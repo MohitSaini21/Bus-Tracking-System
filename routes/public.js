@@ -54,4 +54,7 @@ router.get("/particularBus/:id", async (req, res) => {
   }
 });
 
+router.post("/heyThere/:id", (req, res) => {
+  res.send("Working");
+});
 export { router as publicRouter };

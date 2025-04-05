@@ -12,6 +12,12 @@ const stopSchema = new mongoose.Schema({
   eveningTime: {
     type: String,
   },
+  latitude: {
+    type: String,
+  },
+  longitude: {
+    type: String,
+  },
 });
 
 // Schema for bus documents (name and URL)
@@ -46,6 +52,14 @@ const busSchema = new mongoose.Schema({
   },
   lastServiced: {
     type: Date,
+  },
+  iconPhoto: {
+    type: String,
+    default: "/assets/images/faces/busIcon.png",
+  },
+  busImages: {
+    type: [String], // This ensures it's an array of strings (for image paths/URLs)
+    default: [], // Default is an empty array
   },
   driver: {
     type: mongoose.Schema.Types.ObjectId,

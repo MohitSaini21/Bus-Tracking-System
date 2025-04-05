@@ -23,6 +23,15 @@
     <link rel="stylesheet" href="/assets/css/style.css" />
     <!-- End layout styles -->
     <link rel="shortcut icon" href="/assets/images/faces/tmu.jpg" />
+
+        <style>
+      .preview {
+        width: 150px; /* Set a fixed width */
+        height: 150px; /* Set a fixed height */
+        object-fit: cover; /* Ensures the image covers the container without distortion */
+        border-radius: 50%; /* Keeps the image rounded */
+      }
+    </style>
   </head>
   <body>
     <div class="container-scroller">
@@ -174,52 +183,52 @@
                       <!-- working -->
                        <% if (bus.routeStops && bus.routeStops.length > 0) { %>
   <% bus.routeStops.forEach((stop, index) => { %>
-     <div class="row">
-                        <div class="col-md-6">
-                          <div class="form-group row">
-                            <label class="col-sm-3 col-form-label"
-                              >Stop Name</label
-                            >
-                            <div class="col-sm-9">
-                              <input
-                                type="text"
-                                class="form-control text-white"
-                                name="stopName[]"
-                               value="<%= stop.stopName %>"
-                                placeholder="Enter stop name"
-                              />
-                            </div>
-                          </div>
-                        </div>
+<div class="row">
+  <div class="col-md-3">
+    <div class="form-group row">
+      <label class="col-sm-12 col-form-label">Stop Name</label>
+      <div class="col-sm-12">
+        <input type="text" class="form-control text-white" name="stopName[]" value="<%=stop.stopName  %>" placeholder="Enter stop name" />
+      </div>
+    </div>
+  </div>
 
-                        <div class="col-md-3">
-                          <div class="form-group row">
-                            <label class="col-sm-3 col-form-label">MT</label>
-                            <div class="col-sm-9">
-                              <input
-                                type="time"
-                                class="form-control text-white"
-                                   value="<%= stop.morningTime %>"
-                                name="morningTime[]"
-                              />
-                            </div>
-                          </div>
-                        </div>
+  <div class="col-md-2">
+    <div class="form-group row">
+      <label class="col-sm-12 col-form-label">MT</label>
+      <div class="col-sm-12">
+        <input type="time" value="<%=stop.morningTime  %>" class="form-control text-white" name="morningTime" />
+      </div>
+    </div>
+  </div>
 
-                        <div class="col-md-3">
-                          <div class="form-group row">
-                            <label class="col-sm-3 col-form-label">ET</label>
-                            <div class="col-sm-9">
-                              <input
-                                type="time"
-                                class="form-control text-white"
-                                    value="<%= stop.eveningTime %>"
-                                name="eveningTime[]"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+  <div class="col-md-2">
+    <div class="form-group row">
+      <label class="col-sm-12 col-form-label">ET</label>
+      <div class="col-sm-12">
+        <input type="time" value="<%=stop.eveningTime  %>" class="form-control text-white" name="eveningTime" />
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-2">
+    <div class="form-group row">
+      <label class="col-sm-12 col-form-label">Latitude</label>
+      <div class="col-sm-12">
+        <input type="number" step="any" class="form-control text-white"  value="<%=stop.latitude  %>" name="latitude" placeholder="Enter latitude" />
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="form-group row">
+      <label class="col-sm-12 col-form-label">Longitude</label>
+      <div class="col-sm-12">
+        <input type="number" step="any" class="form-control text-white"  value="<%=stop.longitude  %>" name="longitude" placeholder="Enter longitude" />
+      </div>
+    </div>
+  </div>
+</div>
 
   <% }); %>
 <% } else { %>
@@ -267,7 +276,7 @@
                     <form
                       class="forms-sample"
                       id="multipleFiles"
-                      action="/tmu/admin/settings/busDocuments/<%=bus._id  %>"
+         action="/tmu/admin/settings/busDocuments/<%=bus._id  %>"
                       enctype="multipart/form-data"
                       method="POST"
                     >
@@ -317,6 +326,108 @@
                 </div>
               </div>
               
+
+
+              
+ 
+               <!--  let's take an icon image -->
+                 
+              <div class="col-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body">
+                    <h4 class="card-title">Bus Icon Image</h4>
+                    <p class="card-description">Make sure it is backgournd less and It is highy requested that is background less</p>
+
+                    <div class="container d-flex justify-content-end">
+                      <img
+                   src="<%=bus.iconPhoto  %>"
+                      
+                        id="Preview"
+                        class="img-thumbnail rounded-circle preview"
+                        alt="..."
+                      />
+                    </div>
+                    <form
+                      
+                      action="/tmu/admin/settings/busIcon/<%=bus._id  %>"
+                      class="forms-sample"
+                      id="row"
+                      method="POST"
+                      enctype="multipart/form-data"
+                    >
+                      <div class="form-group">
+                        <label for="exampleInputName1"
+                          >Upload Bus Icon</label
+                        >
+
+                        <input
+                          type="file"
+                          id="iconPhoto"
+          
+                          
+                          name="iconPhoto"
+                          class="form-control file-upload-info"
+                          accept="image/*"
+                        />
+                        <br>
+                        <div class="container p-2 border border-primary">
+                          <span id="fileName"><%= bus.iconPhoto ? bus.iconPhoto.split('/').pop() : "No file chosen" %></span>
+
+                        </div>
+                      </div>
+
+                      <button type="submit" class="btn btn-primary mr-2">
+                        Submit
+                      </button>
+                      <button class="btn btn-dark">Cancel</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+
+              <!-- let's take bus mutliple pictures -->
+               <div class="col-12 grid-margin stretch-card">
+  <div class="card">
+    <div class="card-body">
+      <h4 class="card-title">Bus Multiple Pictures</h4>
+      <p class="card-description">Make sure you upload quality image as they are uploaded on public platform</p>
+
+      <form
+        action="/tmu/admin/settings/busImages/<%= bus._id %>"
+        class="forms-sample"
+        id="row"
+        method="POST"
+        enctype="multipart/form-data"
+      >
+        <div id="file-input-container">
+          <div class="form-group row">
+            <label for="iconPhoto" class="col-sm-3 col-form-label">Upload Bus Picutre</label>
+            <div class="col-12">
+              <input
+                type="file"
+                name="iconPhoto"
+                class="form-control file-upload-info"
+                accept="image/*"
+                multiple
+              />
+              <br />
+          
+              
+            </div>
+          </div>
+        </div>
+
+        <button type="button" id="add-more-files" class="btn btn-secondary">Add More Files</button>
+
+        <button type="submit" class="btn btn-primary mr-2">
+          Submit
+        </button>
+        <button class="btn btn-dark">Cancel</button>
+      </form>
+    </div>
+  </div>
+</div>
+
             </div>
           </div>
           <!-- content-wrapper ends -->
@@ -349,6 +460,35 @@
       <!-- page-body-wrapper ends -->
     </div>
     <!-- container-scroller -->
+
+    <!-- add new input forimage -->
+     <script>
+  // JavaScript to dynamically add file input fields
+  document.getElementById("add-more-files").addEventListener("click", function () {
+    const container = document.getElementById("file-input-container");
+
+    // Create a new file input field
+    const newFileInput = document.createElement("div");
+    newFileInput.classList.add("form-group", "row");
+    newFileInput.innerHTML = `
+      <div class="col-12">
+        <input
+          type="file"
+          name="iconPhoto"
+          class="form-control file-upload-info"
+          accept="image/*"
+          multiple
+        />
+        <br />
+
+        
+      </div>
+    `;
+    // Append the new file input to the container
+    container.appendChild(newFileInput);
+  });
+</script>
+    <!-- add new input forimage -->
     <!-- custom Scripts -->
     <script>
       // Adding additional stop inputs dynamically
@@ -357,35 +497,52 @@
         .addEventListener("click", function () {
           const additionalStops = document.getElementById("additional-stops");
 
-          const stopRow = `
-      <div class="row">
-        <div class="col-md-6">
-          <div class="form-group row">
-            <label class="col-sm-3 col-form-label">Stop Name</label>
-            <div class="col-sm-9">
-              <input type="text" class="form-control text-white" name="stopName[]" placeholder="Enter stop name" />
-            </div>
+          const stopRow = `<div class="row">
+      <div class="col-md-3">
+        <div class="form-group row">
+          <label class="col-sm-12 col-form-label">Stop Name</label>
+          <div class="col-sm-12">
+            <input type="text" class="form-control text-white" name="stopName" placeholder="Enter stop name" />
           </div>
         </div>
+      </div>
 
-        <div class="col-md-3">
-          <div class="form-group row">
-            <label class="col-sm-3 col-form-label">MT</label>
-            <div class="col-sm-9">
-              <input type="time" class="form-control text-white" name="morningTime[]" />
-            </div>
+      <div class="col-md-2">
+        <div class="form-group row">
+          <label class="col-sm-12 col-form-label">MT</label>
+          <div class="col-sm-12">
+            <input type="time" class="form-control text-white" name="morningTime" />
           </div>
         </div>
+      </div>
 
-        <div class="col-md-3">
-          <div class="form-group row">
-            <label class="col-sm-3 col-form-label">ET</label>
-            <div class="col-sm-9">
-              <input type="time" class="form-control text-white" name="eveningTime[]" />
-            </div>
+      <div class="col-md-2">
+        <div class="form-group row">
+          <label class="col-sm-12 col-form-label">ET</label>
+          <div class="col-sm-12">
+            <input type="time" class="form-control text-white" name="eveningTime" />
           </div>
         </div>
-      </div>`;
+      </div>
+
+      <div class="col-md-2">
+        <div class="form-group row">
+          <label class="col-sm-12 col-form-label">Latitude</label>
+          <div class="col-sm-12">
+            <input type="number" step="any" class="form-control text-white" name="latitude" placeholder="Enter latitude" />
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-3">
+        <div class="form-group row">
+          <label class="col-sm-12 col-form-label">Longitude</label>
+          <div class="col-sm-12">
+            <input type="number" step="any" class="form-control text-white" name="longitude" placeholder="Enter longitude" />
+          </div>
+        </div>
+      </div>
+    </div>`;
 
           additionalStops.insertAdjacentHTML("beforeend", stopRow);
         });
@@ -426,13 +583,18 @@
     <script>
         const bus = <%- JSON.stringify(bus) %>;
      if(bus.busDocuments.length>0){
-         append(bus.busDocuments);
+         append(bus.busDocuments,1);
 
      }
 
-        function append(workerDocuments){
+     if(bus.busImages.length>0){
+      append(bus.busImages,8)
+     }
+
+        function append(workerDocuments,childIndex){
  workerDocuments.forEach((doc, index) => {
-  console.log(doc.name)
+
+  
 
            const mainRow = document.querySelector(".row");
            console.log(mainRow)
@@ -444,7 +606,7 @@
                     
                     <div class="media" >
                            <div class="media-body">
-                        <p class="card-text">${doc.name}</p>
+                        <p class="card-text">${doc.name ? doc.name : "Image"}</p>
                       </div>
   <i class="mdi mdi-eye icon-sm" style="margin-right: 8px;"></i>
                  
@@ -459,9 +621,29 @@
      tempDiv.innerHTML = col.trim();
        const newCol = tempDiv.firstChild;
 
-    mainRow.insertBefore(newCol, mainRow.children[1]);
+    mainRow.insertBefore(newCol, mainRow.children[childIndex]);
   });
         }
+    </script>
+    <script>
+       // Function to update driver profile image preview
+      document
+        .getElementById("iconPhoto")
+        .addEventListener("change", function (event) {
+
+           const fileName = this.files.length ? this.files[0].name : "No file chosen";
+    document.getElementById("fileName").textContent = fileName;
+          const driverPreview = document.getElementById("Preview");
+          const file = event.target.files[0];
+
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+              driverPreview.src = e.target.result; // Set the preview to the selected image
+            };
+            reader.readAsDataURL(file); // Read the file as a data URL
+          }
+        });
     </script>
     <!-- custom Scripts -->
 

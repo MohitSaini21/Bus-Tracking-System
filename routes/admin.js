@@ -375,13 +375,22 @@ router.get("/busEntire/:id", async (req, res) => {
 router.post("/busEntire/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { stopName, morningTime, eveningTime, ...busData } = req.body;
+    const {
+      stopName,
+      morningTime,
+      eveningTime,
+      latitude,
+      longitude,
+      ...busData
+    } = req.body;
 
     // Creating routeStops array
     const routeStops = stopName.map((name, index) => ({
       stopName: name,
       morningTime: morningTime[index],
       eveningTime: eveningTime[index],
+      latitude: latitude[index],
+      longitude: longitude[index],
     }));
 
     // Updating the bus document
@@ -424,11 +433,76 @@ router.post("/busDocuments/:id", upload.any(), async (req, res) => {
     await bus.save();
 
     return res.redirect(
-      `http://localhost:3000/tmu/admin/settings/busEntire/67e8ed79552f9251eff61392`
+      `http://localhost:3000/tmu/admin/settings/busEntire/${bus._id}`
     );
   } catch (error) {
     console.error("Error uploading documents:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+});
+router.post("/busIcon/:id", upload.single("iconPhoto"), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    // Fetch conductor by ID
+    const bus = await Bus.findById(id);
+    if (!bus) {
+      return res.status(404).json({ message: "bus not found" });
+    }
+
+    // Update profile
+    const fullPath = req.file.path;
+    const relativePath = fullPath.split("public")[1];
+    bus.iconPhoto = relativePath;
+    await bus.save();
+
+    console.log("File uploaded:", req.file);
+
+    // Redirect user after successful upload
+    res.redirect(`/tmu/admin/settings/busEntire/${bus._id}`);
+  } catch (error) {
+    console.error("Error uploading file:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.post("/busImages/:id", upload.any(), async (req, res) => {
+  try {
+    // Get the bus ID from the route params
+    const { id } = req.params;
+
+    // Get the uploaded files from the request
+    const uploadedFiles = req.files;
+
+    // Map through the uploaded files and get the relative paths
+    const busImagePaths = uploadedFiles.map((file) => {
+      const fullPath = file.path; // Full path (e.g., "public/uploads/abc123.jpg")
+      const relativePath = fullPath.split("public")[1]; // Extract relative path (e.g., "/uploads/abc123.jpg")
+      return relativePath; // Store only the relative path
+    });
+
+    // Find the bus by ID and update its busImages field with the new image paths
+    const bus = await Bus.findById(id);
+
+    if (!bus) {
+      return res.status(404).send("Bus not found");
+    }
+
+    // Add new images to the busImages array
+    bus.busImages = [...bus.busImages, ...busImagePaths];
+
+    // Save the bus with the updated busImages
+    await bus.save();
+
+    // Redirect user after successful upload
+    res.redirect(`/tmu/admin/settings/busEntire/${bus._id}`);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error uploading images");
   }
 });
 
