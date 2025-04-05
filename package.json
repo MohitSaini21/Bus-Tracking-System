@@ -1,0 +1,36 @@
+{
+  "name": "bustrackingsystem",
+  "version": "1.0.0",
+  "description": "Teerthankar Mahaveer University",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bad-words": "^4.0.0",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.7",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0",
+    "firebase-admin": "^13.0.2",
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
+    "moment-timezone": "^0.5.47",
+    "mongoose": "^8.9.2",
+    "multer": "^1.4.5-lts.1",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.16",
+    "passport": "^0.7.0",
+    "passport-facebook": "^3.0.0",
+    "passport-github2": "^0.1.12",
+    "passport-google-oauth20": "^2.0.0",
+    "sanitize-html": "^2.14.0",
+    "socket.io": "^4.8.1",
+    "validator": "^13.12.0"
+  }
+}

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Record Video and Audio</title>
+  </head>
+  <body>
+    <p>
+      Lorem ipsum dolor sit amet consectetur adipisicing elit. Atque rem magnam
+      fugiat alias aperiam nulla laborum impedit reiciendis, dignissimos in
+      obcaecati veniam corporis dolore quidem! Repudiandae illum quas adipisci
+      dicta.
+    </p>
+
+    <!-- Video element to display recorded video -->
+    <video id="video" width="640" height="480" autoplay></video>
+
+    <script>
+      // Access the user's webcam and microphone
+      navigator.mediaDevices
+        .getUserMedia({ video: true, audio: true })
+        .then(function (stream) {
+          // Get the video element
+          const videoElement = document.getElementById("video");
+          console.log(stream);
+
+          // Optionally, save the stream or add more functionality (e.g., record, pause, etc.)
+        })
+        .catch(function (error) {
+          console.log("Error accessing media devices.", error);
+        });
+    </script>
+  </body>
+</html>

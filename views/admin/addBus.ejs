@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <title>Corona Admin</title>
+    <!-- plugins:css -->
+    <link
+      rel="stylesheet"
+      href="/assets/vendors/mdi/css/materialdesignicons.min.css"
+    />
+    <link rel="stylesheet" href="/assets/vendors/css/vendor.bundle.base.css" />
+    <!-- endinject -->
+    <!-- Plugin css for this page -->
+    <!-- End Plugin css for this page -->
+    <!-- inject:css -->
+    <!-- endinject -->
+    <!-- Layout styles -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+    <!-- End layout styles -->
+    <link rel="shortcut icon" href="/assets/images/favicon.png" />
+    <style>
+        .preview{
+  width: 150px; /* Set a fixed width */
+  height: 150px; /* Set a fixed height */
+  object-fit: cover; /* Ensures the image covers the container without distortion */
+  border-radius: 50%; /* Keeps the image rounded */
+}
+
+    </style>
+  </head>
+  <body>
+    <div class="container-scroller">
+      <!-- partial:../../partials/_sidebar.html -->
+
+      <%- include('./partials/sidebar.ejs') %>
+      <!-- partial -->
+      <div class="container-fluid page-body-wrapper">
+        <!-- partial:../../partials/_navbar.html -->
+
+        <%- include('./partials/nav.ejs') %>
+        <!-- partial -->
+        <div class="main-panel">
+          <div class="content-wrapper">
+                       <div class="page-header">
+              <h3 class="page-title">Add New Bus In Garrage</h3>
+              
+              
+          </div>
+          <!-- content-wrapper ends -->
+           <div class="row">
+   
+    
+          <div class="col-md-6 grid-margin stretch-card">
+  <div class="card">
+    <div class="card-body">
+      <h4 class="card-title">Driver Details</h4>
+
+      
+<br>
+
+      <p class="card-description">Fill in the driver’s details below</p>
+      <form class="forms-sample" id="driverForm">
+        <div class="form-group row">
+          <label for="driverId" class="col-sm-3 col-form-label">Driver ID</label>
+          <div class="col-sm-9">
+            <input type="text" class="form-control text-white" id="driverId" placeholder="Enter Driver ID">
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label for="name" class="col-sm-3 col-form-label">Name</label>
+          <div class="col-sm-9">
+            <input type="text" class="form-control text-white" id="driverName" placeholder="Enter Driver's Name" >
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label for="phone" class="col-sm-3 col-form-label">Phone</label>
+          <div class="col-sm-9">
+            <input type="text" class="form-control text-white" id="driverPhone" placeholder="Enter Phone Number" >
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label for="licenseNumber" class="col-sm-3 col-form-label">License Number</label>
+          <div class="col-sm-9">
+            <input type="text" class="form-control text-white" id="driverLicenseNumber" placeholder="Enter License Number" >
+          </div>
+        </div>
+
+
+        
+     
+        
+
+        <div class="form-group row">
+          <label for="address" class="col-sm-3 col-form-label">Address</label>
+          <div class="col-sm-9">
+            <textarea class="form-control text-white" style="color: white;" id="driverAddress" rows="2" placeholder="Enter Driver's Address"></textarea>
+          </div>
+        </div>
+
+
+        
+
+        <div class="form-group row">
+          <label for="joiningDate" class="col-sm-3 col-form-label">Joining Date</label>
+          <div class="col-sm-9">
+            <input type="date" class="form-control text-white" id="DriverJoiningDate">
+          </div>
+        </div>
+
+      
+        
+
+        
+           
+        
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="col-md-6 grid-margin stretch-card">
+  <div class="card">
+    <div class="card-body">
+      <h4 class="card-title">Conductor Details</h4>
+
+      
+<br>
+      <p class="card-description">Fill in the conductor’s details below</p>
+      <form class="forms-sample"  id="conductorForm">
+        
+        <div class="form-group row">
+          <label for="conductorId" class="col-sm-3 col-form-label">Conductor ID</label>
+          <div class="col-sm-9">
+            <input type="text" class="form-control text-white" id="conductorId" placeholder="Enter Conductor ID" >
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label for="name" class="col-sm-3 col-form-label">Name</label>
+          <div class="col-sm-9">
+            <input type="text" class="form-control text-white" id="conductorName" placeholder="Enter Conductor's Name" >
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label for="phone" class="col-sm-3 col-form-label">Phone</label>
+          <div class="col-sm-9">
+            <input type="text" class="form-control text-white" id="conductorPhone" placeholder="Enter Phone Number" >
+          </div>
+        </div>
+
+        
+
+        <div class="form-group row">
+          <label for="address" class="col-sm-3 col-form-label">Address</label>
+          <div class="col-sm-9">
+            <textarea class="form-control text-white" id="conductorAddress" rows="2" placeholder="Enter Conductor's Address"></textarea>
+          </div>
+        </div>
+
+        
+
+        <div class="form-group row">
+          <label for="joiningDate" class="col-sm-3 col-form-label">Joining Date</label>
+          <div class="col-sm-9">
+            <input type="date" class="form-control" id="conductorJoiningDate">
+          </div>
+        </div>
+
+  
+        
+
+   
+        
+      </form>
+    </div>
+  </div>
+</div>
+
+
+          <div class="col-12 grid-margin">
+  <div class="card">
+    <div class="card-body">
+      <h4 class="card-title">Bus Information Form</h4>
+      <form class="form-sample" id="eventForm">
+        <p class="card-description"> Bus Details </p>
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group row">
+              <label class="col-sm-3 col-form-label">Bus Number</label>
+              <div class="col-sm-9">
+                <input type="text" class="form-control text-white" name="busNumber"  />
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="form-group row">
+              <label class="col-sm-3 col-form-label">Route</label>
+              <div class="col-sm-9">
+                <input type="text" class="form-control text-white" name="route" placeholder="e.g., TMU to Dhampur"  />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group row">
+              <label class="col-sm-3 col-form-label">Capacity</label>
+              <div class="col-sm-9">
+                <input type="number" class="form-control text-white" name="capacity" placeholder="Enter bus capacity" />
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="form-group row">
+              <label class="col-sm-3 col-form-label">Status</label>
+              <div class="col-sm-9">
+                <select class="form-control text-white" name="status">
+                              <option value="" disabled selected>Select Status</option>
+                  <option value="Operational">Operational</option>
+                  <option value="Under Maintenance">Under Maintenance</option>
+                  <option value="Out of Service">Out of Service</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group row">
+              <label class="col-sm-3 col-form-label">Fuel Type</label>
+              <div class="col-sm-9">
+                <select class="form-control text-white" name="fuelType">
+                      <option value="" disabled selected>Select Fuel Type</option>
+                  <option value="Diesel">Diesel</option>
+                  <option value="CNG">CNG</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="form-group row">
+              <label class="col-sm-3 col-form-label">Last Serviced</label>
+              <div class="col-sm-9">
+                <input type="date" class="form-control text-white" name="lastServiced" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p class="card-description"> Route Stops </p>
+
+        <!-- Stops Inputs -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group row">
+              <label class="col-sm-3 col-form-label">Stop Name</label>
+              <div class="col-sm-9">
+                <input type="text" class="form-control text-white" name="stopName[]" placeholder="Enter stop name" />
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="form-group row">
+              <label class="col-sm-3 col-form-label">MT</label>
+              <div class="col-sm-9">
+                <input type="time" class="form-control text-white" name="morningTime[]" />
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <div class="form-group row">
+              <label class="col-sm-3 col-form-label">ET</label>
+              <div class="col-sm-9">
+                <input type="time" class="form-control text-white" name="eveningTime[]" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Repeatable stop input structure -->
+        <div id="additional-stops"></div>
+
+        <button type="button" id="add-stop" class="btn btn-primary">Add Another Stop</button>
+ 
+        
+        
+
+
+
+        
+
+      </form>
+      <br><br>
+       <div class="container d-flex justify-content-end">
+  <button type="submit" class="btn btn-inverse-success btn-fw" onclick="Collect()">Add New Bus </button>
+</div>
+
+    </div>
+  </div>
+</div>
+           </div>
+          <!-- partial:../../partials/_footer.html -->
+
+          <%- include('./partials/footer.ejs') %>
+          <!-- partial -->
+        </div>
+        <!-- main-panel ends -->
+      </div>
+      <!-- page-body-wrapper ends -->
+    </div>
+    <!-- container-scroller -->
+
+
+
+    
+    <!-- custom Scripts -->
+     <script>
+  // Adding additional stop inputs dynamically
+  document.getElementById("add-stop").addEventListener("click", function () {
+    const additionalStops = document.getElementById("additional-stops");
+
+    const stopRow = `
+      <div class="row">
+        <div class="col-md-6">
+          <div class="form-group row">
+            <label class="col-sm-3 col-form-label">Stop Name</label>
+            <div class="col-sm-9">
+              <input type="text" class="form-control text-white" name="stopName[]" placeholder="Enter stop name" />
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="form-group row">
+            <label class="col-sm-3 col-form-label">MT</label>
+            <div class="col-sm-9">
+              <input type="time" class="form-control text-white" name="morningTime[]" />
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="form-group row">
+            <label class="col-sm-3 col-form-label">ET</label>
+            <div class="col-sm-9">
+              <input type="time" class="form-control text-white" name="eveningTime[]" />
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+    additionalStops.insertAdjacentHTML("beforeend", stopRow);
+  });
+
+
+
+  
+</script>
+    <!-- custom Scripts -->
+
+    <!-- Scirpt to collect Data -->
+     <script>
+
+function getFormData(id) {
+  const form = document.getElementById(id);  // Get the form by its ID
+  const formData = {};
+
+  // Loop through each form element and collect its value
+  Array.from(form.elements).forEach(element => {
+
+    
+        formData[element.id] = element.value || '';  // Get the value of other inputs (e.g., text, date)
+
+        
+    
+        
+  });
+
+  return formData;
+}
+
+function getBusData(formId) {
+  // Get the form element using the provided ID
+  const form = document.getElementById(formId);
+  
+  // Collecting form data
+  const formData = new FormData(form);
+
+  // Converting FormData to a JSON object
+  const data = {};
+
+  formData.forEach((value, key) => {
+    if (key.includes("stopName") || key.includes("morningTime") || key.includes("eveningTime")) {
+      // Handle array inputs like stopName[], morningTime[], and eveningTime[]
+      if (!data[key]) {
+        data[key] = [];
+      }
+      data[key].push(value);
+    } else {
+      
+      data[key] = value; // Handle single input values like busNumber, route, etc.
+    }
+  });
+
+  // Formatting stops array with their times for better structure
+  const stops = [];
+  for (let i = 0; i < data["stopName[]"].length; i++) {
+    if(data["stopName[]"][i]){
+    stops.push({
+      stopName: data["stopName[]"][i],
+      morningTime: data["morningTime[]"][i],
+      eveningTime: data["eveningTime[]"][i],
+    });
+  }
+  }
+
+
+  
+
+  // Constructing final data object to return
+  const finalData = {
+    busNumber: data.busNumber,
+    route: data.route,
+    capacity: data.capacity,
+    status: data.status ? data.status : "",
+    fuelType: data.fuelType ? data.fuelType : "",
+    lastServiced: data.lastServiced,
+    stops: stops,
+  
+    
+  };
+
+  return finalData; // Return the final data object
+}
+
+
+
+function Collect() {
+  // Collect form data from each form
+  const busData = getBusData("eventForm");
+  console.log(busData);
+
+  const driverData = getFormData("driverForm");
+  console.log(driverData);
+
+  const conductorData = getFormData("conductorForm");
+  console.log(conductorData);
+
+  // Create an array of objects
+  const formDataArray = [
+    {
+      type: 'bus',
+      data: busData
+    },
+    {
+      type: 'driver',
+      data: driverData
+    },
+    {
+      type: 'conductor',
+      data: conductorData
+    }
+  ];
+
+  // Make POST request with the array of objects
+  fetch('http://localhost:3000/tmu/admin/settings/addBus', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(formDataArray),
+  })
+  .then(response => response.json())
+  .then(data => {
+    console.log('Success:', data.message);
+  })
+  .catch((error) => {
+    console.log(error.message)
+    console.error('Error:', error);
+  });
+}
+
+
+
+
+  
+  
+  
+     </script>
+
+
+
+
+
+    <!-- plugins:js -->
+    <script src="/assets/vendors/js/vendor.bundle.base.js"></script>
+    <!-- endinject -->
+    <!-- Plugin js for this page -->
+    <!-- End plugin js for this page -->
+    <!-- inject:js -->
+    <script src="/assets/js/off-canvas.js"></script>
+    <script src="/assets/js/hoverable-collapse.js"></script>
+    <script src="/assets/js/misc.js"></script>
+    <script src="/assets/js/settings.js"></script>
+    <script src="/assets/js/todolist.js"></script>
+    <!-- endinject -->
+    <!-- Custom js for this page -->
+    <!-- End custom js for this page -->
+  </body>
+</html>

@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <title>Corona Admin</title>
+    <!-- plugins:css -->
+    <link
+      rel="stylesheet"
+      href="/assets/vendors/mdi/css/materialdesignicons.min.css"
+    />
+    <link rel="stylesheet" href="/assets/vendors/css/vendor.bundle.base.css" />
+    <!-- endinject -->
+    <!-- Plugin css for this page -->
+    <!-- End Plugin css for this page -->
+    <!-- inject:css -->
+    <!-- endinject -->
+    <!-- Layout styles -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+    <!-- End layout styles -->
+    <link rel="shortcut icon" href="/assets/images/favicon.png" />
+    <style>
+      .preview {
+        width: 150px; /* Set a fixed width */
+        height: 150px; /* Set a fixed height */
+        object-fit: cover; /* Ensures the image covers the container without distortion */
+        border-radius: 50%; /* Keeps the image rounded */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container-scroller">
+      <!-- partial:../../partials/_sidebar.html -->
+
+      <%- include('./partials/sidebar.ejs') %>
+      <!-- partial -->
+      <div class="container-fluid page-body-wrapper">
+        <!-- partial:../../partials/_navbar.html -->
+
+        <%- include('./partials/nav.ejs') %>
+        <!-- part x`ial -->
+        <div class="main-panel">
+          <div class="content-wrapper">
+            <div class="row" id="mainRow">
+              <div class="col-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body">
+                    <h4 class="card-title">Row Information</h4>
+                    <% if (locals.worker.driverId) { %>
+                    <p class="card-description">About Driver</p>
+                    <% } else { %>
+                    <p class="card-description">About Conductor</p>
+                    <% } %>
+
+                    <form
+                      class="forms-sample"
+                      id="row"
+                      method="POST"
+                      action="<%= locals.worker.driverId ? `/tmu/admin/settings/driverRow/${locals.worker._id}` : `/tmu/admin/settings/conductorRow/${locals.worker._id}` %>"
+                    >
+                      <div class="form-group">
+                        <label for="exampleInputName1">Name</label>
+                        <input
+                          type="text"
+                          class="form-control text-white"
+                          value="<%= worker.name  %>"
+                          id="exampleInputName1"
+                          name="name"
+                          placeholder="name"
+                        />
+                      </div>
+                      <div class="form-group row">
+                        <label for="phone" class="col-sm-3 col-form-label"
+                          >Phone</label
+                        >
+                        <div class="col-sm-9">
+                          <input
+                            type="text"
+                            class="form-control text-white"
+                            id="phone"
+                            name="phone"
+                            value="<%= worker.phone  %>"
+                            placeholder="Enter Phone Number"
+                          />
+                        </div>
+                      </div>
+                      <% if (locals.worker.driverId) { %>
+                      <div class="form-group row">
+                        <label
+                          for="licenseNumber"
+                          class="col-sm-3 col-form-label"
+                          >License Number</label
+                        >
+                        <div class="col-sm-9">
+                          <input
+                            type="text"
+                            class="form-control text-white"
+                            id="driverLicenseNumber"
+                            value="<%= worker.licenseNumber  %>"
+                            name="licenseNumber"
+                            placeholder="Enter License Number"
+                          />
+                        </div>
+                      </div>
+                      <% } %>
+                      <div class="form-group">
+                        <label for="exampleTextarea1">Address</label>
+                        <textarea
+                          class="form-control custom-textarea"
+                          name="address"
+                          id="exampleTextarea1"
+                          style="color: white"
+                          rows="4"
+                        >
+<%= worker.address %></textarea
+                        >
+                      </div>
+
+                      <div class="form-group">
+                        <label for="exampleFormControlSelect2"
+                          >select Status</label
+                        >
+                   <select
+  class="form-control text-white"
+  style="color: white"
+  name="status"
+  id="exampleFormControlSelect2"
+>
+  <option 
+    value="Active" 
+    class="text-white"
+    style="color: white" 
+    <%= worker.status === "Active" ? "selected" : "" %>
+  >
+    Active
+  </option>
+  <option 
+    value="Inactive" 
+    class="text-white"
+    style="color: white" 
+    <%= worker.status === "Inactive" ? "selected" : "" %>
+  >
+    Inactive
+  </option>
+</select>
+
+                      </div>
+
+                      <button type="submit" class="btn btn-primary mr-2">
+                        Submit
+                      </button>
+                      <button class="btn btn-dark">Cancel</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body">
+                    <h4 class="card-title">Row Informaton</h4>
+                    <p class="card-description">Basic form elements</p>
+
+                    <div class="container d-flex justify-content-end">
+                      <img
+                        src="<%=worker.profilePhoto  %>"
+                        id="Preview"
+                        class="img-thumbnail rounded-circle preview"
+                        alt="..."
+                      />
+                    </div>
+                    <form
+                      action="<%= locals.worker.conductorId ? `/tmu/admin/settings/conductor/profileImage/${locals.worker._id}` : `/tmu/admin/settings/driver/profileImage/${locals.worker._id}` %>"
+                      class="forms-sample"
+                      id="row"
+                      method="POST"
+                      enctype="multipart/form-data"
+                    >
+                      <div class="form-group">
+                        <label for="exampleInputName1"
+                          >Upload Profile Picture</label
+                        >
+
+                        <input
+                          type="file"
+                          id="profilePhoto"
+          
+                          
+                          name="profileImage"
+                          class="form-control file-upload-info"
+                          accept="image/*"
+                        />
+                        <br>
+                        <div class="container p-2 border border-primary">
+                          <span id="fileName"><%= worker.profilePhoto ? worker.profilePhoto.split('/').pop() : "No file chosen" %></span>
+
+                        </div>
+                      </div>
+
+                      <button type="submit" class="btn btn-primary mr-2">
+                        Submit
+                      </button>
+                      <button class="btn btn-dark">Cancel</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+
+              
+              <!-- Dcouments Div -->
+            
+              
+
+              <!-- Dcouments Div -->
+               
+
+              <div class="col-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body">
+                    <h4 class="card-title">Add Multiple Document</h4>
+                    <p class="card-description">
+                      About <%= worker.driverId ? "Driver" : "Conductor" %> <%=
+                      worker.name %>
+                    </p>
+                    <form
+                      class="forms-sample"
+                      id="multipleFiles"
+                      action="<%= locals.worker.driverId ? `/tmu/admin/settings/driverDocuments/${locals.worker._id}` : `/tmu/admin/settings/conductorDocuments/${locals.worker._id}` %>"
+                      enctype="multipart/form-data"
+                      method="POST"
+                    >
+                      <!-- Bus Legal Papers Input -->
+                      <div id="legal-papers-section">
+                    <div>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group row">
+              <label class="col-sm-3 col-form-label">Paper Name</label>
+              <div class="col-sm-9">
+                <input type="text" class="form-control text-white" name="paperNames" placeholder="Enter paper name (e.g., Registration)" />
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="form-group row">
+              <label class="col-sm-3 col-form-label">Upload Document</label>
+              <div class="col-sm-9">
+                <input type="file" class="form-control text-white" name="Document" accept=".pdf" />
+              </div>
+            </div>
+          </div>
+        </div>
+        </div>
+                        
+                      </div>
+
+                      <!-- Button to Add More Paper Inputs -->
+                      <button
+                        type="button"
+                        id="add-paper"
+                        class="btn btn-primary"
+                        onclick="add()"
+                      >
+                        Add Another Paper
+                      </button>
+                      <br />
+                      <br />
+                      <button type="submit" class="btn btn-primary mr-2">
+                        Submit
+                      </button>
+                      <button class="btn btn-dark">Cancel</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- content-wrapper ends -->
+          <!-- partial:../../partials/_footer.html -->
+          <footer class="footer">
+            <div
+              class="d-sm-flex justify-content-center justify-content-sm-between"
+            >
+              <span
+                class="text-muted d-block text-center text-sm-left d-sm-inline-block"
+                >Copyright © bootstrapdash.com 2020</span
+              >
+              <span
+                class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center"
+              >
+                Free
+                <a
+                  href="https://www.bootstrapdash.com/bootstrap-admin-template/"
+                  target="_blank"
+                  >Bootstrap admin templates</a
+                >
+                from Bootstrapdash.com</span
+              >
+            </div>
+          </footer>
+          <!-- partial -->
+        </div>
+        <!-- main-panel ends -->
+      </div>
+      <!-- page-body-wrapper ends -->
+    </div>
+    <!-- container-scroller -->
+    <!-- plugins:js -->
+    <script src="/assets/vendors/js/vendor.bundle.base.js"></script>
+    <!-- endinject -->
+    <!-- Plugin js for this page -->
+    <!-- End plugin js for this page -->
+    <!-- inject:js -->
+    <script src="/assets/js/off-canvas.js"></script>
+    <script src="/assets/js/hoverable-collapse.js"></script>
+    <script src="/assets/js/misc.js"></script>
+    <script src="/assets/js/settings.js"></script>
+    <script src="/assets/js/todolist.js"></script>
+    <script>
+      // Function to update driver profile image preview
+      document
+        .getElementById("profilePhoto")
+        .addEventListener("change", function (event) {
+
+           const fileName = this.files.length ? this.files[0].name : "No file chosen";
+    document.getElementById("fileName").textContent = fileName;
+          const driverPreview = document.getElementById("Preview");
+          const file = event.target.files[0];
+
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+              driverPreview.src = e.target.result; // Set the preview to the selected image
+            };
+            reader.readAsDataURL(file); // Read the file as a data URL
+          }
+        });
+      function add() {
+        const paperSection = document.getElementById("legal-papers-section");
+
+        const paperRow = `
+        <div>
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group row">
+              <label class="col-sm-3 col-form-label">Paper Name</label>
+              <div class="col-sm-9">
+                <input type="text" class="form-control text-white" name="paperNames" placeholder="Enter paper name (e.g., Registration)" />
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="form-group row">
+              <label class="col-sm-3 col-form-label">Upload Document</label>
+              <div class="col-sm-9">
+                <input type="file" class="form-control text-white" name="Document" accept=".pdf" />
+              </div>
+            </div>
+          </div>
+        </div>
+        </div>`;
+
+        paperSection.insertAdjacentHTML("beforeend", paperRow);
+      }
+
+
+      
+    </script>
+
+    <script>
+        const worker = <%- JSON.stringify(worker) %>;
+        if(worker.driverId){
+        
+          append(worker.driverDocuments)
+          
+        }else{
+          append(worker.conductorDocuments)
+       
+          
+      
+          
+        }
+
+        function append(workerDocuments){
+ workerDocuments.forEach((doc, index) => {
+  console.log(doc.name)
+
+           const mainRow = document.querySelector(".row");
+           console.log(mainRow)
+   const col = `
+    <div class="col-md-4 grid-margin stretch-card">
+                <div class="card "  style="padding: 0;">
+                  <div class="card-body"  style="padding: 0.8rem;">
+                  
+                    
+                    <div class="media" >
+                           <div class="media-body">
+                        <p class="card-text">${doc.name}</p>
+                      </div>
+  <i class="mdi mdi-eye icon-sm" style="margin-right: 8px;"></i>
+                 
+ <i class="mdi mdi-close icon-sm"></i> 
+                 
+                    </div>
+                  </div>
+                </div>
+              </div>
+    `;
+    const tempDiv = document.createElement('div');
+     tempDiv.innerHTML = col.trim();
+       const newCol = tempDiv.firstChild;
+
+    mainRow.insertBefore(newCol, mainRow.children[2]);
+  });
+        }
+    </script> 
+    <!-- endinject -->
+    <!-- Custom js for this page -->
+    <!-- End custom js for this page -->
+  </body>
+</html>

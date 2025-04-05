@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <center><%=bus.busNumber %></center>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/custom/particularBus.js"></script>
+    <script>
+              const bus = <%- JSON.stringify(bus) %>; // Ensure 'bus' is passed correctly from the server
+      console.log(bus);
+
+      const socket = io({
+        query: {
+          busId: bus._id.toString() // Convert the _id to a string (if it’s a MongoDB ObjectId)
+        }
+      });
+
+
+      socket.on("receivelocation",(data)=>{
+          console.log(data)
+      })
+    </script>
+  </body>
+</html>

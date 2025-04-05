@@ -1,0 +1,64 @@
+import mongoose from "mongoose";
+
+// Schema for route stops with morning and evening timings
+const stopSchema = new mongoose.Schema({
+  stopName: {
+    type: String,
+    set: (value) => value.toLowerCase(), // Convert the route to lowercase before saving
+  },
+  morningTime: {
+    type: String,
+  },
+  eveningTime: {
+    type: String,
+  },
+});
+
+// Schema for bus documents (name and URL)
+const busDocumentSchema = new mongoose.Schema({
+  name: {
+    type: String, // Document name (e.g., "Bus Registration", "Insurance")
+  },
+  url: {
+    type: String, // URL or path to the document (e.g., file path or URL)
+  },
+});
+
+const busSchema = new mongoose.Schema({
+  busNumber: {
+    type: String,
+  },
+  route: {
+    type: String,
+    set: (value) => value.toLowerCase(), // Convert the route to lowercase before saving
+  },
+  capacity: {
+    type: Number,
+  },
+  status: {
+    type: String,
+    enum: ["Operational", "Under Maintenance", "Out of Service"],
+    default: "Operational",
+  },
+  fuelType: {
+    type: String,
+    enum: ["Diesel", "CNG"],
+  },
+  lastServiced: {
+    type: Date,
+  },
+  driver: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Driver", // Reference to Driver model
+  },
+  conductor: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Conductor", // Reference to Conductor model
+  },
+  routeStops: [stopSchema], // Array of stops with morning and evening timings
+  busDocuments: [busDocumentSchema], // Array of document objects with name and URL
+});
+
+const Bus = mongoose.model("Bus", busSchema);
+
+export default Bus;

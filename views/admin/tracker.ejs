@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <title>Tracker</title>
+    <!-- plugins:css -->
+    <link
+      rel="stylesheet"
+      href="/assets/vendors/mdi/css/materialdesignicons.min.css"
+    />
+    
+    <link rel="stylesheet" href="/assets/vendors/css/vendor.bundle.base.css" />
+    <!-- endinject -->
+    <!-- Plugin css for this page -->
+    <!-- End Plugin css for this page -->
+    <!-- inject:css -->
+    <!-- endinject -->
+    <!-- Layout styles -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+    <!-- End layout styles -->
+    <link rel="shortcut icon" href="/assets/images/favicon.png" />
+        <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />  
+    
+
+
+
+
+    
+  </head>
+  <body>
+    <div class="container-scroller">
+      <!-- partial:../../partials/_sidebar.html -->
+
+      <%- include('./partials/sidebar.ejs') %>
+      <!-- partial -->
+      <div class="container-fluid page-body-wrapper">
+        <!-- partial:../../partials/_navbar.html -->
+
+        <%- include('./partials/nav.ejs') %>
+        <!-- partial -->
+        <div class="main-panel">
+          <div class="content-wrapper">
+          <div class="page-header">
+              <h3 class="page-title">Buses Locations</h3>
+
+          
+            </div>
+
+
+                <div class="row">
+                       <div class="col-md-12 grid-margin">
+                <div class="card">
+                  <div class="card-body" id="map" style="width: 100%; height: 450px !important" >
+    
+                    
+         
+                    
+              
+                    
+            
+                    
+                  </div>
+                </div>
+              </div>
+
+ 
+                    
+
+
+                  
+
+
+
+
+
+
+              </div>
+     
+              
+       
+
+            
+          <!-- content-wrapper ends -->
+          <!-- partial:../../partials/_footer.html -->
+          <footer class="footer">
+            <div
+              class="d-sm-flex justify-content-center justify-content-sm-between"
+            >
+              <span
+                class="text-muted d-block text-center text-sm-left d-sm-inline-block"
+                >Copyright © bootstrapdash.com 2020</span
+              >
+              <span
+                class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center"
+              >
+                Free
+                <a
+                  href="https://www.bootstrapdash.com/bootstrap-admin-template/"
+                  target="_blank"
+                  >Bootstrap admin templates</a
+                >
+                from Bootstrapdash.com</span
+              >
+            </div>
+          </footer>
+          <!-- partial -->
+        </div>
+        <!-- main-panel ends -->
+      </div>
+      <!-- page-body-wrapper ends -->
+    </div>
+    <!-- container-scroller -->
+    <!-- plugins:js -->
+
+
+    <!-- custom Scripts -->
+
+
+         <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+      ></script>
+      <script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io({
+    query: {
+      adminId: "1234567890"
+    }
+  });
+
+  // Tile layers for Google and others
+  var googleStreets = L.tileLayer(
+    "http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+    {
+      maxZoom: 20,
+      subdomains: ["mt0", "mt1", "mt2", "mt3"]
+    }
+  );
+
+  var googleHybrid = L.tileLayer(
+    "http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}",
+    {
+      maxZoom: 20,
+      subdomains: ["mt0", "mt1", "mt2", "mt3"]
+    }
+  );
+
+  var googleSat = L.tileLayer(
+    "http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+    {
+      maxZoom: 20,
+      subdomains: ["mt0", "mt1", "mt2", "mt3"]
+    }
+  );
+
+  var googleTerrain = L.tileLayer(
+    "http://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}",
+    {
+      maxZoom: 20,
+      subdomains: ["mt0", "mt1", "mt2", "mt3"]
+    }
+  );
+
+  // Initialize the map with a default layer
+  var map = L.map("map", {
+    center: [28.8347, 78.7763],
+    zoom: 30,
+    layers: [googleTerrain] // default layer
+  });
+
+  // Define base maps
+  var baseMaps = {
+    "Google Streets": googleStreets,
+    "Google Terrain": googleTerrain,
+    "Google Satellite": googleSat,
+    "Google Hybrid": googleHybrid
+  };
+
+  var markerCache = {}; // Cache to store markers by busId
+
+  // Define overlay maps
+  var overlayMaps = {}; // Empty initially, will be filled dynamically
+
+  // Variable to track the layer control instance
+  let layerControlInstance = null;
+
+  socket.on("allBusLocations", (data) => {
+    console.log(data);
+    const { busId, latitude, longitude } = data;
+
+    // Check if the marker for this busId already exists
+    if (markerCache[busId]) {
+      // If the marker exists, update its position
+      let existingMarker = markerCache[busId];
+      existingMarker.setLatLng([latitude, longitude]); // Update position
+
+      // Optionally, update the popup or other properties here
+      existingMarker.bindPopup(`Bus ID: ${busId}<br>Location: ${latitude}, ${longitude}`).openPopup();
+    } else {
+      // If the marker doesn't exist, create a new one
+      let newMarker = L.marker([latitude, longitude], {
+        title: `Bus ID: ${busId}`,
+      }).addTo(map);
+
+      // Cache the marker by busId
+      markerCache[busId] = newMarker;
+
+      // Add the new marker to the overlayMaps with busId as the key
+      overlayMaps[busId] = newMarker; // Add the marker to the overlay with busId as the key
+    }
+
+    // If a previous layer control exists, remove it
+    if (layerControlInstance) {
+      map.removeControl(layerControlInstance);
+    }
+
+    // Create a new layer control and add it to the map
+    layerControlInstance = L.control.layers(baseMaps, overlayMaps).addTo(map);
+  });
+
+  // Initial layer control
+  layerControlInstance = L.control.layers(baseMaps, overlayMaps).addTo(map);
+</script>
+
+
+
+
+
+    <!-- custom Scripts -->
+    <script src="/assets/vendors/js/vendor.bundle.base.js"></script>
+    <!-- endinject -->
+    <!-- Plugin js for this page -->
+    <!-- End plugin js for this page -->
+    <!-- inject:js -->
+    <script src="/assets/js/off-canvas.js"></script>
+    <script src="/assets/js/hoverable-collapse.js"></script>
+    <script src="/assets/js/misc.js"></script>
+    <script src="/assets/js/settings.js"></script>
+    <script src="/assets/js/todolist.js"></script>
+    
+    <!-- endinject -->
+    <!-- Custom js for this page -->
+    <!-- End custom js for this page -->
+  </body>
+</html>
