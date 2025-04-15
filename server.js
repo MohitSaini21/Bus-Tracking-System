@@ -78,10 +78,9 @@ const io = new Server(server);
 let busConnections = {};
 let allAdmins = [];
 let liveBuses = [];
-let liveVidoes = [];
+
 let lastLocation = {};
 // Memory-based store (can replace with DB)
-const peers = {};
 
 io.on("connection", (socket) => {
   if (socket.handshake.query.busId) {
@@ -152,103 +151,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // Admin Checking for liveVideos
-  socket.on("liveVideos", (data, callback) => {
-    console.log("Received liveVideos request from client");
-
-    // Send the response back to the client using the callback
-    callback({ liveBuses: liveVidoes });
-  });
-  // Admin Checking for liveVideos
-
-  // Admin Disconnecwith
-  socket.on("admin-disconnected", ({ busId }) => {
-    console.log(
-      "Admin DisconnectedAdmin DisconnectedAdmin DisconnectedAdmin DisconnectedAdmin DisconnectedAdmin DisconnectedAdmin"
-    );
-
-    if (peers[busId]) {
-      // Invalidate old offer
-      // Tell driver: "hey! admin wants to connect again, please send a fresh offer"
-      io.to(peers[busId].driverSocketId).emit("request-new-offer", { busId });
-    }
-  });
-
-  // Storig offer with the busId   and stroign ICE candiation information
-
-  //
-  // Refreshing all the fofer
-  socket.on("refresh", ({ message }) => {
-    console.log("Refresing all the offers");
-    if (liveVidoes.length > 0) {
-      for (let i = 0; i < liveVidoes.length; i++) {
-        // Tell driver: "hey! admin wants to connect again, please send a fresh offer"
-
-        io.to(peers[liveVidoes[i]].driverSocketId).emit("request-new-offer", {
-          busId: liveVidoes[i],
-        });
-      }
-    }
-  });
-  //
-
-  // Store offer
-  socket.on("offer", ({ bus, offer }) => {
-    if (!peers[bus._id]) peers[bus._id] = {};
-    peers[bus._id].offer = offer;
-    peers[bus._id].driverSocketId = socket.id;
-    if (!liveVidoes.includes(bus._id)) {
-      liveVidoes.push(bus._id);
-    }
-    if (allAdmins.length > 0) {
-      for (let i = 0; i < allAdmins.length; i++) {
-        io.to(allAdmins[i]).emit("addliveBus", bus);
-      }
-    }
-  });
-  // Store ICE candidates
-  socket.on("ice-candidate", ({ bus, candidate }) => {
-    if (!peers[bus._id]) peers[bus._id] = {};
-    if (!peers[bus._id].candidates) peers[bus._id].candidates = [];
-    peers[bus._id].candidates.push(candidate);
-  });
-
-  // Storig offer with the busId   and stroign ICE candiation information
-
-  // Admin Loking for ice candidate and off of particuarl bus
-  socket.on("admin-wants-to-connect", ({ busId }) => {
-    if (peers[busId]) {
-      socket.emit("bus-offer-and-candidates", {
-        offer: peers[busId].offer,
-        candidates: peers[busId].candidates || [],
-      });
-    } else {
-      socket.emit("bus-offer-and-candidates", {
-        offer: null,
-        candidates: null,
-      });
-    }
-  });
-
-  socket.on("admin-ice-candidate", ({ busId, candidate }) => {
-    if (peers[busId]) {
-      socket.broadcast.emit("ice-candidate", {
-        bus: { _id: busId },
-        candidate: candidate,
-      });
-    }
-  });
-
-  // Handle admin's answer to the offer from the driver
-  socket.on("admin-answer", ({ busId, answer }) => {
-    if (peers[busId]) {
-      // Send the answer to the bus (driver)
-      socket.broadcast.emit("offer", { bus: { _id: busId }, offer: answer });
-    }
-  });
-
-  // Admin Loking for ice candidate and off of particuarl bus
-
   socket.on("busLocationUpdate", (data) => {
     if (data.bus && busConnections[data.bus._id]) {
       for (let i = 0; i < busConnections[data.bus._id].length; i++) {
@@ -302,17 +204,6 @@ io.on("connection", (socket) => {
     } else {
       console.log(`${socket.id} has disconnectect`);
       if (socket.liveBusId) {
-        if (socket.liveBusId && peers[socket.liveBusId]) {
-          delete peers[socket.liveBusId]; // Clean up offers and candidates
-
-          if (allAdmins.length) {
-            for (let i = 0; i < allAdmins.length; i++) {
-              io.to(allAdmins[i]).emit("bus-disconnected", socket.liveBusId);
-            }
-          }
-          liveVidoes = liveVidoes.filter((id) => id !== socket.liveBusId);
-          console.log(`Cleaned up peers for bus: ${socket.liveBusId}`);
-        }
         const index = liveBuses.indexOf(socket.liveBusId);
         if (index !== -1) {
           liveBuses.splice(index, 1);
