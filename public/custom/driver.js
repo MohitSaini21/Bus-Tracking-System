@@ -59,11 +59,3 @@ socket.on("connectionDenied", (message) => {
 socket.on("connectionApproved", (message) => {
   console.log(message);
 });
-const iceConfig = {
-  iceServers: [
-    {
-      urls: "stun:stun.l.google.com:19302", // Google STUN server
-    },
-    // Optionally add TURN servers here
-  ],
-};
