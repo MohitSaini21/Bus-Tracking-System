@@ -11,6 +11,10 @@ const driverDocumentSchema = new mongoose.Schema({
 const driverSchema = new mongoose.Schema({
   driverId: {
     type: String,
+    index: true, // This creates an index on 'email'
+  },
+  password: {
+    type: String,
   },
   name: {
     type: String,
@@ -40,6 +44,10 @@ const driverSchema = new mongoose.Schema({
     type: String,
     enum: ["Active", "Inactive", "On Leave"],
     default: "Active",
+  },
+  role: {
+    type: String,
+    default: "driver",
   },
   driverDocuments: [driverDocumentSchema], // Array of document objects with name and URL
 });

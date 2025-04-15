@@ -43,7 +43,7 @@
         <div class="main-panel">
           <div class="content-wrapper">
           <div class="page-header">
-              <h3 class="page-title">Driver</h3>
+              <h3 class="page-title">Drive  let's Go live</h3>
 
           
             </div>
@@ -75,8 +75,21 @@
     <script src="/assets/js/misc.js"></script>
     <script src="/assets/js/settings.js"></script>
     <script src="/assets/js/todolist.js"></script>
+
+        <script src="/socket.io/socket.io.js"></script>
+    
+
+        
     <!-- endinject -->
     <!-- Custom js for this page -->
     <!-- End custom js for this page -->
+       <!-- custom Scripts -->
+   <script>
+       const bus= <%- JSON.stringify(bus) %>;
+      
+       
+   </script>
+      <script src="/custom/driver.js"></script>
+  <!-- custom Scripts -->
   </body>
 </html>

@@ -88,7 +88,57 @@
                           />
                         </div>
                       </div>
+                           <div class="form-group row">
+                        <label for="phone" class="col-sm-3 col-form-label"
+                          >Password</label
+                        >
+                        <div class="col-sm-9">
+                          <input
+                            type="text"
+                            class="form-control text-white"
+                            id="password"
+                            name="password"
+                            value="<%= worker.password  %>"
+                            placeholder="Enter Phone Number"
+                          />
+                        </div>
+                      </div>
+                         <% if (locals.worker.conductorId) { %>
+                               <div class="form-group row">
+                        <label for="phone" class="col-sm-3 col-form-label"
+                          >conductorId</label
+                        >
+                        <div class="col-sm-9">
+                          <input
+                            type="text"
+                            class="form-control text-white"
+                            id="driverId"
+                            name="driverId"
+                            value="<%= worker.conductorId  %>"
+                            placeholder="Enter Phone Number"
+                          />
+                        </div>
+                      </div>
+                               <% } %>
+
                       <% if (locals.worker.driverId) { %>
+
+                          <div class="form-group row">
+                        <label for="phone" class="col-sm-3 col-form-label"
+                          >DriverId</label
+                        >
+                        <div class="col-sm-9">
+                          <input
+                            type="text"
+                            class="form-control text-white"
+                            id="driverId"
+                            name="driverId"
+                            value="<%= worker.driverId  %>"
+                            placeholder="Enter Phone Number"
+                          />
+                        </div>
+                      </div>
+                     
                       <div class="form-group row">
                         <label
                           for="licenseNumber"

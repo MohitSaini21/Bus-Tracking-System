@@ -55,9 +55,78 @@
 
           
             </div>
+            <div>
+               <i class="mdi mdi-close icon-sm" onclick="document.getElementById('particularBus').style.display='none';"></i>
+ 
+            </div>
+                 <div class="row"  id="particularBus">
+              <div class="col-12">
+                <div class="card">
+                  <div class="card-body">
+                    <h4 class="card-title">Stops</h4>
+                    <div class="row">
+                
+                      <div class="col-md-5">
+                        <div class="table-responsive">
+                          <table class="table">
+                            <tbody>
+                              <tr>
+                        
+                                
+                                <td>U</td>
+                                <td class="text-right">1500</td>
+                                <td class="text-right font-weight-medium">
+                                  56.35%
+                                </td>
+                              </tr>
+                       
+                              
+                              <tr>
+                    
+                                
+                                <td>Romania</td>
+                                <td class="text-right">620</td>
+                                <td class="text-right font-weight-medium">
+                                  10.25%
+                                </td>
+                              </tr>
+                              <tr>
+                          
+                                
+                                <td>Brasil</td>
+                                <td class="text-right">230</td>
+                                <td class="text-right font-weight-medium">
+                                  75.00%
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                 
+                      <div class="col-md-7">
+
+                        <div class="container">
+
+                      
+         
+                          
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            
+            <br>
 
 
-                <div class="row">
+
+            
+
+                <div class="row"  id="mainRow">
                        <div class="col-md-12 grid-margin">
                 <div class="card">
                   <div class="card-body" id="map" style="width: 100%; height: 450px !important" >
@@ -74,47 +143,25 @@
               </div>
 
  
-                    
 
 
-                  
-
-
+              
 
 
 
-
-              </div>
-     
+         
+              
               
        
 
             
-          <!-- content-wrapper ends -->
-          <!-- partial:../../partials/_footer.html -->
-          <footer class="footer">
-            <div
-              class="d-sm-flex justify-content-center justify-content-sm-between"
-            >
-              <span
-                class="text-muted d-block text-center text-sm-left d-sm-inline-block"
-                >Copyright © bootstrapdash.com 2020</span
-              >
-              <span
-                class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center"
-              >
-                Free
-                <a
-                  href="https://www.bootstrapdash.com/bootstrap-admin-template/"
-                  target="_blank"
-                  >Bootstrap admin templates</a
-                >
-                from Bootstrapdash.com</span
-              >
-            </div>
-          </footer>
-          <!-- partial -->
+
+
+              
         </div>
+
+        
+
         <!-- main-panel ends -->
       </div>
       <!-- page-body-wrapper ends -->
@@ -174,11 +221,13 @@
 
   // Initialize the map with a default layer
   var map = L.map("map", {
-    center: [28.8347, 78.7763],
+    center: [29.4426,78.4327],
     zoom: 30,
     layers: [googleTerrain] // default layer
   });
 
+
+  
   // Define base maps
   var baseMaps = {
     "Google Streets": googleStreets,
@@ -187,51 +236,314 @@
     "Google Hybrid": googleHybrid
   };
 
-  var markerCache = {}; // Cache to store markers by busId
+  
 
-  // Define overlay maps
-  var overlayMaps = {}; // Empty initially, will be filled dynamically
+  
+  // Global layerGroup to hold all bus markers
+const busLayerGroup = L.layerGroup().addTo(map);
 
-  // Variable to track the layer control instance
-  let layerControlInstance = null;
+// Also register it in layer control (optional but good)
+const overlays = {
+  "🚌 Active Buses": busLayerGroup
+};
+L.control.layers(baseMaps, overlays).addTo(map);
 
-  socket.on("allBusLocations", (data) => {
-    console.log(data);
-    const { busId, latitude, longitude } = data;
+// Cache to track markers by busId
+const markerCache = {};
 
-    // Check if the marker for this busId already exists
-    if (markerCache[busId]) {
-      // If the marker exists, update its position
-      let existingMarker = markerCache[busId];
-      existingMarker.setLatLng([latitude, longitude]); // Update position
+const BusIcon = L.Icon.extend({
+  options: {
+    iconSize: [60, 45],
+    iconAnchor: [19, 45],
+    popupAnchor: [0, -40]
+  }
+});
 
-      // Optionally, update the popup or other properties here
-      existingMarker.bindPopup(`Bus ID: ${busId}<br>Location: ${latitude}, ${longitude}`).openPopup();
-    } else {
-      // If the marker doesn't exist, create a new one
-      let newMarker = L.marker([latitude, longitude], {
-        title: `Bus ID: ${busId}`,
-      }).addTo(map);
+socket.on("allBusLocations", (data) => {
+  console.log(data)
+  const busId = data.bus._id;
+  const lat = data.latitude;
+  const lng = data.longitude;
 
-      // Cache the marker by busId
-      markerCache[busId] = newMarker;
+  const busIcon = new BusIcon({ iconUrl: data.bus.iconPhoto });
 
-      // Add the new marker to the overlayMaps with busId as the key
-      overlayMaps[busId] = newMarker; // Add the marker to the overlay with busId as the key
+const popupHTML = `
+  <style>
+    .leaflet-popup-content {
+      margin: 0 !important;
     }
-
-    // If a previous layer control exists, remove it
-    if (layerControlInstance) {
-      map.removeControl(layerControlInstance);
+    .bus-popup {
+      font-family: Arial, sans-serif;
+      max-width: 280px;
+      padding: 10px;
     }
+    .bus-title {
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 10px;
+      color: #333;
+    }
+    .person-card {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 6px;
+      background: #f9f9f9;
+    }
+    .person-card img {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 10px;
+    }
+    .person-info {
+      font-size: 13px;
+    }
+    .person-info b {
+      display: block;
+      color: #444;
+    }
+    .info-line {
+      font-size: 13px;
+      margin-top: 6px;
+    }
+    .info-line b {
+      color: #444;
+    }
+.popup-footer {
+  margin-top: 10px;
+  text-align: center;
+}
 
-    // Create a new layer control and add it to the map
-    layerControlInstance = L.control.layers(baseMaps, overlayMaps).addTo(map);
+.track-btn {
+  display: inline-block;
+  background-color: #4CAF50;
+  color: white;
+  padding: 8px 16px;
+  font-size: 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  margin-bottom: 10px;
+}
+
+.track-btn:hover {
+  background-color: #45a049;
+}
+
+.call-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.call-btn {
+  flex: 1 1 120px;
+  background-color: #007bff;
+  color: white;
+  padding: 8px 10px;
+  font-size: 14px;
+  border-radius: 6px;
+  text-decoration: none;
+  text-align: center;
+}
+
+.call-btn:hover {
+  background-color: #0056b3;
+}
+
+    .last-updated {
+      font-size: 12px;
+      color: #777;
+      margin-top: 10px;
+    }
+  </style>
+
+  <div class="bus-popup">
+    <div class="bus-title">🚌 Bus No: ${data.bus.busNumber}</div>
+
+    <div class="person-card">
+      <img src="${data.bus.driver?.profilePhoto || 'default-driver.jpg'}" alt="Driver">
+      <div class="person-info">
+        <b>🧑‍✈️ Driver</b>
+        ${data.bus.driver?.name || 'N/A'}<br>
+        📞 ${data.bus.driver?.phone || 'N/A'}
+      </div>
+    </div>
+
+    <div class="person-card">
+      <img src="${data.bus.conductor?.profilePhoto || 'default-conductor.jpg'}" alt="Conductor">
+      <div class="person-info">
+        <b>👨‍💼 Conductor</b>
+        ${data.bus.conductor?.name || 'N/A'}<br>
+        📞 ${data.bus.conductor?.phone || 'N/A'}
+      </div>
+    </div>
+
+    <div class="info-line"><b>🚏 Route:</b> ${data.bus.route || 'N/A'}</div>
+    <div class="info-line"><b>⛽ Fuel Type:</b> ${data.bus.fuelType || 'N/A'}</div>
+<div class="popup-footer">
+  <a href="javascript:void(0);" class="track-btn" onclick="trackBus(${data.bus._id})">📍 Track This Bus</a>
+  <div class="call-buttons">
+    <a href="tel:${data.bus.driver?.phone || ''}" class="call-btn">📞 Call Driver</a>
+    <a href="tel:${data.bus.conductor?.phone || ''}" class="call-btn">📞 Call Conductor</a>
+  </div>
+</div>
+
+    <div class="last-updated">
+      Last updated: ${new Date(data.timestamp).toLocaleString()}
+    </div>
+  </div>
+`;
+
+
+
+  if (markerCache[busId]) {
+    // Update existing marker
+    markerCache[busId].setLatLng([lat, lng]);
+    markerCache[busId].setPopupContent(popupHTML);
+
+    markerCache[busId].on("click", () => {
+    showBusDetails(data.bus); // pass full bus data or just id
   });
+  } else {
+    // Create new marker and add to LayerGroup
+    const marker = L.marker([lat, lng], { icon: busIcon })
+      .bindPopup(popupHTML);
 
-  // Initial layer control
-  layerControlInstance = L.control.layers(baseMaps, overlayMaps).addTo(map);
+    markerCache[busId] = marker;
+      // Add event listener for details panel
+  marker.on("click", () => {
+    showBusDetails(data.bus); // or just data.bus._id
+  });
+    busLayerGroup.addLayer(marker);
+  }
+
+  
+
+});
+
+function showBusDetails(data){
+  console.log(data)
+
+}
+
+
+
+// function appendLiveBus(id) {
+//   const mainRow = document.getElementById("mainRow");
+// // Select the column with the bus ID
+//   const busColumn = document.getElementById(id);
+  
+//   // If the column exists, remove it from the DOM
+//   if (busColumn) {
+//     busColumn.parentNode.removeChild(busColumn); // Remove the column
+//   }
+
+
+//   const col = `
+//     <div class="col-sm-4 grid-margin  video" id=${id}>
+//       <div class="card">
+//         <div class="card-body">
+//           <h5 class="card-title">live View</h5>
+//           <!-- Make iframe responsive using Bootstrap's Embed Utilities -->
+//           <div class="embed-responsive embed-responsive-16by9">
+//             <iframe 
+//               src="http://localhost:3000/tmu/admin/settings/liveBus/${id}" 
+//               frameborder="0" 
+//               class="embed-responsive-item">
+//             </iframe>
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   `;
+  
+//   const tempDiv = document.createElement('div');
+//   tempDiv.innerHTML = col.trim();
+  
+//   const newCol = tempDiv.firstChild;
+
+//   // Append the new column as the last child
+//   mainRow.appendChild(newCol);
+// }
+
+
+//   socket.on("addliveBus",(bus)=>{
+    
+    
+
+
+//     appendLiveBus(bus._id)
+    
+//   })
+
+
+// // Listen for bus-disconnected event to remove the corresponding column
+// socket.on("bus-disconnected", (id) => {
+
+  
+
+//   // Select the column with the bus ID
+//   const busColumn = document.getElementById(id);
+  
+//   // If the column exists, remove it from the DOM
+//   if (busColumn) {
+//     busColumn.parentNode.removeChild(busColumn); // Remove the column
+//   }
+// });
+
+
+
+
+
+
+
+// setTimeout(() => {
+//   // Emitting the "liveVideos" event with a callback function
+// socket.emit("liveVideos", {}, (response) => {
+//   // This callback will be triggered once the server responds
+//   console.log("Server Response:", response);
+
+//   // You can use the response here to handle which buses are live
+//   if (response && response.liveBuses) {
+//     // Assuming `response.liveBuses` is an array of live buses
+//     response.liveBuses.forEach(id => {
+//      appendLiveBus(id)
+//     });
+//   }
+// });
+// }, 4000);
+
+
+
+// // Send a message to the server when the admin closes the tab
+// window.addEventListener("beforeunload", function (event) {
+//   const mainRow = document.getElementById("mainRow");
+  
+//   // Select all columns with the class 'video'
+//   const videoColumns = document.querySelectorAll('.video');
+  
+//   // Loop through the video columns and remove them from the DOM
+//   videoColumns.forEach(col => {
+//     col.parentNode.removeChild(col);
+//   });
+
+//  socket.emit("refresh",{meesage:"Refresh"})
+  
+// });
+
+
+
+
 </script>
+
+
+
 
 
 

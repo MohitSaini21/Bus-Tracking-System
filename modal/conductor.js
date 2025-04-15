@@ -12,10 +12,15 @@ const conductorDocumentSchema = new mongoose.Schema({
 const conductorSchema = new mongoose.Schema({
   conductorId: {
     type: String,
+    index: true, // This creates an index on 'email'
+  },
+  password: {
+    type: String,
   },
   name: {
     type: String,
   },
+
   phone: {
     type: String,
   },
@@ -38,6 +43,10 @@ const conductorSchema = new mongoose.Schema({
     type: String,
     enum: ["Active", "Inactive", "On Leave"],
     default: "Active",
+  },
+  role: {
+    type: String,
+    default: "conductor",
   },
   conductorDocuments: [conductorDocumentSchema], // Array of document objects with name and URL
 });

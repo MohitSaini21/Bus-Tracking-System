@@ -5,13 +5,16 @@ import Bus from "../modal/Bus.js";
 import multer from "multer";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
+import generatePassword from "../utils/password.js";
+
+
 
 let router = express.Router();
 
 // Configure Multer
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.resolve(`./public/uploads/`));
+    cb(null, path.resolve(`../public/uploads/`));
   },
   filename: function (req, file, cb) {
     const FileName = `${Date.now()}-${file.originalname}`;
@@ -44,12 +47,13 @@ router.post("/addBus", async (req, res) => {
     if (driverData) {
       // Create a new driver
       const newDriver = await Driver.create({
-        driverId: driverData.data.driverId,
+        driverId: uuidv4(),
         name: driverData.data.driverName, // Fix variable name mismatch
         phone: driverData.data.driverPhone, // Fix variable name mismatch
         licenseNumber: driverData.data.driverLicenseNumber, // Fix variable name mismatch
         address: driverData.data.driverAddress, // Fix variable name mismatch
         joiningDate: driverData.data.DriverJoiningDate,
+        password: generatePassword(8),
         status: "Active", // Default status
         profilePhoto: "/assets/images/faces/driver.png",
       });
@@ -61,12 +65,13 @@ router.post("/addBus", async (req, res) => {
     if (conductorData) {
       // Create a new conductor
       const newConductor = await Conductor.create({
-        conductorId: conductorData.data.conductorId,
+        conductorId: uuidv4(),
         name: conductorData.data.conductorName, // Fix variable name mismatch
         phone: conductorData.data.conductorPhone, // Fix variable name mismatch
         address: conductorData.data.conductorAddress, // Fix variable name mismatch
         joiningDate: conductorData.data.conductorJoiningDate,
         status: "Active", // Default status
+        password: generatePassword(8),
         profilePhoto: "/assets/images/faces/conductor.jpg",
       });
 
@@ -516,6 +521,12 @@ router.get("/CDB", (req, res) => {
 
 router.get("/tracker", (req, res) => {
   return res.render("admin/tracker.ejs");
+});
+
+router.get("/liveBus/:id", async (req, res) => {
+  let bus = await Bus.findById(req.params.id);
+
+  return res.render("admin/liveBus.ejs", { bus });
 });
 
 export { router as adminRouter };

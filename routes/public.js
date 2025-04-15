@@ -1,5 +1,9 @@
 import express from "express";
+import Driver from "../modal/driver.js";
+import Conductor from "../modal/conductor.js";
 import Bus from "../modal/Bus.js";
+import { checkAuthHome } from "../middlware/rootCheckHome.js";
+import { generateTokenAndSetCookie } from "../utils/createJwtTokenSetCookie.js";
 let router = express.Router();
 
 router.get("/", (req, res) => {
@@ -46,6 +50,8 @@ router.post("/", async (req, res) => {
   }
 });
 
+
+
 router.get("/particularBus/:id", async (req, res) => {
   const { id } = req.params;
   const bus = await Bus.findById(id);
@@ -54,7 +60,45 @@ router.get("/particularBus/:id", async (req, res) => {
   }
 });
 
-router.post("/heyThere/:id", (req, res) => {
-  res.send("Working");
+
+
+
+router.get("/driverConductorLogin", checkAuthHome, async (req, res) => {
+  return res.render("public/dcLogin.ejs");
 });
+router.post("/driverConductorLogin", checkAuthHome, async (req, res) => {
+  const { userId, password } = req.body;
+  if (!userId || !password) {
+  } else {
+    const driver = await Driver.findOne({
+      driverId: userId,
+    });
+    if (driver) {
+      if (password == driver.password) {
+        let token = generateTokenAndSetCookie(res, driver._id, driver.role);
+        if (token) {
+          return res.json({ message: "He is the driver" });
+        }
+      }
+    } else {
+      const conductor = await Conductor.findOne({
+        conductorId: userId,
+      });
+      if (conductor) {
+        if (password == conductor.password) {
+          let token = generateTokenAndSetCookie(
+            res,
+            conductor._id,
+            conductor.role
+          );
+          if (token) {
+            return res.json({ message: "He is the conductor" });
+          }
+        }
+      } else {
+      }
+    }
+  }
+});
+
 export { router as publicRouter };

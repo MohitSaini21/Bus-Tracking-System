@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      /* Ensure the body and html take full height */
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+
+      /* Position the video as the background */
+      video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover; /* Ensure video covers the entire viewport */
+        z-index: -1; /* Put the video behind the content */
+      }
+
+      /* Content styling */
+      .content {
+        position: relative;
+        z-index: 1; /* Keep the content in front of the video */
+        color: white; /* Adjust text color for readability */
+        font-size: 24px;
+        text-align: center;
+        padding-top: 20%;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Video element -->
+    <video id="adminVideo" autoplay playsinline controls muted></video>
+
+    <!-- Content -->
+    <div><%= bus.busNumber %></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const bus = <%- JSON.stringify(bus) %>;
+      const socket = io();
+      socket.emit("admin-wants-to-connect", { busId: bus._id });
+
+      let adminPeer = new RTCPeerConnection();    
+
+      setupDisconnectHandlers();
+
+      // Handle receiving the offer and candidates from the server
+      socket.on("bus-offer-and-candidates", ({ offer, candidates }) => {
+        if (offer && candidates) {
+          setupAdminPeer(offer, candidates);
+        } else {
+          console.log("No more sharing screen");
+        }
+      });
+
+      // Function to set up the admin's peer connection
+      function setupAdminPeer(offer, candidates) {
+        // Only create a new RTCPeerConnection if the previous one has been closed.
+        if (adminPeer.signalingState === "stable" || adminPeer.signalingState === "closed") {
+          console.log("Refreshing Offer: Closing existing connection and resetting peer connection.");
+          
+          // Close the previous peer connection if it was in a stable state
+          adminPeer.close();
+          
+          // Create a new RTCPeerConnection
+          adminPeer = new RTCPeerConnection();
+        }
+
+        adminPeer.setRemoteDescription(new RTCSessionDescription(offer))
+          .then(() => adminPeer.createAnswer())
+          .then(answer => {
+            return adminPeer.setLocalDescription(answer);
+          })
+          .then(() => {
+            // Send the answer to the server
+            socket.emit("admin-answer", {
+              busId: bus._id, // busId
+              answer: adminPeer.localDescription,
+            });
+          })
+          .catch(error => console.error("Error setting up admin peer connection:", error));
+
+        // Handle the ICE candidates for the admin
+        candidates.forEach(candidate => {
+          adminPeer.addIceCandidate(new RTCIceCandidate(candidate))
+            .catch(error => console.error("Error adding ICE candidate:", error));
+        });
+
+        // Handle receiving media stream from the bus (driver)
+        adminPeer.ontrack = function (event) {
+          const stream = event.streams[0];
+          console.log("Received stream:", stream);
+
+          const videoElement = document.getElementById("adminVideo");  // Video element on admin's dashboard
+          videoElement.srcObject = stream;
+          videoElement.play();  // Ensure the video starts playing
+        };
+      }
+
+      // Send ICE candidates to the driver (bus)
+      adminPeer.onicecandidate = function (event) {
+        if (event.candidate) {
+          socket.emit("admin-ice-candidate", {
+            busId: bus._id,  // busId
+            candidate: event.candidate,
+          });
+        }
+      };
+
+      function setupDisconnectHandlers() {
+        // Catch abrupt close
+        window.addEventListener("beforeunload", () => {
+          socket.emit("admin-disconnected", { busId: bus._id });
+
+          // Close the peer connection to clean up resources
+          if (adminPeer) {
+            adminPeer.close();
+          }
+        });
+
+        // ICE connection monitoring
+        adminPeer.oniceconnectionstatechange = () => {
+          console.log("ICE state changed:", adminPeer.iceConnectionState);
+          if (
+            adminPeer.iceConnectionState === "disconnected" ||
+            adminPeer.iceConnectionState === "failed"
+          ) {
+            console.warn("Admin ICE disconnected.");
+            socket.emit("admin-disconnected", { busId: bus._id });
+          }
+        };
+
+        // WebRTC connection monitoring
+        adminPeer.onconnectionstatechange = () => {
+          console.log("Connection state:", adminPeer.connectionState);
+          if (
+            adminPeer.connectionState === "disconnected" ||
+            adminPeer.connectionState === "closed" ||
+            adminPeer.connectionState === "failed"
+          ) {
+            console.warn("Admin connection closed.");
+            socket.emit("admin-disconnected", { busId: bus._id });
+          }
+        };
+      }
+    </script>
+  </body>
+</html>

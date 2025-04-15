@@ -10,19 +10,30 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="/custom/particularBus.js"></script>
     <script>
-              const bus = <%- JSON.stringify(bus) %>; // Ensure 'bus' is passed correctly from the server
-      console.log(bus);
+                    const bus = <%- JSON.stringify(bus) %>; // Ensure 'bus' is passed correctly from the server
+            console.log(bus);
 
-      const socket = io({
-        query: {
-          busId: bus._id.toString() // Convert the _id to a string (if it’s a MongoDB ObjectId)
+            const socket = io({
+              query: {
+                busId: bus._id.toString() // Convert the _id to a string (if it’s a MongoDB ObjectId)
+              }
+            });
+
+
+            socket.on("receivelocation",(data)=>{
+                console.log(data)
+            })
+
+
+
+            //   to check whther bus is live or not
+        socket.emit("lastLocation", bus._id, (response) => {
+
+
+        if(response.status=="false"){
+            console.log(response.data)
         }
       });
-
-
-      socket.on("receivelocation",(data)=>{
-          console.log(data)
-      })
     </script>
   </body>
 </html>
