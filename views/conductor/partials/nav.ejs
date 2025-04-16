@@ -33,7 +33,7 @@
                   data-toggle="dropdown"
                   aria-expanded="false"
                   href="#"
-                  >+ Create New Project</a
+                  >Checked In</a
                 >
                 <div
                   class="dropdown-menu dropdown-menu-right navbar-dropdown preview-list"
@@ -223,11 +223,11 @@
                   <div class="navbar-profile">
                     <img
                       class="img-xs rounded-circle"
-                      src="/assets/images/faces/tmu.jpg"
+                      src="<%=bus.conductor.profilePhoto  %>"
                       alt=""
                     />
                     <p class="mb-0 d-none d-sm-block navbar-profile-name">
-                      Admin
+                      <%=bus.conductor.name%>
                     </p>
                     <i class="mdi mdi-menu-down d-none d-sm-block"></i>
                   </div>

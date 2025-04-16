@@ -7,8 +7,6 @@ import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import generatePassword from "../utils/password.js";
 
-
-
 let router = express.Router();
 
 // Configure Multer
@@ -523,10 +521,10 @@ router.get("/tracker", (req, res) => {
   return res.render("admin/tracker.ejs");
 });
 
-router.get("/liveBus/:id", async (req, res) => {
+router.get("/liveStream/:id", async (req, res) => {
   let bus = await Bus.findById(req.params.id);
 
-  return res.render("admin/liveBus.ejs", { bus });
+  return res.render("admin/busStream.ejs", { bus });
 });
 
 export { router as adminRouter };

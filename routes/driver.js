@@ -22,7 +22,17 @@ router.get("/GoLive", async (req, res) => {
     .populate("driver")
     .populate("conductor");
   if (bus) {
-    return res.render("driver/goLive.ejs", { bus });
+    return res.render("driver/goLive.ejs", { bus, role: "driver" });
+  }
+});
+router.get("/stream", async (req, res) => {
+  const bus = await Bus.findOne({
+    driver: req.user.id,
+  })
+    .populate("driver")
+    .populate("conductor");
+  if (bus) {
+    return res.render("driver/stream.ejs", { bus, role: "driver" });
   }
 });
 

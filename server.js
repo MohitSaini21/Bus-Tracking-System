@@ -78,9 +78,9 @@ const io = new Server(server);
 let busConnections = {};
 let allAdmins = [];
 let liveBuses = [];
+const peers = {};
 
 let lastLocation = {};
-// Memory-based store (can replace with DB)
 
 io.on("connection", (socket) => {
   if (socket.handshake.query.busId) {
@@ -116,29 +116,89 @@ io.on("connection", (socket) => {
 
       if (busId) {
         if (liveBuses.includes(busId)) {
-          console.log(
-            `Bus ${busId} already live. Rejecting socket ${socket.id}`
-          );
-
+          // If already live, reject and disconnect
           socket.emit(
             "connectionDenied",
-            "You cannot go live. Your mate is already live."
+            "This bus is already live from another device."
           );
-
-          socket.disconnect(true);
+          socket.disconnect(true); // 💥 Immediately close the connection
           return;
+        } else {
+          // Register this socket as live
+          liveBuses.push(busId);
+          console.log(`Bus ${busId} is now live with socket ${socket.id}`);
+
+          socket.emit("connectionApproved", "You are now live.");
+          socket.liveBusId = busId; // Store it on socket for disconnect cleanup
         }
-
-        // Register this socket as live
-        liveBuses.push(busId);
-        console.log(`Bus ${busId} is now live with socket ${socket.id}`);
-
-        socket.emit("connectionApproved", "You are now live.");
-        socket.liveBusId = busId; // Store it on socket for disconnect cleanup
       }
     }
   }
 
+  // offer and icecandiate storegae
+  socket.on("driver-offer", ({ bus, offer }) => {
+    if (!peers[bus._id]) peers[bus._id] = {};
+    peers[bus._id].offer = offer;
+    peers[bus._id].socketID = socket.id;
+    console.log("Offer saved for bus:", bus._id);
+  });
+  socket.on("ice-candidate", ({ bus, candidate }) => {
+    if (!peers[bus._id]) peers[bus._id] = {};
+    if (!peers[bus._id].candidates) peers[bus._id].candidates = [];
+    peers[bus._id].candidates.push(candidate);
+    console.log("ICE candidate saved for bus:", bus._id);
+  });
+  // admin checking whether offer and candiate exsit or not
+  socket.on("admin-wants-to-connect", ({ busId }) => {
+    if (peers[busId]) {
+      socket.emit("bus-offer-and-candidates", {
+        offer: peers[busId].offer,
+        candidates: peers[busId].candidates || [],
+      });
+    } else {
+      socket.emit("bus-offer-and-candidates", {
+        offer: null,
+        candidates: [],
+      });
+    }
+  });
+
+  // Admin REalted ice candiate and asnwer
+
+  // Relay the admin's ICE candidate back to the driver
+  socket.on("admin-ice-candidate", ({ busId, candidate }) => {
+    if (peers[busId]) {
+      io.to(peers[busId].socketID).emit("ice-candidate", {
+        bus: { _id: busId },
+        candidate: candidate,
+      });
+    }
+  });
+
+  // Handle admin's answer to the offer from the driver
+  socket.on("admin-answer", ({ busId, answer }) => {
+    if (peers[busId]) {
+      // Send the answer to the bus (driver)
+      io.to(peers[busId].socketID).emit("admin-answer", {
+        bus: { _id: busId },
+        offer: answer,
+      });
+    }
+  });
+
+  socket.on("admin-disconnected", ({ busId }) => {
+    if (peers[busId]) {
+      io.to(peers[busId].socketID).emit("refresh", {
+        bus: { _id: busId },
+      });
+
+      // Clean up the peer entry
+      delete peers[busId];
+      console.log(`Cleaned up peers[${busId}] after admin disconnect.`);
+    }
+  });
+
+  // chekcin bus is live or not
   // public to check whterthe bus is live or not
   socket.on("lastLocation", (busId, callback) => {
     console.log(busId);
@@ -183,6 +243,7 @@ io.on("connection", (socket) => {
       console.log(
         `Socket ${socket.id} disconnected from busId (Viewer): ${busId}`
       );
+
       // Remove the socketId from the busId array when the socket disconnects
       if (busConnections[busId]) {
         busConnections[busId] = busConnections[busId].filter(
@@ -204,6 +265,12 @@ io.on("connection", (socket) => {
     } else {
       console.log(`${socket.id} has disconnectect`);
       if (socket.liveBusId) {
+        const busId = socket.liveBusId;
+        if (busId && peers[busId]) {
+          delete peers[busId]; // Clean up offers and candidates
+          console.log(`Cleaned up peers for bus: ${busId}`);
+          console.log(peers);
+        }
         const index = liveBuses.indexOf(socket.liveBusId);
         if (index !== -1) {
           liveBuses.splice(index, 1);

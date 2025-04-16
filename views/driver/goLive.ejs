@@ -42,12 +42,33 @@
         <!-- partial -->
         <div class="main-panel">
           <div class="content-wrapper">
-          <div class="page-header">
-              <h3 class="page-title">Drive  let's Go live</h3>
+         <div class="row">
+                <div class="col-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body" id="cardBody">
+        <h4 class="card-title"><%=bus.driver.name %>  (<%=bus.driver.role  %>)  </h4>
+                    <p class="card-description">Click <code>Checked Out</code>to stop giving bus location</p>
+                    <div class="template-demo">
+                                   <button type="button" class="btn btn-secondary btn-fw"><a href="/driver">Checked Out</a></button>
+              <button type="button" class="btn btn-secondary btn-fw"><a href="/driver/stream">Start  Streaming </a></button>
+                      
+             
+                      
+                    </div>
+                  </div>
+     
+                  
+     
+                  
+         
+                  
+                </div>
+              </div>
 
-          
+
+              
+
             </div>
-        
             
      
               
@@ -86,8 +107,9 @@
        <!-- custom Scripts -->
    <script>
        const bus= <%- JSON.stringify(bus) %>;
+       const role= <%- JSON.stringify(role) %>;
       
-       
+       console.log(role)
    </script>
       <script src="/custom/driver.js"></script>
   <!-- custom Scripts -->

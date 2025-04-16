@@ -20,7 +20,18 @@ router.get("/GoLive", async (req, res) => {
     .populate("driver")
     .populate("conductor");
   if (bus) {
-    return res.render("conductor/goLive.ejs", { bus });
+    return res.render("conductor/goLive.ejs", { bus, role: "conductor" });
+  }
+});
+
+router.get("/stream", async (req, res) => {
+  const bus = await Bus.findOne({
+    conductor: req.user.id,
+  })
+    .populate("driver")
+    .populate("conductor");
+  if (bus) {
+    return res.render("conductor/stream.ejs", { bus, role: "conductor" });
   }
 });
 

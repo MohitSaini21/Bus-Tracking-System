@@ -46,11 +46,11 @@
                 <div class="col-12 grid-margin stretch-card">
                 <div class="card">
                   <div class="card-body" id="cardBody">
-        <h4 class="card-title"><%=bus.conductor.name %>  (<%=bus.conductor.role  %>)  </h4>
+                    <h4 class="card-title"><%=bus.driver.name %>  (<%=bus.driver.role  %>)  </h4>
                     <p class="card-description">Click <code>Checked Out</code>to stop giving bus location</p>
                     <div class="template-demo">
-                                   <button type="button" class="btn btn-secondary btn-fw"><a href="/conductor">Checked Out</a></button>
-              <button type="button" class="btn btn-secondary btn-fw"><a href="/conductor/stream">Start Streaming </a></button>
+                                   <button type="button" class="btn btn-secondary btn-fw"><a href="/driver">Checked Out</a></button>
+              <button type="button" class="btn btn-secondary btn-fw"><a href="/driver/goLive">Stop  Streaming </a></button>
                       
              
                       
@@ -63,6 +63,10 @@
          
                   
                 </div>
+              </div>
+
+                      <div class="col-12 grid-margin stretch-card">
+                <video id="driverVideo" autoplay></video>
               </div>
 
 
@@ -110,6 +114,84 @@
          const role= <%- JSON.stringify(role) %>;
       
        
+   </script>
+      <script>
+    const iceConfig = {
+  iceServers: [
+    {
+      urls: "stun:stun.l.google.com:19302", // Google STUN server
+    },
+    // Optionally add TURN servers here
+  ],
+};
+
+var peerConnection; // Declare globally
+
+
+async function collectionIceCandidateInfo() {
+  try {
+    peerConnection = new RTCPeerConnection(iceConfig);
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+    });
+
+    stream.getTracks().forEach((track) =>
+      peerConnection.addTrack(track, stream)
+    );
+
+    const localVideo = document.getElementById("driverVideo");
+    localVideo.srcObject = stream;
+
+    peerConnection.onicecandidate = (event) => {
+      if (event.candidate) {
+        console.log("Driver ICE candidate emitting...");
+        socket.emit("ice-candidate", {
+          bus,
+          candidate: event.candidate,
+        });
+      }
+    };
+
+    console.log("Creating offer...");
+    const offer = await peerConnection.createOffer();
+    console.log("Offer created:", offer);
+
+    await peerConnection.setLocalDescription(offer);
+    console.log("Local description set.");
+
+    console.log("Emitting driver offer...");
+    socket.emit("driver-offer", {
+      bus,
+      offer,
+    });
+  } catch (err) {
+    console.error("Error in collectionIceCandidateInfo:", err);
+  }
+}
+
+window.onload = () => {
+  collectionIceCandidateInfo();
+};
+
+
+
+
+// When the admin sends an answer to the driver (bus), set it as remote description
+socket.on("admin-answer", ({ offer }) => {
+  peerConnection.setRemoteDescription(new RTCSessionDescription(offer))
+    .catch(error => console.error("Error setting remote description:", error));
+});
+socket.on("ice-candidate", ({ busId, candidate }) => {
+       console.log("admin ice candidate Asnwer received")
+  if (peerConnection) {
+    // Add the candidate to the peer connection
+    peerConnection.addIceCandidate(new RTCIceCandidate(candidate))
+      .catch((error) => console.error("Error adding ICE candidate:", error));
+  }
+});
+
+
    </script>
       <script src="/custom/driver.js"></script>
   <!-- custom Scripts -->
