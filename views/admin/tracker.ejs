@@ -142,21 +142,11 @@
                 </div>
               </div>
 
-      <div class="col-md-12 grid-margin">
-        <!-- <div style="display: flex; gap: 10px; padding: 10px;">
-  <iframe
-    src="http://localhost:3000/tmu/admin/settings/liveStream/67f0d935b9bfa528074352a1"
-    style="flex: 1; min-width: 300px; min-height: 200px; border: 1px solid #ccc;"
-  ></iframe>
 
-  <iframe
-    src="http://localhost:3000/tmu/admin/settings/liveStream/67f5503b1adadc8c3c290007"
-    style="flex: 1; min-width: 300px; min-height: 200px; border: 1px solid #ccc;"
-  ></iframe>
-</div> -->
+              
 
-      </div>
 
+       
  
 
 
@@ -195,6 +185,40 @@
       ></script>
       <script src="/socket.io/socket.io.js"></script>
 <script>
+
+function append(id) {
+  const mainRow = document.getElementById("mainRow");
+  console.log(mainRow);
+
+  const col = `
+    <div class="col-sm-4 grid-margin ">
+      <div class="card m-1">
+        <div class="card-body  p-1">
+  
+          
+          <iframe
+            src="http://localhost:3000/tmu/admin/settings/liveStream/${id}"
+            width="100%"
+            height="200"
+            allow="camera; microphone"
+            style="border-radius: 8px; border: none;"
+          ></iframe>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const tempDiv = document.createElement("div");
+  tempDiv.innerHTML = col.trim();
+  const newCol = tempDiv.firstChild;
+
+mainRow.appendChild(newCol); // ✅ This appends it at the end
+
+}
+
+// append("67f5503b1adadc8c3c290007")
+
+  
   const socket = io({
     query: {
       adminId: "1234567890"
@@ -203,7 +227,24 @@
 
 
 
-  
+
+  setTimeout(() => {
+      socket.emit("allStream",(response)=>{
+    // Object.keys(response).forEach((id)=>{
+    //   console.log(id)
+    //   append(id)
+    // })
+    response.forEach(element => {
+      append(element)
+    });
+
+  })
+  }, 3000);
+
+
+
+
+
   // Tile layers for Google and others
   var googleStreets = L.tileLayer(
     "http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",

@@ -3,11 +3,49 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title><%= bus.busNumber  %></title>
+        <style>
+      body, html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        font-family: sans-serif;
+        overflow: hidden;
+      }
+
+      #adminVideo {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        object-fit: cover;
+        z-index: -1; /* Send video to background */
+      }
+
+      .overlay-content {
+        position: relative;
+        z-index: 1;
+        color: white;
+        text-align: center;
+        padding-top: 30px;
+        background: rgba(0, 0, 0, 0.4); /* optional semi-transparent overlay */
+      }
+
+      h2 {
+        font-size: 2em;
+        font-weight: bold;
+        text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
+      }
+    </style>
   </head>
   <body>
-    <h2>Admin is watching... <%= bus.busNumber %></h2>
-    <video id="adminVideo" autoplay muted controls></video>
+     <video id="adminVideo" autoplay muted playsinline></video>
+
+    <div class="overlay-content">
+      <h2>Admin is watching... <%= bus.busNumber %></h2>
+      <!-- You can add more content here if needed -->
+    </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>

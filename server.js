@@ -135,6 +135,11 @@ io.on("connection", (socket) => {
     }
   }
 
+  // allStream
+  socket.on("allStream", (callback) => {
+    callback(Object.keys(peers));
+  });
+
   // offer and icecandiate storegae
   socket.on("driver-offer", ({ bus, offer }) => {
     if (!peers[bus._id]) peers[bus._id] = {};
