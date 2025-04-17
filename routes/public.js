@@ -1,7 +1,7 @@
 import express from "express";
-import Driver from "../modal/driver.js";
-import Conductor from "../modal/conductor.js";
-import Bus from "../modal/Bus.js";
+import Driver from "../model/driver.js";
+import Conductor from "../model/conductor.js";
+import Bus from "../model/Bus.js";
 import { checkAuthHome } from "../middlware/rootCheckHome.js";
 import { generateTokenAndSetCookie } from "../utils/createJwtTokenSetCookie.js";
 let router = express.Router();
@@ -50,8 +50,6 @@ router.post("/", async (req, res) => {
   }
 });
 
-
-
 router.get("/particularBus/:id", async (req, res) => {
   const { id } = req.params;
   const bus = await Bus.findById(id);
@@ -59,9 +57,6 @@ router.get("/particularBus/:id", async (req, res) => {
     return res.render("public/particularBus.ejs", { bus });
   }
 });
-
-
-
 
 router.get("/driverConductorLogin", checkAuthHome, async (req, res) => {
   return res.render("public/dcLogin.ejs");

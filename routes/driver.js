@@ -1,6 +1,6 @@
 import express from "express";
-import Bus from "../modal/Bus.js";
-import Driver from "../modal/driver.js";
+import Bus from "../model/Bus.js";
+import Driver from "../model/driver.js";
 let router = express.Router();
 
 // Driver
