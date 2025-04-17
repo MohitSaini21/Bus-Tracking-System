@@ -189,9 +189,16 @@
 function append(id) {
   const mainRow = document.getElementById("mainRow");
   console.log(mainRow);
+  const element = document.getElementById(id);
+            
+            // Removing the element from the DOM
+            if (element) {
+                element.remove();
+            } 
+            
 
   const col = `
-    <div class="col-sm-4 grid-margin ">
+    <div class="col-sm-4 grid-margin " id=${id}>
       <div class="card m-1">
         <div class="card-body  p-1">
   
@@ -224,22 +231,36 @@ mainRow.appendChild(newCol); // ✅ This appends it at the end
       adminId: "1234567890"
     }
   });
+ socket.on("deleteStream",(busId)=>{
+    console.log(busId)
+    console.log("Disconnectoin")
+      const element = document.getElementById(busId);
+            
+            // Removing the element from the DOM
+            if (element) {
+                element.remove();
+            } 
+  })
 
 
+  socket.on("newStream",(busid)=>{
+    console.log("newConection")
+
+    append(busid)
+  })
+ 
 
 
   setTimeout(() => {
       socket.emit("allStream",(response)=>{
-    // Object.keys(response).forEach((id)=>{
-    //   console.log(id)
-    //   append(id)
-    // })
+
+        
     response.forEach(element => {
       append(element)
     });
 
   })
-  }, 3000);
+  }, 5000);
 
 
 
@@ -490,6 +511,8 @@ function showBusDetails(data){
   console.log(data)
 
 }
+
+
 
 
 

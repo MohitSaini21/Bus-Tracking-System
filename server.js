@@ -142,6 +142,14 @@ io.on("connection", (socket) => {
 
   // offer and icecandiate storegae
   socket.on("driver-offer", ({ bus, offer }) => {
+    if (!peers[bus._id]) {
+      console.log("New connection !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ne Connection !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+      if (allAdmins.length) {
+        for (let i = 0; i < allAdmins.length; i++) {
+          io.to(allAdmins[i]).emit("newStream", bus._id);
+        }
+      }
+    }
     if (!peers[bus._id]) peers[bus._id] = {};
     peers[bus._id].offer = offer;
     peers[bus._id].socketID = socket.id;
@@ -198,7 +206,8 @@ io.on("connection", (socket) => {
       });
 
       // Clean up the peer entry
-      delete peers[busId];
+      peers[busId].offer = null;
+      peers[busId].candidates = [];
       console.log(`Cleaned up peers[${busId}] after admin disconnect.`);
     }
   });
@@ -272,7 +281,14 @@ io.on("connection", (socket) => {
       if (socket.liveBusId) {
         const busId = socket.liveBusId;
         if (busId && peers[busId]) {
+          if (allAdmins.length) {
+            for (let i = 0; i < allAdmins.length; i++) {
+              console.log("Emiitting the event to delte the connection")
+              io.to(allAdmins[i]).emit("deleteStream", busId);
+            }
+          }
           delete peers[busId]; // Clean up offers and candidates
+          
           console.log(`Cleaned up peers for bus: ${busId}`);
           console.log(peers);
         }
