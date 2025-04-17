@@ -1,7 +1,7 @@
 import express from "express";
 import Driver from "../model/driver.js";
 import Conductor from "../model/conductor.js";
-import Bus from "../model/Bus.js";
+import Bus from "../model/bus.js";
 import { checkAuthHome } from "../middlware/rootCheckHome.js";
 import { generateTokenAndSetCookie } from "../utils/createJwtTokenSetCookie.js";
 let router = express.Router();

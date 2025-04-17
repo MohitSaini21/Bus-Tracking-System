@@ -1,5 +1,5 @@
 import express from "express";
-import Bus from "../model/Bus.js";
+import Bus from "../model/bus.js";
 import Driver from "../model/driver.js";
 let router = express.Router();
 

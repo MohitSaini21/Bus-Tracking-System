@@ -1,5 +1,5 @@
 import express from "express";
-import Bus from "../model/Bus.js";
+import Bus from "../model/bus.js";
 import Conductor from "../model/conductor.js";
 let router = express.Router();
 router.get("/", async (req, res) => {

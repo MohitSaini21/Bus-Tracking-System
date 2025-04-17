@@ -1,7 +1,7 @@
 import express from "express";
+import Bus from "../model/bus.js";
 import Driver from "../model/driver.js";
 import Conductor from "../model/conductor.js";
-import Bus from "../model/Bus.js";
 import multer from "multer";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
