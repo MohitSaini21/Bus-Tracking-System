@@ -143,7 +143,9 @@ io.on("connection", (socket) => {
   // offer and icecandiate storegae
   socket.on("driver-offer", ({ bus, offer }) => {
     if (!peers[bus._id]) {
-      console.log("New connection !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ne Connection !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+      console.log(
+        "New connection !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ne Connection !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+      );
       if (allAdmins.length) {
         for (let i = 0; i < allAdmins.length; i++) {
           io.to(allAdmins[i]).emit("newStream", bus._id);
@@ -283,12 +285,12 @@ io.on("connection", (socket) => {
         if (busId && peers[busId]) {
           if (allAdmins.length) {
             for (let i = 0; i < allAdmins.length; i++) {
-              console.log("Emiitting the event to delte the connection")
+              console.log("Emiitting the event to delte the connection");
               io.to(allAdmins[i]).emit("deleteStream", busId);
             }
           }
           delete peers[busId]; // Clean up offers and candidates
-          
+
           console.log(`Cleaned up peers for bus: ${busId}`);
           console.log(peers);
         }
@@ -312,6 +314,8 @@ server.listen(PORT, () => {
 
   console.log("Time in IST:", timeInIST);
 
-  ConnectDB(dbUrl);
+  ConnectDB(
+    "mongodb+srv://mohitsainisaini2680:misbaansari20@cluster0.wjx3j.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+  );
   console.log(`✅ Server is running and listneing at the port ${PORT}`);
 });
