@@ -1,10 +1,10 @@
-  const socket = io({
-    query: {
-      liveBusId: bus._id, // Convert the _id to a string (if it’s a MongoDB ObjectId)
-    },
-  });
+const socket = io({
+  query: {
+    liveBusId: bus._id, // Convert the _id to a string (if it’s a MongoDB ObjectId)
+  },
+});
 socket.on("connectionDenied", (message) => {
-  // alert(message);
+  alert(message);
   document.getElementById("cardBody").innerHTML = "";
   if (role == "driver") {
     document.getElementById(
