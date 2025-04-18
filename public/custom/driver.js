@@ -70,3 +70,63 @@ navigator.geolocation.watchPosition(
     timeout: 10000, // 10 sec tak fresh location ka wait karega
   }
 );
+
+let previousPoint = null;
+let currentPoint = null;
+
+// Function to get location
+const getCurrentLocation = () => {
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const point = {
+          latitude,
+          longitude,
+          timestamp: Date.now(),
+        };
+        resolve(point);
+      },
+      (error) => {
+        console.error("Error getting position:", error.message);
+        reject(error);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+
+        maximumAge: 5 * 60 * 1000, // Max 5 min purani location accept karega
+      }
+    );
+  });
+};
+  
+// Poll every 5 seconds
+setInterval(async () => {
+  try {
+    const latestPoint = await getCurrentLocation();
+
+    if (!previousPoint) {
+      previousPoint = latestPoint;
+      return;
+    }
+
+    currentPoint = latestPoint;
+
+    // Send just lat & lng
+    const data = {
+      previousPoint,
+      currentPoint,
+
+      bus,
+    };
+
+    console.log("Sending only lat/lng:", data);
+    socket.emit("towPoints", data);
+
+    // Prepare for next run
+    previousPoint = currentPoint;
+  } catch (err) {
+    console.warn("Location fetch failed:", err.message);
+  }
+}, 5000);

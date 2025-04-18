@@ -178,11 +178,16 @@
     <!-- custom Scripts -->
 
 
-         <script
-      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-      crossorigin=""
-      ></script>
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin=""
+></script>
+
+<script src="https://unpkg.com/leaflet.marker.slideto/leaflet.marker.slideto.js"></script>
+
+
+
       <script src="/socket.io/socket.io.js"></script>
 <script>
 
@@ -484,12 +489,12 @@ const popupHTML = `
 
   if (markerCache[busId]) {
     // Update existing marker
-    markerCache[busId].setLatLng([lat, lng]);
+    markerCache[busId].slideTo([lat, lng], {
+    duration: 1000
+  });
     markerCache[busId].setPopupContent(popupHTML);
 
-    markerCache[busId].on("click", () => {
-    showBusDetails(data.bus); // pass full bus data or just id
-  });
+    
   } else {
     // Create new marker and add to LayerGroup
     const marker = L.marker([lat, lng], { icon: busIcon })

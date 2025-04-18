@@ -8,6 +8,7 @@ import { conductorRouter } from "./routes/conductor.js";
 import { checkAuth } from "./middlware/rootCheckAuth.js";
 
 import { driverRouter } from "./routes/driver.js";
+import { checkEntryExit } from "./utils/polygon.js";
 
 import ejs from "ejs";
 
@@ -225,6 +226,10 @@ io.on("connection", (socket) => {
         data: lastLocation[busId],
       });
     }
+  });
+
+  socket.on("towPoints", (data) => {
+    checkEntryExit(data);
   });
 
   socket.on("busLocationUpdate", (data) => {
