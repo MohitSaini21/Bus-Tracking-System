@@ -14,7 +14,7 @@
     <meta name="description" content="" />
     <meta name="author" content="" />
 
-    <title>Rent4u</title>
+    <title>Tmu Bus</title>
 
     <!-- slider stylesheet -->
     <link
@@ -43,6 +43,394 @@
         overflow-x: hidden;
         width: 100%;
       }
+      .aesthetic-input::placeholder {
+        font-size: 0.85rem;
+        color: #6c757d; /* Bootstrap's muted text color */
+        font-style: italic;
+        opacity: 0.8;
+      }
+    </style>
+    <style>
+      #scene-wrapper {
+        position: relative;
+        /* overflow-x: hidden; */
+        width: 100%;
+      }
+      #road {
+        width: auto;
+        height: 80px;
+        background-color: gray;
+        margin: 55px 10px 0 10px;
+        clear: both;
+        border-radius: 2px;
+      }
+
+      /*#tree{
+	
+  z-index:1;
+  position:absolute;
+  width:150px;
+  height:150px;
+  background: url(http://th07.deviantart.net/fs71/150/f/2012/176/f/4/tree_yay_by_rhubarb_leaf-d54swby.png);
+  background-repeat: no-repeat;
+  margin:-50px 0 0 500px ;
+ }*/
+
+      .bus {
+        display: inline-block;
+        width: 90px;
+        height: 45px;
+        clear: both;
+        margin: 20px 0px 0px 10px;
+        background-color: #ffd800; /* School bus yellow */
+        border-radius: 17px 10px 2px 2px;
+        position: relative;
+        animation: mymove 7s infinite normal ease-in-out;
+        -webkit-animation: mymove 7s infinite normal ease-in-out;
+      }
+
+      @keyframes mymove {
+        0% {
+          left: -300px;
+        }
+        50% {
+          left: 600px;
+        }
+        100% {
+          left: 1400px;
+        }
+      }
+
+      @-webkit-keyframes mymove {
+        0% {
+          left: -300px;
+        }
+        50% {
+          left: 550px;
+        }
+        100% {
+          left: 1400px;
+        }
+      }
+
+      #whell1 {
+        position: absolute;
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        background-color: black;
+        border-radius: 80px;
+        margin: 37px 65px;
+        background-position: center center;
+      }
+
+      #whell2 {
+        position: absolute;
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        background-color: black;
+        border-radius: 80px;
+        margin: 37px 10px;
+        background-position: center center;
+      }
+
+      #whell3 {
+        position: absolute;
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background-color: transparent;
+        border: 1.5px dotted white;
+        border-radius: 80px;
+        margin: 39px 67.1px;
+        background-position: center center;
+      }
+
+      #whell4 {
+        position: absolute;
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background-color: transparent;
+        border: 1.5px dotted white;
+        border-radius: 80px;
+        margin: 39px 11.9px;
+        background-position: center center;
+      }
+
+      #win1 {
+        position: absolute;
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        background-color: white;
+        border-radius: 4px 0 0 0;
+        margin: 5px 20px 0px 8px;
+        background-position: center center;
+      }
+      #win2 {
+        position: absolute;
+        display: inline-block;
+        width: 18px;
+        height: 12px;
+        background-color: white;
+        border-radius: 3px 3px 0px 0px;
+        margin: 5px 33px 0px 24px;
+        background-position: center center;
+      }
+
+      #win3 {
+        position: absolute;
+        display: inline-block;
+        width: 18px;
+        height: 12px;
+        background-color: white;
+        border-radius: 3px 3px 0px 0px;
+        margin: 5px 54px 0 48px;
+        background-position: center center;
+      }
+
+      #win4 {
+        position: absolute;
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        background-color: white;
+        border-radius: 0 4px 0 0;
+        margin: 5px 54px 0 72px;
+        background-position: center center;
+      }
+
+      #line {
+        position: relative;
+        width: 1200px;
+        top: 40px;
+        height: 1px;
+        clear: both;
+        margin-left: auto;
+        margin-right: auto;
+        border: 1px dashed white;
+      }
+
+      #fuel {
+        position: absolute;
+        display: inline-block;
+        width: 5px;
+        height: 1.5px;
+        background-color: #1d1f20;
+        border-radius: 0px;
+        margin: 42px -5px;
+        background-position: center center;
+        transform: rotate(-18deg);
+      }
+
+      #light {
+        z-index: 1;
+        position: absolute;
+        display: inline-block;
+        width: 4px;
+        height: 7.8px;
+        background-color: black;
+        border-radius: 80px;
+        margin: 27px 90px;
+        border-radius: 0 90px 90px 0;
+        background: #f93100;
+      }
+
+      #up1 {
+        position: absolute;
+        display: inline-block;
+        width: 50px;
+        height: 2px;
+        background-color: white;
+        border-radius: 4px 4px 0 0;
+        margin: -5px 0px 0px 19px;
+        background-position: center center;
+      }
+
+      #up2 {
+        position: absolute;
+        display: inline-block;
+        width: 2px;
+        height: 5px;
+        background-color: white;
+        margin: -5px 0px 0px 26px;
+        background-position: center center;
+      }
+
+      #up3 {
+        position: absolute;
+        display: inline-block;
+        width: 2px;
+        height: 5px;
+        background-color: white;
+        margin: -5px 0px 0px 60px;
+        background-position: center center;
+      }
+
+      #foggy {
+        width: 4px;
+        height: 7.8px;
+        border-right: 200px solid #f7f771;
+        border-top: 20px solid transparent;
+        border-left: 20px solid transparent;
+        border-bottom: 20px solid transparent;
+        border-radius: 100px;
+        margin: 90px 60px;
+        position: absolute;
+        margin: 7px 68px;
+      }
+
+      #cloud1 {
+        width: 100px;
+        height: 100px;
+        margin: -90px;
+        position: absolute;
+        background: url(http://images.clipartpanda.com/clouds-background-png-cloud-edition.png);
+        background-size: 65% 45%;
+        background-repeat: no-repeat;
+        animation: cloudy 20s infinite normal;
+        -webkit-animation: cloudy 20s infinite normal linear;
+      }
+
+      @keyframes cloudy {
+        0% {
+          left: -100px;
+        }
+        100% {
+          left: 1320px;
+        }
+      }
+
+      @-webkit-keyframes cloudy {
+        0% {
+          left: -100px;
+        }
+        100% {
+          left: 1320px;
+        }
+      }
+
+      #cloud2 {
+        opacity: 0.7;
+        width: 100px;
+        height: 100px;
+        margin: -120px;
+        position: absolute;
+        background: url(http://images.clipartpanda.com/clouds-background-png-cloud-edition.png);
+        background-size: 65% 45%;
+        background-repeat: no-repeat;
+        animation: cloudy2 23s infinite reverse;
+        -webkit-animation: cloudy2 23s infinite reverse ease-in;
+      }
+
+      @keyframes cloudy2 {
+        0% {
+          left: -100px;
+        }
+        100% {
+          left: 1300px;
+        }
+      }
+
+      @-webkit-keyframes cloudy2 {
+        0% {
+          left: -100px;
+        }
+        100% {
+          left: 1300px;
+        }
+      }
+
+      #cloud3 {
+        opacity: 0.8;
+        width: 100px;
+        height: 100px;
+        margin: -80px;
+        position: absolute;
+        background: url(http://images.clipartpanda.com/clouds-background-png-cloud-edition.png);
+        background-size: 70% 48%;
+        background-repeat: no-repeat;
+        animation: cloudy3 40s infinite normal;
+        -webkit-animation: cloudy3 40s infinite normal linear;
+      }
+
+      @keyframes cloudy3 {
+        0% {
+          left: -100px;
+        }
+        100% {
+          left: 1320px;
+        }
+      }
+
+      @-webkit-keyframes cloudy3 {
+        0% {
+          left: -100px;
+        }
+        100% {
+          left: 1320px;
+        }
+      }
+
+      #cloud4 {
+        -webkit-transform: rotateY(180deg);
+        transform: rotateY(180deg);
+        opacity: 1;
+        width: 100px;
+        height: 100px;
+        margin: -80px;
+        position: absolute;
+        background: url(http://images.clipartpanda.com/clouds-background-png-cloud-edition.png);
+        background-size: 85% 70%;
+        background-repeat: no-repeat;
+        animation: cloudy4 38s infinite reverse;
+        -webkit-animation: cloudy4 38s infinite reverse linear;
+      }
+
+      @keyframes cloudy4 {
+        0% {
+          left: -100px;
+        }
+        100% {
+          left: 1300px;
+        }
+      }
+
+      @-webkit-keyframes cloudy4 {
+        0% {
+          left: -100px;
+        }
+        100% {
+          left: 1300px;
+        }
+      }
+      @media (max-width: 600px) {
+        @keyframes mymove {
+          0% {
+            left: -200px;
+          }
+          100% {
+            left: 100vw;
+          }
+        }
+
+        @keyframes cloudy {
+          0% {
+            left: -100px;
+          }
+          100% {
+            left: 100vw;
+          }
+        }
+      }
+      .detail-box small {
+        font-size: 0.9rem;
+        color: #ccc;
+        display: block;
+        margin-top: 10px;
+      }
     </style>
   </head>
 
@@ -57,9 +445,6 @@
             </a>
 
             <div class="navbar-collapse" id="">
-              <div class="user_option">
-                <a href=""> Login </a>
-              </div>
               <div class="custom_menu-btn">
                 <button onclick="openNav()">
                   <span class="s-1"> </span>
@@ -69,12 +454,7 @@
               </div>
               <div id="myNav" class="overlay">
                 <div class="overlay-content">
-                  <a href="index.html">Home</a>
-                  <a href="about.html">About</a>
-                  <a href="car.html">Cars</a>
-                  <a href="blog.html">Blog</a>
-                  <a href="contact.html">Contact Us</a>
-                  <a href="#">Login</a>
+                  <a href="/">Home</a>
                 </div>
               </div>
             </div>
@@ -94,38 +474,36 @@
               class="carousel slide"
               data-ride="carousel"
             >
-              <div class="carousel-inner">
+              <div class="carousel-inner p-2">
+                <!-- Slide 1: Reliable Transport -->
                 <div class="carousel-item active">
                   <div class="detail-box">
-                    <h1>
-                      Tmu <br />
-                      Relaible <br />
-                      Transport
-                    </h1>
-                    <a href=""> Contact Us </a>
+                    <h1>Transport</h1>
+                    <small>Reliable & on-time service for all routes</small
+                    ><br />
+                    <a href="/">Contact Us</a>
                   </div>
                 </div>
+
+                <!-- Slide 2: GPS Enabled -->
                 <div class="carousel-item">
                   <div class="detail-box">
-                    <h1>
-                      Rent Car <br />
-                      Experts <br />
-                      Service
-                    </h1>
-                    <a href=""> Contact Us </a>
+                    <h1>GPS Tracking</h1>
+                    <small>Live location for student safety</small><br />
+                    <a href="/">Contact Us</a>
                   </div>
                 </div>
+
+                <!-- Slide 3: Safety First -->
                 <div class="carousel-item">
                   <div class="detail-box">
-                    <h1>
-                      Rent Car <br />
-                      Experts <br />
-                      Service
-                    </h1>
-                    <a href=""> Contact Us </a>
+                    <h1>Security First</h1>
+                    <small>Monitored, secure & trusted transport</small><br />
+                    <a href="/">Contact Us</a>
                   </div>
                 </div>
               </div>
+
               <a
                 class="carousel-control-prev"
                 href="#carouselExampleControls"
@@ -151,38 +529,26 @@
     <!-- book section -->
     <section class="book_section">
       <div class="form_container">
-        <form action="/" method="POST">
-          <div class="form-row">
-            <div class="col-lg-8">
-              <div class="form-row">
-                <div class="col-md-6">
-                  <label for="from">From : </label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    name="from"
-                    placeholder="TMU"
-                    required
-                  />
-                </div>
-                <div class="col-md-6">
-                  <label for="to">To : </label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    name="to"
-                    placeholder="Nagina"
-                    required
-                  />
-                </div>
-              </div>
+        <form>
+          <div class="row g-3 align-items-center">
+            <div class="col-auto">
+              <label for="inputPassword6" class="col-form-label">Route</label>
             </div>
-            <div class="col-lg-4">
-              <div class="btn-container">
-                <button type="submit" class="btn btn-primary">Search</button>
-              </div>
+            <div class="col-auto">
+              <input
+                type="text"
+                class="form-control aesthetic-input"
+                id="routeInput"
+                name="route"
+                placeholder="e.g. TMU to Nagina"
+                required
+              />
             </div>
           </div>
+          <br />
+          <button type="button" class="btn btn-outline-primary" onclick="Go()">
+            Go
+          </button>
         </form>
       </div>
       <div class="img-box">
@@ -192,35 +558,48 @@
 
     <!-- end book section -->
     <!-- Start Book Section -->
-    <% if (locals.buses && locals.buses.length > 0) { %>
-    <div class="container">
-      <% locals.buses.forEach((bus) => { %>
-      <!-- Iterate over the buses -->
-      <div class="card m-1 p-1">
-        <div class="card-body p-1">
-          <blockquote class="blockquote mb-0">
-            <h5>Bus Number: <%= bus.busNumber %></h5>
-            <p><strong>Route:</strong> <%= bus.route %></p>
+    <div class="container" id="Buses"></div>
 
-            <a href="/particularBus/<%=bus._id  %>" class="btn btn-primary"
-              >Track Bus</a
-            >
-            <!-- Tracking link -->
-          </blockquote>
-        </div>
-      </div>
-      <% }) %>
-      <!-- End loop -->
-    </div>
-    <% } else { %> <% } %>
     <!-- End Book Section -->
 
     <!-- car section -->
+    <br />
+    <br />
+    <br />
+
+    <div id="scene-wrapper">
+      <!-- your animated clouds, road, bus, etc. go here -->
+
+      <div id="road">
+        <div id="cloud1"></div>
+        <div id="cloud2"></div>
+        <div id="cloud3"></div>
+        <div id="cloud4"></div>
+        <div id="line"></div>
+        <div id="tree"></div>
+        <div class="bus">
+          <div id="up1"></div>
+          <div id="up2"></div>
+          <div id="up3"></div>
+          <div id="win1"></div>
+          <div id="win2"></div>
+          <div id="win3"></div>
+          <div id="win4"></div>
+          <div id="whell1"></div>
+          <div id="whell2"></div>
+          <div id="whell3"></div>
+          <div id="whell4"></div>
+          <div id="fuel"></div>
+          <div id="light"></div>
+          <div id="foggy"></div>
+        </div>
+      </div>
+    </div>
 
     <section class="car_section layout_padding2-top layout_padding-bottom">
       <div class="container">
         <div class="heading_container">
-          <h2>Better Way For Find Your Favourite Cars</h2>
+          <h2>Better Way For Find Your Bus</h2>
           <p>
             It is a long established fact that a reader will be distracted by
             the readable
@@ -237,7 +616,7 @@
                 It is a long established fact that a reader will be distracted
                 by the readable content of a page when
               </p>
-              <a href=""> Read More </a>
+              <a href=""> Track Now</a>
             </div>
           </div>
           <div class="box">
@@ -668,7 +1047,7 @@
     <section class="contact_section layout_padding">
       <div class="container">
         <div class="heading_container">
-          <h2>Request A call back</h2>
+          <h2>Complain Form</h2>
         </div>
         <div class="row">
           <div class="col-md-8 mx-auto">
@@ -773,7 +1152,7 @@
       <div class="map_container">
         <div class="map-responsive">
           <iframe
-            src="https://www.google.com/maps/embed/v1/place?key=AIzaSyA0s1a7phLN0iaD6-UE7m4qP-z21pH0eSc&q=Eiffel+Tower+Paris+France"
+            src="https://www.google.com/maps/embed?pb=!1m16!1m12!1m3!1d7961.286679784669!2d78.65935165039355!3d28.826136546341232!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!2m1!1sTeerthanker%20Mahaveer%20College%20of!5e1!3m2!1sen!2sin!4v1745038018034!5m2!1sen!2sin"
             width="600"
             height="300"
             frameborder="0"
@@ -790,8 +1169,8 @@
     <!-- footer section -->
     <footer class="container-fluid footer_section">
       <p>
-        Copyright &copy; 2020 All Rights Reserved. Design by
-        <a href="https://html.design/">Free Html Templates</a>
+        Copyright &copy; 2025 All Rights Reserved. Design by
+        <a href="https://html.design/"> Tmu </a>
       </p>
     </footer>
     <!-- footer section -->
@@ -802,5 +1181,152 @@
     <script src="/public/js/custom.js"></script>
 
     <script src="/custom/public.js"></script>
+    <script>
+      async function Go() {
+        const input = document.getElementById("routeInput");
+        const inputValue = input.value.trim();
+
+        input.value = ""; // Clear the input
+
+        try {
+          response = await fetch("/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ route: inputValue }),
+          });
+
+          // You can handle response status or JSON parsing here
+          response = await response.json();
+          if (!response.success) {
+            alert(response.message);
+          } else {
+            let topBuses = response.data.slice(0, 5); // Top 5 buses from response
+            let existingBuses =
+              JSON.parse(localStorage.getItem("lastSearchBuses")) || [];
+
+            // Step 1: Create new/updated bus list
+            topBuses.forEach((bus) => {
+              let randomIndex = Math.floor(
+                Math.random() * bus.busImages.length
+              );
+              let imageToStore =
+                bus.busImages.length > 0
+                  ? bus.busImages[randomIndex]
+                  : "/public/images/busImage.jpg";
+
+              // Check if bus already exists
+              let existingIndex = existingBuses.findIndex(
+                (b) => b.busNumber === bus.busNumber
+              );
+
+              let newBus = {
+                busId: bus._id,
+                busNumber: bus.busNumber,
+                route: bus.route,
+                busImage: imageToStore,
+                lastSearch: Date.now(),
+              };
+
+              if (existingIndex !== -1) {
+                // Bus exists: update lastSearch and move to latest
+                existingBuses[existingIndex] = newBus;
+              } else {
+                // New bus: push to array
+                existingBuses.push(newBus);
+              }
+            });
+
+            // Step 2: Sort by lastSearch (latest first)
+            existingBuses.sort((a, b) => b.lastSearch - a.lastSearch);
+
+            // Step 3: Limit to top 5
+            let limitedBuses = existingBuses.slice(0, 5);
+
+            // Step 4: Store in localStorage
+            localStorage.setItem(
+              "lastSearchBuses",
+              JSON.stringify(limitedBuses)
+            );
+
+            // Optional: Log to check
+            console.log("Updated Buses:", limitedBuses);
+
+            // Step 5: Show in UI
+            appendBuses();
+            window.scrollBy({
+              top: 200,
+              left: 0,
+              behavior: "smooth",
+            });
+          }
+        } catch (error) {
+          // This block only runs for *network* errors like no connection
+          alert(
+            "Network error occurred. Please check your internet or try again later."
+          );
+          console.error("Fetch error:", error);
+        }
+      }
+
+      function appendBuses() {
+        // Get the stored buses from localStorage
+        document.getElementById("Buses").innerHTML = "";
+        let storedBuses = JSON.parse(localStorage.getItem("lastSearchBuses"));
+
+        // Check if there are any stored buses
+        if (storedBuses && storedBuses.length > 0) {
+          // Iterate through each stored bus and create a card for it
+          storedBuses.forEach((bus) => {
+            // Create the card HTML structure
+            let cardHTML = `
+           <div class="card mb-3" style="width: 100%">
+             <div class="row g-0">
+               <div class="col-md-4">
+                 <img src="${
+                   bus.busImage
+                 }" class="img-fluid rounded-start" alt="Bus Image" />
+               </div>
+               <div class="col-md-8">
+                 <div class="card-body">
+                   <h5 class="card-title">${bus.route}</h5>
+                   <p class="card-text">Bus Number: ${bus.busNumber}</p>
+      <p class="card-text">Last Search: ${new Date(
+        bus.lastSearch
+      ).toLocaleString()}</p>
+
+
+      <a href="/particularBus/${bus.busId}">Track Now</a>
+      <br>
+      <div class="form-check  text-warning-emphasis">
+  <input class="form-check-input  text-warning-emphasis" type="radio" name="radioDefault" id="radioDefault2">
+  <label class="form-check-label  text-warning-emphasis" for="radioDefault2">
+    Notify About ${bus.busNumber}
+    
+  </label>
+</div>
+
+
+
+
+
+                 </div>
+               </div>
+             </div>
+           </div>
+         `;
+
+            // Append the card to the DOM (e.g., to a container with id 'busContainer')
+            document.getElementById("Buses").innerHTML += cardHTML;
+          });
+        } else {
+          console.log("No buses found in localStorage.");
+        }
+      }
+
+      // Call the function to append buses when needed
+      appendBuses();
+    </script>
   </body>
 </html>

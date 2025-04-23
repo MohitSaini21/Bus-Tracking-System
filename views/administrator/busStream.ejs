@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= bus.busNumber %></title>
+    <style>
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        font-family: sans-serif;
+        overflow: hidden;
+      }
+
+      #adminVideo {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        object-fit: cover;
+        z-index: -1; /* Send video to background */
+      }
+
+      .overlay-content {
+        position: relative;
+        z-index: 1;
+        color: white;
+        text-align: center;
+        padding-top: 30px;
+        background: rgba(0, 0, 0, 0.4); /* optional semi-transparent overlay */
+      }
+
+      h2 {
+        font-size: 2em;
+        font-weight: bold;
+        text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
+      }
+    </style>
+  </head>
+  <body>
+    <video id="adminVideo" autoplay muted playsinline></video>
+
+    <div class="overlay-content">
+      <h2>Admin is watching... <%= bus.busNumber %></h2>
+      <!-- You can add more content here if needed -->
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+                        const bus= <%- JSON.stringify(bus) %>;
+                     const socket = io({
+        query: {
+          administratorId: "1234567890"
+        }
+      });
+                                                    // Example: assume you receive it from the server
+                                        const adminPeer = new RTCPeerConnection();
+
+                                        setTimeout(() => {
+                                          socket.emit("admin-wants-to-connect", { busId:bus._id });
+
+                                        }, 4000);
+
+                      // Handle receiving the offer and candidates from the server
+                      socket.on("bus-offer-and-candidates", ({ offer, candidates }) => {
+                        console.log(offer)
+                        console.log(candidates)
+                        if (offer && candidates) {
+                          setupAdminPeer(offer, candidates);
+                        } else {
+                          console.log("No more sharing screen");
+                        }
+                      });
+
+                      // Function to set up the admin's peer connection
+                      function setupAdminPeer(offer, candidates) {
+                        adminPeer.setRemoteDescription(new RTCSessionDescription(offer))
+                          .then(() => adminPeer.createAnswer())
+                          .then(answer => {
+                            return adminPeer.setLocalDescription(answer);
+                          })
+                          .then(() => {
+                            // Send the answer to the server
+                            socket.emit("admin-answer", {
+                              busId: bus._id,  // busId
+                              answer: adminPeer.localDescription,
+                            });
+                          })
+                          .catch(error => console.error("Error setting up admin peer connection:", error));
+
+                        // Handle the ICE candidates for the admin
+                        candidates.forEach(candidate => {
+                          adminPeer.addIceCandidate(new RTCIceCandidate(candidate))
+                            .catch(error => console.error("Error adding ICE candidate:", error));
+                        });
+
+                        // Handle receiving media stream from the bus (driver)
+                        adminPeer.ontrack = function (event) {
+                          const stream = event.streams[0];
+                          const videoElement = document.getElementById("adminVideo");  // Video element on admin's dashboard
+                          videoElement.srcObject = stream;
+                        };
+                      }
+
+                      // Send ICE candidates to the driver (bus)
+                      adminPeer.onicecandidate = function (event) {
+                        if (event.candidate) {
+                          socket.emit("admin-ice-candidate", {
+                            busId: bus._id,  // busId
+                            candidate: event.candidate,
+                          });
+                        }
+                      };
+
+
+                      function setupDisconnectHandlers() {
+            // Catch abrupt close
+            window.addEventListener("beforeunload", () => {
+              socket.emit("admin-disconnected", { busId: bus._id });
+            });
+
+            // ICE connection monitoring
+            adminPeer.oniceconnectionstatechange = () => {
+              console.log("ICE state changed:", adminPeer.iceConnectionState);
+              if (
+                adminPeer.iceConnectionState === "disconnected" ||
+                adminPeer.iceConnectionState === "failed"
+              ) {
+                console.warn("Admin ICE disconnected.");
+                socket.emit("admin-disconnected", { busId: bus._id });
+              }
+            };
+
+            // WebRTC connection monitoring
+            adminPeer.onconnectionstatechange = () => {
+              console.log("Connection state:", adminPeer.connectionState);
+              if (
+                adminPeer.connectionState === "disconnected" ||
+                adminPeer.connectionState === "closed" ||
+                adminPeer.connectionState === "failed"
+              ) {
+                console.warn("Admin connection closed.");
+                socket.emit("admin-disconnected", { busId: bus._id });
+              }
+            };
+          }
+
+          setupDisconnectHandlers()
+    </script>
+  </body>
+</html>

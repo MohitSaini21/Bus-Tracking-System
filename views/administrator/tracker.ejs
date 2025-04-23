@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <title>Tracker</title>
+    <!-- plugins:css -->
+    <link
+      rel="stylesheet"
+      href="/assets/vendors/mdi/css/materialdesignicons.min.css"
+    />
+    
+    <link rel="stylesheet" href="/assets/vendors/css/vendor.bundle.base.css" />
+    <!-- endinject -->
+    <!-- Plugin css for this page -->
+    <!-- End Plugin css for this page -->
+    <!-- inject:css -->
+    <!-- endinject -->
+    <!-- Layout styles -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+    <!-- End layout styles -->
+    <link rel="shortcut icon" href="/assets/images/favicon.png" />
+        <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />  
+    
+
+
+
+
+    
+  </head>
+  <body>
+    <div class="container-scroller">
+      <!-- partial:../../partials/_sidebar.html -->
+
+      <%- include('./partials/sidebar.ejs') %>
+      <!-- partial -->
+      <div class="container-fluid page-body-wrapper">
+        <!-- partial:../../partials/_navbar.html -->
+
+        <%- include('./partials/nav.ejs') %>
+        <!-- partial -->
+        <div class="main-panel">
+          <div class="content-wrapper"  id="bodyContent">
+ 
+    
+            
+            <br>
+     
+            
+
+
+            
+
+                <div class="row"  id="mainRow">
+                       <div class="col-md-12 grid-margin">
+                <div class="card">
+                  <div class="card-body" id="map" style="width: 100%; height: 700px !important" >
+    
+                    
+         
+                    
+              
+                    
+            
+                    
+                  </div>
+                </div>
+              </div>
+
+
+              
+
+
+       
+ 
+
+
+              
+
+
+
+         
+              
+              
+       
+
+            
+
+
+              
+        </div>
+
+        
+
+        <!-- main-panel ends -->
+      </div>
+      <!-- page-body-wrapper ends -->
+    </div>
+    <!-- container-scroller -->
+    <!-- plugins:js -->
+
+
+    <!-- custom Scripts -->
+
+
+<script
+  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+  crossorigin=""
+></script>
+
+<script src="https://unpkg.com/leaflet.marker.slideto/leaflet.marker.slideto.js"></script>
+
+
+
+      <script src="/socket.io/socket.io.js"></script>
+<script>
+
+function append(id) {
+  const mainRow = document.getElementById("mainRow");
+  console.log(mainRow);
+  const element = document.getElementById(id);
+            
+            // Removing the element from the DOM
+            if (element) {
+                element.remove();
+            } 
+            
+
+  const col = `
+    <div class="col-sm-4 grid-margin " id=${id}>
+      <div class="card m-1">
+        <div class="card-body  p-1">
+  
+          
+          <iframe
+            src="/tmu/administrator/settings/liveStream/${id}"
+            width="100%"
+            height="200"
+            allow="camera; microphone"
+            style="border-radius: 8px; border: none;"
+          ></iframe>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const tempDiv = document.createElement("div");
+  tempDiv.innerHTML = col.trim();
+  const newCol = tempDiv.firstChild;
+
+mainRow.appendChild(newCol); // ✅ This appends it at the end
+
+}
+
+// append("67f5503b1adadc8c3c290007")
+
+  
+  const socket = io({
+    query: {
+      administratorId: "1234567890"
+    }
+  });
+ socket.on("deleteStream",(busId)=>{
+    console.log(busId)
+    console.log("Disconnectoin")
+      const element = document.getElementById(busId);
+            
+            // Removing the element from the DOM
+            if (element) {
+                element.remove();
+            } 
+  })
+
+
+  socket.on("newStream",(busid)=>{
+    console.log("newConection")
+
+    append(busid)
+  })
+ 
+
+
+  setTimeout(() => {
+      socket.emit("allStream",(response)=>{
+
+        console.log(response)
+
+        
+
+        response.forEach(element => {
+          append(element)
+        });
+        
+
+  })
+  }, 5000);
+
+
+
+
+
+  // Tile layers for Google and others
+  var googleStreets = L.tileLayer(
+    "http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+    {
+      maxZoom: 20,
+      subdomains: ["mt0", "mt1", "mt2", "mt3"]
+    }
+  );
+
+  var googleHybrid = L.tileLayer(
+    "http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}",
+    {
+      maxZoom: 20,
+      subdomains: ["mt0", "mt1", "mt2", "mt3"]
+    }
+  );
+
+  var googleSat = L.tileLayer(
+    "http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+    {
+      maxZoom: 20,
+      subdomains: ["mt0", "mt1", "mt2", "mt3"]
+    }
+  );
+
+  var googleTerrain = L.tileLayer(
+    "http://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}",
+    {
+      maxZoom: 20,
+      subdomains: ["mt0", "mt1", "mt2", "mt3"]
+    }
+  );
+
+  // Initialize the map with a default layer
+  var map = L.map("map", {
+    center: [29.4426,78.4327],
+    zoom: 30,
+    layers: [googleTerrain] // default layer
+  });
+
+
+  
+  // Define base maps
+  var baseMaps = {
+    "Google Streets": googleStreets,
+    "Google Terrain": googleTerrain,
+    "Google Satellite": googleSat,
+    "Google Hybrid": googleHybrid
+  };
+
+  
+
+  
+  // Global layerGroup to hold all bus markers
+const busLayerGroup = L.layerGroup().addTo(map);
+
+// Also register it in layer control (optional but good)
+const overlays = {
+  "🚌 Active Buses": busLayerGroup
+};
+L.control.layers(baseMaps, overlays).addTo(map);
+
+// Cache to track markers by busId
+const markerCache = {};
+
+const BusIcon = L.Icon.extend({
+  options: {
+    iconSize: [60, 45],
+    iconAnchor: [19, 45],
+    popupAnchor: [0, -40]
+  }
+});
+
+socket.on("allBusLocations", (data) => {
+  console.log(data)
+  const busId = data.bus._id;
+  const lat = data.latitude;
+  const lng = data.longitude;
+
+  const busIcon = new BusIcon({ iconUrl: data.bus.iconPhoto });
+
+const popupHTML = `
+  <style>
+    .leaflet-popup-content {
+      margin: 0 !important;
+    }
+    .bus-popup {
+      font-family: Arial, sans-serif;
+      max-width: 400px;
+      padding: 10px;
+    }
+    .bus-title {
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 10px;
+      color: #333;
+      text-align: center;
+    }
+    .person-img {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .info-line {
+      font-size: 13px;
+      margin: 4px 0;
+    }
+    .info-line b {
+      color: #444;
+    }
+    .track-btn, .call-btn {
+      font-size: 14px;
+      border-radius: 6px;
+      text-decoration: none;
+      padding: 6px 10px;
+      display: inline-block;
+      margin: 4px 0;
+    }
+    .track-btn {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .track-btn:hover {
+      background-color: #45a049;
+    }
+    .call-btn {
+      background-color: #007bff;
+      color: white;
+    }
+    .call-btn:hover {
+      background-color: #0056b3;
+    }
+    .last-updated {
+      font-size: 12px;
+      color: #777;
+      margin-top: 8px;
+      text-align: center;
+    }
+  </style>
+
+  <div class="bus-popup">
+    <div class="bus-title">🚌 Bus No: ${data.bus.busNumber}</div>
+
+    <div class="row">
+      <div class="col-6 text-center">
+        <img src="${data.bus.driver?.profilePhoto || 'default-driver.jpg'}" class="person-img mb-2" alt="Driver">
+        <div class="info-line"><b>Driver</b></div>
+        <div class="info-line">${data.bus.driver?.name || 'N/A'}</div>
+        <div class="info-line">📞 ${data.bus.driver?.phone || 'N/A'}</div>
+      </div>
+
+      <div class="col-6 text-center">
+        <img src="${data.bus.conductor?.profilePhoto || 'default-conductor.jpg'}" class="person-img mb-2" alt="Conductor">
+        <div class="info-line"><b>Conductor</b></div>
+        <div class="info-line">${data.bus.conductor?.name || 'N/A'}</div>
+        <div class="info-line">📞 ${data.bus.conductor?.phone || 'N/A'}</div>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="info-line"><b>🚏 Route:</b> ${data.bus.route || 'N/A'}</div>
+    <div class="info-line"><b>⛽ Fuel:</b> ${data.bus.fuelType || 'N/A'}</div>
+
+    <div class="text-center mt-2">
+      <a href="javascript:void(0);" class="track-btn" onclick="trackBus('${data.bus._id}')">📍 Track Bus</a>
+    </div>
+
+    <div class="d-flex justify-content-center mt-1 flex-wrap">
+      <a href="tel:${data.bus.driver?.phone || ''}" class="call-btn mr-1">📞 Call Driver</a>
+      <a href="tel:${data.bus.conductor?.phone || ''}" class="call-btn ml-1">📞 Call Conductor</a>
+    </div>
+
+    <div class="last-updated">
+      Last updated: ${new Date(data.timestamp).toLocaleString()}
+    </div>
+  </div>
+`;
+
+
+
+
+  if (markerCache[busId]) {
+    // Update existing marker
+    markerCache[busId].slideTo([lat, lng], {
+    duration: 1000
+  });
+  console.log("updatin the amrker")
+    markerCache[busId].setPopupContent(popupHTML);
+
+    
+  } else {
+    // Create new marker and add to LayerGroup
+    console.log("creating the marker")
+    const marker = L.marker([lat, lng], { icon: busIcon })
+    .bindPopup(popupHTML);
+    
+    markerCache[busId] = marker;
+    // Add event listener for details panel
+    marker.on("click", () => {
+      showBusDetails(data.bus); // or just data.bus._id
+    });
+    console.log("creating the marker")
+    busLayerGroup.addLayer(marker);
+    console.log("creating the marker")
+  }
+
+  
+
+});
+
+function showBusDetails(data) {
+  console.log(data);
+
+  const stopsHtml = data.routeStops
+    .map((stop, index) => {
+      return `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${stop.stopName}</td>
+          <td>${stop.morningTime}</td>
+          <td>${stop.eveningTime}</td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  const html = `
+    <div class="row" id="particularBus">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-body">
+            <h4 class="card-title">Route Stops for Bus: ${data.busNumber}</h4>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="table-responsive">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Stop</th>
+                        <th>Morning Time</th>
+                        <th>Evening Time</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${stopsHtml}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="container">
+        
+                        <iframe
+                          src="/locationBus/${data._id}"
+                          frameborder="0"
+                          style="
+                            width: 100%;
+                            height: 100%;
+                            border: none;
+                            display: block;
+                          "
+                        ></iframe>
+                </div>
+              </div>
+
+              <div class="container mt-4">
+                <div class="d-flex justify-content-end">
+        
+                  
+<a href="/tmu/administrator/settings/particularBusLive/${data._id}" class="btn btn-secondary btn-fw mr-2">
+  Live Track
+</a>
+
+
+                  <button type="button" class="btn btn-success btn-fw" onclick="document.getElementById('particularBus').remove()">Close</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  const card = document.getElementById("particularBus");
+  if (card) card.remove();
+  // Prepend to the top of bodyContent without clearing existing content
+  const container = document.getElementById("bodyContent");
+  const tempDiv = document.createElement("div");
+  tempDiv.innerHTML = html;
+  container.insertBefore(tempDiv.firstElementChild, container.firstChild);
+}
+
+
+
+
+
+
+
+
+</script>
+
+
+
+
+
+
+
+
+    <!-- custom Scripts -->
+    <script src="/assets/vendors/js/vendor.bundle.base.js"></script>
+    <!-- endinject -->
+    <!-- Plugin js for this page -->
+    <!-- End plugin js for this page -->
+    <!-- inject:js -->
+    <script src="/assets/js/off-canvas.js"></script>
+    <script src="/assets/js/hoverable-collapse.js"></script>
+    <script src="/assets/js/misc.js"></script>
+    <script src="/assets/js/settings.js"></script>
+    <script src="/assets/js/todolist.js"></script>
+    
+    <!-- endinject -->
+    <!-- Custom js for this page -->
+    <!-- End custom js for this page -->
+  </body>
+</html>

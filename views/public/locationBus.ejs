@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- leaflet  css -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7"
+      crossorigin="anonymous"
+    />
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-k6d4wzSIapyDyv1kpU366/PK5hCdSbCRGRCMv+eplOQJWyd1fbcAu9OCUj5zNLiq"
+      crossorigin="anonymous"
+    ></script>
+    <!-- leaflet  css -->
+    <style>
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        overflow: hidden; /* Prevent body from scrolling */
+      }
+      #map {
+        width: 100%;
+        height: 100vh;
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+      .navbar {
+        z-index: 1000;
+      }
+    </style>
+    <title><%=bus.busNumber %></title>
+  </head>
+  <body>
+    <div class="container">
+      <nav
+        class="navbar navbar-expand-lg bg-transparent position-relative"
+        style="z-index: 1000"
+      >
+        <div class="container-fluid">
+          <a class="navbar-brand" href="#">Navbar</a>
+        </div>
+      </nav>
+    </div>
+
+    <div id="map"></div>
+
+    <!-- leaflet js  -->
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+
+    <script src="https://unpkg.com/leaflet.marker.slideto/leaflet.marker.slideto.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <!-- leaflet js  -->
+    <script>
+       const bus = <%- JSON.stringify(bus) %>;
+
+      const socket = io({
+                                                             query: {
+                                                               busId: bus._id.toString() // Convert the _id to a string (if it’s a MongoDB ObjectId)
+                                                             }
+                                                           });
+
+
+
+
+                                                                                            // Baser layers
+                                                                                            let googleStreets = L.tileLayer(
+                                                                                              "http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+                                                                                              {
+                                                                                                maxZoom: 20,
+                                                                                                subdomains: ["mt0", "mt1", "mt2", "mt3"],
+                                                                                              }
+                                                                                            );
+                                                                                            let googleHybrid = L.tileLayer(
+                                                                                              "http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}",
+                                                                                              {
+                                                                                                maxZoom: 20,
+                                                                                                subdomains: ["mt0", "mt1", "mt2", "mt3"],
+                                                                                              }
+                                                                                            );
+                                                                                            let googleSat = L.tileLayer(
+                                                                                              "http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+                                                                                              {
+                                                                                                maxZoom: 20,
+                                                                                                subdomains: ["mt0", "mt1", "mt2", "mt3"],
+                                                                                              }
+                                                                                            );
+
+                                                                                            let googleTerrain = L.tileLayer(
+                                                                                              "http://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}",
+                                                                                              {
+                                                                                                maxZoom: 20,
+                                                                                                subdomains: ["mt0", "mt1", "mt2", "mt3"],
+                                                                                              }
+                                                                                            );
+                                                                                            var CartoDB_DarkMatter = L.tileLayer(
+                                                                                              "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+                                                                                              {
+                                                                                                attribution:
+                                                                                                  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                                                                                                subdomains: "abcd",
+                                                                                                maxZoom: 20,
+                                                                                              }
+                                                                                            );
+
+
+                                                                                            var OpenStreetMap_HOT = L.tileLayer(
+                                                                                              "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+                                                                                              {
+                                                                                                maxZoom: 19,
+                                                                                                attribution:
+                                                                                                  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>',
+                                                                                              }
+                                                                                            );
+                                                                                            var OpenStreetMap_France = L.tileLayer(
+                                                                                              "https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png",
+                                                                                              {
+                                                                                                maxZoom: 20,
+                                                                                                attribution:
+                                                                                                  '&copy; OpenStreetMap France | &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                                                                                              }
+                                                                                            );
+                                                                                            // Baser layers
+
+                                                                                            var baseMaps = {
+                                                                                              googleStreets,
+                                                                                              googleHybrid,
+                                                                                              googleSat,
+                                                                                              googleTerrain,
+
+
+                                                                                              OpenStreetMap_France,
+                                                                                              OpenStreetMap_HOT,
+                                                                                              CartoDB_DarkMatter,
+                                                                                            };
+
+                                                                                                      // Scoket Connnection Rleated
+
+
+
+
+
+                                               //             socket.on("receivelocation",(data)=>{
+                                               //                 console.log(data)
+                                               //             })
+
+
+
+                                               //             //   to check whther bus is live or not
+
+                                                                      // Scoket Connnection Rleated
+
+                                                                                            // Initialize the map with a default layer
+                                                                      var map = L.map("map", {
+                                                                        center: [29.4426,78.4327],
+                                                              zoom: 16, // or 17–18 for detailed view,
+                                                                        layers: [googleTerrain] // default layer
+                                                                      });
+
+                                                                   //    bus marker
+
+                                                                   var busMarker;
+                                                                   const BusIcon = L.Icon.extend({
+                                           options: {
+                                             iconSize: [60, 45],
+                                             iconAnchor: [19, 45],
+                                             popupAnchor: [0, -40]
+                                           }
+                                         });
+                                           const busIcon = new BusIcon({ iconUrl: bus.iconPhoto });
+
+                                                                            var busMarkerLayerGroup= L.layerGroup().addTo(map);
+
+                                                                                       socket.emit("lastLocation", bus._id, (response) => {
+
+                                                 if(response.data){
+                                                         busMarker = L.marker([response.data.latitude, response.data.longitude], { icon: busIcon })
+
+
+                                               busMarkerLayerGroup.addLayer(busMarker)
+                                               map.flyTo([response.data.latitude, response.data.longitude], map.getZoom(), {
+             animate: true,
+             duration: 1.2
+           });
+
+                                                 }else {
+                                                     console.log("Bus location is not avialable rightnow")
+                                                 }
+
+
+                                                     });
+
+
+
+                                                           socket.on("receivelocation",(data)=>{
+                                                            console.log(data)
+
+                                                            if(busMarker){
+
+                                                              if (busMarkerLayerGroup.hasLayer(busMarker)) {
+                                                                // ✅ Marker already exists → just update position
+                                                                busMarker.slideTo([data.latitude, data.longitude], {
+                                                                  duration: 1000
+                                                                });
+                                                              }
+
+         // 🧠 Animate map only if distance moved > 50m
+         const lastLatLng = busMarker.getLatLng();
+         const distanceMoved = map.distance(lastLatLng, L.latLng(data.latitude, data.longitude));
+
+         if (distanceMoved > 50) {
+           map.flyTo([data.latitude, data.longitude], map.getZoom(), {
+             animate: true,
+             duration: 1.2
+           });
+         }
+                             } else {
+                               // ❌ Marker not present → create and add it
+                               busMarker = L.marker([data.latitude, data.longitude], { icon: busIcon });
+                               busMarkerLayerGroup.addLayer(busMarker);
+                               map.flyTo([data.latitude, data.longitude], map.getZoom(), {
+                         animate: true,
+                         duration: 1.2
+                       });
+                             }
+                                                           })
+
+
+
+                                                                                            //  Setting up Stops layer
+                                                                       const iconStopLayerGroup = L.layerGroup().addTo(map);
+                                                                       const circularStopLayerGroup=L.layerGroup().addTo(map)
+
+                                                                                      const stopIconClass = L.Icon.extend({
+                                                                                  options: {
+                                                                                    iconSize: [60, 45],
+                                                                                    iconAnchor: [19, 45],
+                                                                                    popupAnchor: [0, -40]
+                                                                                  }
+                                                                                });
+
+                                                                                      bus.routeStops.forEach(stop => {
+                                                                                        console.log(stop)
+                                                                            const stopIcon = new stopIconClass({
+                                                                            iconUrl: '/assets/images/faces/bus-stop.png'
+                                                                          });
+                                                          const popupContent = `
+                                                            <div style="padding: 8px; border-radius: 8px; background-color: #f8f9fa; box-shadow: 0 2px 6px rgba(0,0,0,0.15); font-family: Arial; font-size: 14px;">
+                                                              <h4 style="margin: 0 0 5px;">🚌 ${stop.stopName}</h4>
+                                                              <p style="margin: 2px 0;">🌅 <strong>Morning:</strong> ${stop.morningTime}</p>
+                                                              <p style="margin: 2px 0;">🌇 <strong>Evening:</strong> ${stop.eveningTime}</p>
+                                                            </div>
+
+
+
+                                                          `;
+
+
+                                                                              var  iconMarker=           L.marker([stop.latitude,stop.longitude],{ icon: stopIcon }).bindPopup(popupContent)
+                                                                              const circleMarker = L.circleMarker([stop.latitude, stop.longitude], {
+                                                      radius: 20,           // radius in pixels
+                                                      color: 'red',
+                                                      fillColor: '#f03',
+                                                      fillOpacity: 0.3
+                                                    })
+
+
+                                                                              iconStopLayerGroup.addLayer(iconMarker);
+                                                                              circularStopLayerGroup.addLayer(circleMarker)
+
+
+                                                                                      })
+                                                                                      //  Setting up Stops layer
+
+                                                                                      // over lyaer
+                                                                                      const overlays = {
+                                                                  "iconStops": iconStopLayerGroup,
+                                                                  "circularStops":circularStopLayerGroup,
+                                                                  "busMarker":busMarkerLayerGroup
+
+                                                                };
+                                                                                      // over lyaer
+
+
+                                                                      L.control.layers(baseMaps, overlays).addTo(map);
+    </script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+      integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.min.js"
+      integrity="sha384-VQqxDN0EQCkWoxt/0vsQvZswzTHUVOImccYmSyhJTp7kGtPed0Qcx8rK9h9YEgx+"
+      crossorigin="anonymous"
+    ></script>
+  </body>
+</html>

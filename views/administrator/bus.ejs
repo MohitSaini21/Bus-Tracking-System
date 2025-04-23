@@ -54,7 +54,7 @@
                     <form
                       class="form-sample"
                       id="eventForm"
-                      action="/tmu/admin/settings/busEntire/<%=bus._id  %>"
+                      action="/tmu/administrator/settings/busEntire/<%=bus._id  %>"
                       method="POST"
                     >
                       <p class="card-description">Bus Details</p>
@@ -173,6 +173,28 @@
                           </div>
                         </div>
                       </div>
+
+                      <div class="row">
+  <div class="col-md-6">
+    <div class="form-group row">
+      <label class="col-sm-3 col-form-label">Distance Travelled (m)</label>
+      <div class="col-sm-9">
+
+        <input type="number" value="<%=bus.distanceTravelled  %>"  name="distanceTravelled" id="distanceTravelled">
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6">
+    <div class="form-group row">
+      <label class="col-sm-3 col-form-label">Average Speed (km/h)</label>
+      <div class="col-sm-9">
+        <input type="number"  value="<%= bus.averageSpeed  %>" class="form-control text-white" name="averageSpeed" placeholder="e.g. 45" 
+         />
+      </div>
+    </div>
+  </div>
+</div>
 
                       <p class="card-description">Route Stops</p>
 

@@ -1,9 +1,15 @@
 // Importing Required Modules
 import express from "express"; // Core framework for building the server
 import { config } from "dotenv"; // For environment variable management
+import updateDistance from "./utils/distance.js";
+import evaluateBusProximityToStops from "./utils/stopsProximity.js";
+
+import { administratorRouter } from "./routes/administrator.js";
 import { adminRouter } from "./routes/admin.js";
 import { publicRouter } from "./routes/public.js";
 import { Socket } from "socket.io";
+
+import saveLogs from "./utils/saveLogs.js";
 import { conductorRouter } from "./routes/conductor.js";
 import { checkAuth } from "./middlware/rootCheckAuth.js";
 
@@ -48,7 +54,10 @@ app.use(express.static("public")); // Serve static files from the "public" direc
 const server = http.createServer(app);
 
 // Routers
-app.use("/tmu/admin/settings", adminRouter);
+app.use("/tmu/administrator/settings", administratorRouter);
+app.use("/admin", adminRouter);
+
+// app.use("/admin");
 
 app.use("/", publicRouter);
 app.use(
@@ -77,11 +86,86 @@ import { Server } from "socket.io";
 const io = new Server(server);
 // Object to store busId -> array of socketIds
 let busConnections = {};
+
 let allAdmins = [];
 let liveBuses = [];
+let administratorIds = [];
 const peers = {};
 
+let adminConnectionsBus = {};
+
 let lastLocation = {};
+
+let locationEvaluationCooldown = 5000; // ms (5 seconds)
+let lastEvaluated = {}; // { [busId]: timestamp }
+
+// About the Distance
+
+const distanceSession = {}; // { busId: { totalDistance, lastLocation: { lat, lng, timestamp } } }
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Earth's radius in kilometers
+  const toRad = (deg) => (deg * Math.PI) / 180;
+
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+
+  const distanceInKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return distanceInKm * 1000; // ✅ Returns distance in meters
+}
+
+function updateBusDistance(io, busId, latitude, longitude, timestamp) {
+  const MIN_TIME_DIFF = 10 * 1000; // 10 seconds
+  const MIN_DIST = 5; // in meters
+
+  if (!distanceSession[busId]) {
+    distanceSession[busId] = {
+      totalDistance: 0,
+      lastLocation: { latitude, longitude, timestamp },
+    };
+    return;
+  }
+
+  const { lastLocation } = distanceSession[busId];
+
+  const timeDiff = timestamp - lastLocation.timestamp;
+  if (timeDiff < MIN_TIME_DIFF) {
+    console.log("Skipping update: too frequent");
+    return;
+  }
+
+  const distance = calculateDistance(
+    lastLocation.latitude,
+    lastLocation.longitude,
+    latitude,
+    longitude
+  );
+  console.log(distance);
+
+  if (distance < MIN_DIST) {
+    console.log("Skipping update: distance too small");
+    return;
+  }
+
+  // Ensure totalDistance is always an integer
+  distanceSession[busId].totalDistance += Math.round(distance); // Rounds to nearest integer
+  distanceSession[busId].lastLocation = { latitude, longitude, timestamp };
+  // ✅ Notify all connected admins for this bus
+  if (adminConnectionsBus[busId]) {
+    adminConnectionsBus[busId].forEach((id) => {
+      io.to(id).emit("distanceCovered", distanceSession[busId]);
+    });
+  }
+
+  console.log(
+    `✅ Updated: ${distance.toFixed(2)}m added | Total: ${distanceSession[
+      busId
+    ].totalDistance.toFixed(0)}m`
+  );
+}
 
 io.on("connection", (socket) => {
   if (socket.handshake.query.busId) {
@@ -105,6 +189,36 @@ io.on("connection", (socket) => {
       `Current connections for bus ${busId}: `,
       busConnections[busId]
     );
+
+    // const used = process.memoryUsage();
+    // console.log(`Memory Usage: ${used.heapUsed}`);
+  } else if (socket.handshake.query.bus && socket.handshake.query.adminId) {
+    const busId = socket.handshake.query.bus;
+
+    socket.bus = busId;
+    socket.adminId = socket.handshake.query.adminId;
+
+    if (!adminConnectionsBus[busId]) {
+      // If no array exists, create one
+      adminConnectionsBus[busId] = [];
+    }
+
+    // Push the new socket.id into the array for the given busId
+    adminConnectionsBus[busId].push(socket.id);
+
+    console.log(
+      `New connection (admiin or adminsistror ) for busId: ${busId} with socketId: ${socket.id}`
+    );
+    console.log(
+      `Current connections for bus ${busId}: `,
+      adminConnectionsBus[busId]
+    );
+  } else if (socket.handshake.query.administratorId) {
+    // We have to check from the databaes it's exist or not got it
+    console.log(`New administrator Connection: ${socket.id}`);
+    administratorIds.push(socket.id);
+    console.log(administratorIds);
+    socket.administratorId = socket.handshake.query.administratorId;
   } else if (socket.handshake.query.adminId) {
     console.log(`New admin Connection: ${socket.id}`);
     allAdmins.push(socket.id);
@@ -136,6 +250,14 @@ io.on("connection", (socket) => {
     }
   }
 
+  socket.on("distanceTravelled", (busId, callback) => {
+    const session = distanceSession[busId];
+    if (session) {
+      callback(Math.round(session.totalDistance)); // return whole number in meters
+    } else {
+      callback(0);
+    }
+  });
   // allStream
   socket.on("allStream", (callback) => {
     callback(Object.keys(peers));
@@ -147,9 +269,9 @@ io.on("connection", (socket) => {
       console.log(
         "New connection !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ne Connection !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
       );
-      if (allAdmins.length) {
-        for (let i = 0; i < allAdmins.length; i++) {
-          io.to(allAdmins[i]).emit("newStream", bus._id);
+      if (administratorIds.length) {
+        for (let i = 0; i < administratorIds.length; i++) {
+          io.to(administratorIds[i]).emit("newStream", bus._id);
         }
       }
     }
@@ -218,12 +340,10 @@ io.on("connection", (socket) => {
   // chekcin bus is live or not
   // public to check whterthe bus is live or not
   socket.on("lastLocation", (busId, callback) => {
-    console.log(busId);
-
     if (!liveBuses.includes(busId)) {
       callback({
         status: "false",
-        data: lastLocation[busId],
+        data: lastLocation[busId] ? lastLocation[busId] : null,
       });
     }
   });
@@ -233,6 +353,32 @@ io.on("connection", (socket) => {
   });
 
   socket.on("busLocationUpdate", (data) => {
+    const busId = data.bus._id;
+    const now = Date.now();
+
+    updateBusDistance(
+      io,
+      data.bus._id,
+      data.latitude,
+      data.longitude,
+      data.timestamp
+    );
+
+    if (
+      !lastEvaluated[busId] ||
+      now - lastEvaluated[busId].lastEvaluations >= locationEvaluationCooldown
+    ) {
+      // Initialize the object if it doesn't exist
+      if (!lastEvaluated[busId]) {
+        lastEvaluated[busId] = { busId };
+      }
+
+      lastEvaluated[busId].lastEvaluations = now;
+
+      // ⛳️ Evaluate: has the bus reached a stop?
+      evaluateBusProximityToStops(io, data, lastEvaluated[busId]);
+    }
+
     if (data.bus && busConnections[data.bus._id]) {
       for (let i = 0; i < busConnections[data.bus._id].length; i++) {
         io.to(busConnections[data.bus._id][i]).emit("receivelocation", data);
@@ -247,17 +393,59 @@ io.on("connection", (socket) => {
         io.to(allAdmins[i]).emit("allBusLocations", data);
       }
     }
+
+    if (administratorIds.length) {
+      for (let i = 0; i < administratorIds.length; i++) {
+        io.to(administratorIds[i]).emit("allBusLocations", data);
+      }
+    }
   });
 
   // You can listen for the disconnect event here
-  socket.on("disconnect", () => {
-    if (socket.adminId) {
+  socket.on("disconnect", async () => {
+    if (socket.bus) {
+      const busId = socket.bus; // Now we can access busId from the socket object
+
+      console.log(
+        `Socket ${socket.id} disconnected from busId (admin or adminstrartoor): ${busId}`
+      );
+
+      if (adminConnectionsBus[busId]) {
+        adminConnectionsBus[busId] = adminConnectionsBus[busId].filter(
+          (id) => id !== socket.id
+        );
+        console.log(
+          `Updated admin or administraot  connections for bus ${busId}: `,
+          adminConnectionsBus[busId]
+        );
+
+        // Optionally, remove the busId key if no socket is connected to it
+        if (adminConnectionsBus[busId].length === 0) {
+          delete adminConnectionsBus[busId];
+          console.log(
+            `No more connections for bus of admin and admisniartor  ${busId}, deleting busId entry.`
+          );
+        }
+      }
+    } else if (socket.adminId) {
       if (allAdmins.includes(socket.id)) {
         // 2. Remove the element from the array
         let index = allAdmins.indexOf(socket.id);
         allAdmins.splice(index, 1); // Removes the element at the specified index
         console.log(`${socket.id} was removed (Admin).`, allAdmins);
       }
+    } else if (socket.administratorId) {
+      if (administratorIds.includes(socket.id)) {
+        // 2. Remove the element from the array
+        let index = administratorIds.indexOf(socket.id);
+        administratorIds.splice(index, 1); // Removes the element at the specified index
+        console.log(
+          `${socket.id} was removed (administratorIds).`,
+          administratorIds
+        );
+      }
+
+      // const busId = socket.bus;
     } else if (socket.busId) {
       const busId = socket.busId; // Now we can access busId from the socket object
 
@@ -283,8 +471,11 @@ io.on("connection", (socket) => {
           );
         }
       }
+      // const used = process.memoryUsage();
+      // console.log(`Memory Usage: ${used.heapUsed}`);
     } else {
-      console.log(`${socket.id} has disconnectect`);
+
+      
       if (socket.liveBusId) {
         const busId = socket.liveBusId;
         if (busId && peers[busId]) {
@@ -307,6 +498,48 @@ io.on("connection", (socket) => {
             liveBuses
           );
         }
+
+        if (lastEvaluated[socket.liveBusId]) {
+          saveLogs(lastEvaluated[socket.liveBusId]);
+
+          delete lastEvaluated[socket.liveBusId];
+        }
+        if (distanceSession[socket.liveBusId]) {
+          console.log(
+            "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+          );
+          console.log(distanceSession[socket.liveBusId]);
+
+          if (
+            typeof distanceSession[socket.liveBusId].totalDistance !== "number"
+          ) {
+            console.log(
+              "Invalid or missing totalDistance for bus ID:",
+              socket.liveBusId
+            );
+            return; // exit early
+          }
+
+          // Update bus distance if it exists
+          const distanceUpdated = await updateDistance(
+            socket.liveBusId,
+            distanceSession[socket.liveBusId].totalDistance
+          );
+
+          if (distanceUpdated) {
+            console.log("Distance has been updated for this bus ID");
+            delete distanceSession[socket.liveBusId];
+            console.log(distanceSession);
+          } else {
+            console.log("Failed to update distance for this bus ID");
+          }
+
+          console.log(
+            "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+          );
+        } else {
+          console.log("No distance data found for bus ID:", socket.liveBusId);
+        }
       }
     }
   });
@@ -318,6 +551,8 @@ server.listen(PORT, () => {
   const timeInIST = moment().tz("Asia/Kolkata").format("YYYY-MM-DD HH:mm:ss");
 
   console.log("Time in IST:", timeInIST);
+  // const used = process.memoryUsage();
+  // console.log(`Memory Usage: ${used.heapUsed}`);
 
   ConnectDB(
     "mongodb+srv://mohitsainisaini2680:misbaansari20@cluster0.wjx3j.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"

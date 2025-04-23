@@ -1,6 +1,7 @@
 import express from "express";
 import Driver from "../model/driver.js";
 import Conductor from "../model/conductor.js";
+import Fuse from "fuse.js";
 import Bus from "../model/bus.js";
 import { checkAuthHome } from "../middlware/rootCheckHome.js";
 import { generateTokenAndSetCookie } from "../utils/createJwtTokenSetCookie.js";
@@ -11,42 +12,48 @@ router.get("/", (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  console.log(req.body); // { from: 'Tmu', to: 'Nagina' }
-
-  // Extract the 'from' and 'to' locations from the request body
-  const { from, to } = req.body;
-
-  // Normalize 'from' and 'to' by trimming spaces and converting to lowercase
-  const normalizedFrom = from.trim().toLowerCase();
-  const normalizedTo = to.trim().toLowerCase();
-
-  // Create the two route strings:
-  const route1 = `${normalizedFrom} to ${normalizedTo}`; // Tmu to Nagina
-  const route2 = `${normalizedTo} to ${normalizedFrom}`; // Nagina to Tmu
-
-  console.log("Generated Routes:", route1, route2);
-
   try {
-    // Find buses whose route matches either of the two generated route strings
-    const buses = await Bus.find({
-      $or: [
-        { route: { $regex: new RegExp(`^${route1}$`, "i") } }, // Match the first route (case-insensitive)
-        { route: { $regex: new RegExp(`^${route2}$`, "i") } }, // Match the reversed route (case-insensitive)
-      ],
-    });
+    const userRoute = req.body.route?.toLowerCase().trim(); // normalize
 
-    // If no buses found, return an empty array or an appropriate message
-    if (buses.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No buses found for the given route" });
+    if (!userRoute) {
+      return res.status(400).json({
+        success: false,
+        message: "Route is required.",
+      });
     }
 
-    // Return the list of buses that match the search criteria
-    return res.render("public/index.ejs", { buses });
+    // Step 1: Fetch all buses for each search
+    const allBuses = await Bus.find(); // Move this inside the handler
+
+    // Step 2: Configure Fuse.js with options
+    const fuse = new Fuse(allBuses, {
+      keys: ["route"], // We're searching in the 'route' field
+      threshold: 0.3, // 0.0 = perfect match, 1.0 = complete mismatch
+      includeScore: true, // This will include a score for each result
+    });
+
+    const fuzzyResults = fuse.search(userRoute); // Perform search
+
+    // Step 3: Get the matching buses from the search results
+    const matchingBuses = fuzzyResults.map((result) => result.item);
+
+    if (matchingBuses.length > 0) {
+      return res.json({
+        success: true,
+        data: matchingBuses,
+      });
+    } else {
+      return res.json({
+        success: false,
+        message: "No buses found matching the route.",
+      });
+    }
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Server error" });
+    console.error("Error searching buses:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong. Please try again later.",
+    });
   }
 });
 
@@ -55,6 +62,14 @@ router.get("/particularBus/:id", async (req, res) => {
   const bus = await Bus.findById(id);
   if (bus) {
     return res.render("public/particularBus.ejs", { bus });
+  }
+});
+
+router.get("/locationBus/:id", async (req, res) => {
+  const { id } = req.params;
+  const bus = await Bus.findById(id);
+  if (bus) {
+    return res.render("public/locationBus.ejs", { bus });
   }
 });
 
@@ -96,4 +111,11 @@ router.post("/driverConductorLogin", checkAuthHome, async (req, res) => {
   }
 });
 
+router.get("/adminLogin", async (req, res) => {
+  return res.render("public/adminLogin.ejs");
+});
+
+router.get("/administratorLogin", (req, res) => {
+  return res.render("public/administratorLogin.ejs");
+});
 export { router as publicRouter };
