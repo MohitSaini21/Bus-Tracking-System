@@ -87,7 +87,7 @@ router.post("/driverConductorLogin", checkAuthHome, async (req, res) => {
       if (password == driver.password) {
         let token = generateTokenAndSetCookie(res, driver._id, driver.role);
         if (token) {
-          return res.json({ message: "He is the driver" });
+          return res.json({ role: "driver" });
         }
       }
     } else {
@@ -102,7 +102,7 @@ router.post("/driverConductorLogin", checkAuthHome, async (req, res) => {
             conductor.role
           );
           if (token) {
-            return res.json({ message: "He is the conductor" });
+            return res.json({ role: "conductor" });
           }
         }
       } else {

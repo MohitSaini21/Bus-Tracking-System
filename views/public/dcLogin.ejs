@@ -133,7 +133,12 @@
           })
             .then((response) => response.json())
             .then((data) => {
-              console.log("Success:", data);
+              if (data.role === "conductor") {
+                window.location.href = "/conductor"; // ✅ Redirect to conductor dashboard/page
+              } else {
+                window.location.href = "/driver"; // ✅ Redirect to conductor dashboard/page
+              }
+
               // You can handle the response here (e.g., show a success message, redirect, etc.)
             })
             .catch((error) => {
