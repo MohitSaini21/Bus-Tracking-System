@@ -67,237 +67,237 @@
     <script src="/socket.io/socket.io.js"></script>
     <!-- leaflet js  -->
     <script>
-       const bus = <%- JSON.stringify(bus) %>;
+             const bus = <%- JSON.stringify(bus) %>;
 
-      const socket = io({
-                                                             query: {
-                                                               busId: bus._id.toString() // Convert the _id to a string (if it’s a MongoDB ObjectId)
-                                                             }
+            const socket = io({
+                                                                   query: {
+                                                                     busId: bus._id.toString() // Convert the _id to a string (if it’s a MongoDB ObjectId)
+                                                                   }
+                                                                 });
+
+
+
+
+                                                                                                  // Baser layers
+                                                                                                  let googleStreets = L.tileLayer(
+                                                                                                    "http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+                                                                                                    {
+                                                                                                      maxZoom: 20,
+                                                                                                      subdomains: ["mt0", "mt1", "mt2", "mt3"],
+                                                                                                    }
+                                                                                                  );
+                                                                                                  let googleHybrid = L.tileLayer(
+                                                                                                    "http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}",
+                                                                                                    {
+                                                                                                      maxZoom: 20,
+                                                                                                      subdomains: ["mt0", "mt1", "mt2", "mt3"],
+                                                                                                    }
+                                                                                                  );
+                                                                                                  let googleSat = L.tileLayer(
+                                                                                                    "http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+                                                                                                    {
+                                                                                                      maxZoom: 20,
+                                                                                                      subdomains: ["mt0", "mt1", "mt2", "mt3"],
+                                                                                                    }
+                                                                                                  );
+
+                                                                                                  let googleTerrain = L.tileLayer(
+                                                                                                    "http://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}",
+                                                                                                    {
+                                                                                                      maxZoom: 20,
+                                                                                                      subdomains: ["mt0", "mt1", "mt2", "mt3"],
+                                                                                                    }
+                                                                                                  );
+                                                                                                  var CartoDB_DarkMatter = L.tileLayer(
+                                                                                                    "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+                                                                                                    {
+                                                                                                      attribution:
+                                                                                                        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                                                                                                      subdomains: "abcd",
+                                                                                                      maxZoom: 20,
+                                                                                                    }
+                                                                                                  );
+
+
+                                                                                                  var OpenStreetMap_HOT = L.tileLayer(
+                                                                                                    "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+                                                                                                    {
+                                                                                                      maxZoom: 19,
+                                                                                                      attribution:
+                                                                                                        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>',
+                                                                                                    }
+                                                                                                  );
+                                                                                                  var OpenStreetMap_France = L.tileLayer(
+                                                                                                    "https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png",
+                                                                                                    {
+                                                                                                      maxZoom: 20,
+                                                                                                      attribution:
+                                                                                                        '&copy; OpenStreetMap France | &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                                                                                                    }
+                                                                                                  );
+                                                                                                  // Baser layers
+
+                                                                                                  var baseMaps = {
+                                                                                                    googleStreets,
+                                                                                                    googleHybrid,
+                                                                                                    googleSat,
+                                                                                                    googleTerrain,
+
+
+                                                                                                    OpenStreetMap_France,
+                                                                                                    OpenStreetMap_HOT,
+                                                                                                    CartoDB_DarkMatter,
+                                                                                                  };
+
+                                                                                                            // Scoket Connnection Rleated
+
+
+
+
+
+                                                     //             socket.on("receivelocation",(data)=>{
+                                                     //                 console.log(data)
+                                                     //             })
+
+
+
+                                                     //             //   to check whther bus is live or not
+
+                                                                            // Scoket Connnection Rleated
+
+                                                                                                  // Initialize the map with a default layer
+                                                                            var map = L.map("map", {
+                                                                              center: [29.4426,78.4327],
+                                                                    zoom: 16, // or 17–18 for detailed view,
+                                                                              layers: [googleTerrain] // default layer
+                                                                            });
+
+                                                                         //    bus marker
+
+                                                                         var busMarker;
+                                                                         const BusIcon = L.Icon.extend({
+                                                 options: {
+                                                   iconSize: [60, 45],
+                                                   iconAnchor: [19, 45],
+                                                   popupAnchor: [0, -40]
+                                                 }
+                                               });
+                                                 const busIcon = new BusIcon({ iconUrl: bus.iconPhoto });
+
+                                                                                  var busMarkerLayerGroup= L.layerGroup().addTo(map);
+
+                                                                                             socket.emit("lastLocation", bus._id, (response) => {
+
+                                                       if(response.data){
+                                                               busMarker = L.marker([response.data.latitude, response.data.longitude], { icon: busIcon })
+
+
+                                                     busMarkerLayerGroup.addLayer(busMarker)
+                                                     map.flyTo([response.data.latitude, response.data.longitude], map.getZoom(), {
+                   animate: true,
+                   duration: 1.2
+                 });
+
+                                                       }else {
+                                                           console.log("Bus location is not avialable rightnow")
+                                                       }
+
+
                                                            });
 
 
 
+                                                                 socket.on("receivelocation",(data)=>{
+                                                                  console.log(data)
 
-                                                                                            // Baser layers
-                                                                                            let googleStreets = L.tileLayer(
-                                                                                              "http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
-                                                                                              {
-                                                                                                maxZoom: 20,
-                                                                                                subdomains: ["mt0", "mt1", "mt2", "mt3"],
-                                                                                              }
-                                                                                            );
-                                                                                            let googleHybrid = L.tileLayer(
-                                                                                              "http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}",
-                                                                                              {
-                                                                                                maxZoom: 20,
-                                                                                                subdomains: ["mt0", "mt1", "mt2", "mt3"],
-                                                                                              }
-                                                                                            );
-                                                                                            let googleSat = L.tileLayer(
-                                                                                              "http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
-                                                                                              {
-                                                                                                maxZoom: 20,
-                                                                                                subdomains: ["mt0", "mt1", "mt2", "mt3"],
-                                                                                              }
-                                                                                            );
+                                                                  if(busMarker){
 
-                                                                                            let googleTerrain = L.tileLayer(
-                                                                                              "http://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}",
-                                                                                              {
-                                                                                                maxZoom: 20,
-                                                                                                subdomains: ["mt0", "mt1", "mt2", "mt3"],
-                                                                                              }
-                                                                                            );
-                                                                                            var CartoDB_DarkMatter = L.tileLayer(
-                                                                                              "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
-                                                                                              {
-                                                                                                attribution:
-                                                                                                  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-                                                                                                subdomains: "abcd",
-                                                                                                maxZoom: 20,
-                                                                                              }
-                                                                                            );
-
-
-                                                                                            var OpenStreetMap_HOT = L.tileLayer(
-                                                                                              "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
-                                                                                              {
-                                                                                                maxZoom: 19,
-                                                                                                attribution:
-                                                                                                  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, Tiles style by <a href="https://www.hotosm.org/" target="_blank">Humanitarian OpenStreetMap Team</a> hosted by <a href="https://openstreetmap.fr/" target="_blank">OpenStreetMap France</a>',
-                                                                                              }
-                                                                                            );
-                                                                                            var OpenStreetMap_France = L.tileLayer(
-                                                                                              "https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png",
-                                                                                              {
-                                                                                                maxZoom: 20,
-                                                                                                attribution:
-                                                                                                  '&copy; OpenStreetMap France | &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                                                                                              }
-                                                                                            );
-                                                                                            // Baser layers
-
-                                                                                            var baseMaps = {
-                                                                                              googleStreets,
-                                                                                              googleHybrid,
-                                                                                              googleSat,
-                                                                                              googleTerrain,
-
-
-                                                                                              OpenStreetMap_France,
-                                                                                              OpenStreetMap_HOT,
-                                                                                              CartoDB_DarkMatter,
-                                                                                            };
-
-                                                                                                      // Scoket Connnection Rleated
-
-
-
-
-
-                                               //             socket.on("receivelocation",(data)=>{
-                                               //                 console.log(data)
-                                               //             })
-
-
-
-                                               //             //   to check whther bus is live or not
-
-                                                                      // Scoket Connnection Rleated
-
-                                                                                            // Initialize the map with a default layer
-                                                                      var map = L.map("map", {
-                                                                        center: [29.4426,78.4327],
-                                                              zoom: 16, // or 17–18 for detailed view,
-                                                                        layers: [googleTerrain] // default layer
+                                                                    if (busMarkerLayerGroup.hasLayer(busMarker)) {
+                                                                      // ✅ Marker already exists → just update position
+                                                                      busMarker.slideTo([data.latitude, data.longitude], {
+                                                                        duration: 1000
                                                                       });
+                                                                    }
 
-                                                                   //    bus marker
+               // 🧠 Animate map only if distance moved > 50m
+               const lastLatLng = busMarker.getLatLng();
+               const distanceMoved = map.distance(lastLatLng, L.latLng(data.latitude, data.longitude));
 
-                                                                   var busMarker;
-                                                                   const BusIcon = L.Icon.extend({
-                                           options: {
-                                             iconSize: [60, 45],
-                                             iconAnchor: [19, 45],
-                                             popupAnchor: [0, -40]
-                                           }
-                                         });
-                                           const busIcon = new BusIcon({ iconUrl: bus.iconPhoto });
-
-                                                                            var busMarkerLayerGroup= L.layerGroup().addTo(map);
-
-                                                                                       socket.emit("lastLocation", bus._id, (response) => {
-
-                                                 if(response.data){
-                                                         busMarker = L.marker([response.data.latitude, response.data.longitude], { icon: busIcon })
-
-
-                                               busMarkerLayerGroup.addLayer(busMarker)
-                                               map.flyTo([response.data.latitude, response.data.longitude], map.getZoom(), {
-             animate: true,
-             duration: 1.2
-           });
-
-                                                 }else {
-                                                     console.log("Bus location is not avialable rightnow")
-                                                 }
-
-
-                                                     });
+               if (distanceMoved > 50) {
+                 map.flyTo([data.latitude, data.longitude], map.getZoom(), {
+                   animate: true,
+                   duration: 1.2
+                 });
+               }
+                                   } else {
+                                     // ❌ Marker not present → create and add it
+                                     busMarker = L.marker([data.latitude, data.longitude], { icon: busIcon });
+                                     busMarkerLayerGroup.addLayer(busMarker);
+                                     map.flyTo([data.latitude, data.longitude], map.getZoom(), {
+                               animate: true,
+                               duration: 1.2
+                             });
+                                   }
+                                                                 })
 
 
 
-                                                           socket.on("receivelocation",(data)=>{
-                                                            console.log(data)
+                                                                                                  //  Setting up Stops layer
+                                                                             const iconStopLayerGroup = L.layerGroup().addTo(map);
+                                                                             const circularStopLayerGroup=L.layerGroup().addTo(map)
 
-                                                            if(busMarker){
+                                                                                            const stopIconClass = L.Icon.extend({
+                                                                                        options: {
+                                                                                          iconSize: [60, 45],
+                                                                                          iconAnchor: [19, 45],
+                                                                                          popupAnchor: [0, -40]
+                                                                                        }
+                                                                                      });
 
-                                                              if (busMarkerLayerGroup.hasLayer(busMarker)) {
-                                                                // ✅ Marker already exists → just update position
-                                                                busMarker.slideTo([data.latitude, data.longitude], {
-                                                                  duration: 1000
-                                                                });
-                                                              }
-
-         // 🧠 Animate map only if distance moved > 50m
-         const lastLatLng = busMarker.getLatLng();
-         const distanceMoved = map.distance(lastLatLng, L.latLng(data.latitude, data.longitude));
-
-         if (distanceMoved > 50) {
-           map.flyTo([data.latitude, data.longitude], map.getZoom(), {
-             animate: true,
-             duration: 1.2
-           });
-         }
-                             } else {
-                               // ❌ Marker not present → create and add it
-                               busMarker = L.marker([data.latitude, data.longitude], { icon: busIcon });
-                               busMarkerLayerGroup.addLayer(busMarker);
-                               map.flyTo([data.latitude, data.longitude], map.getZoom(), {
-                         animate: true,
-                         duration: 1.2
-                       });
-                             }
-                                                           })
-
-
-
-                                                                                            //  Setting up Stops layer
-                                                                       const iconStopLayerGroup = L.layerGroup().addTo(map);
-                                                                       const circularStopLayerGroup=L.layerGroup().addTo(map)
-
-                                                                                      const stopIconClass = L.Icon.extend({
-                                                                                  options: {
-                                                                                    iconSize: [60, 45],
-                                                                                    iconAnchor: [19, 45],
-                                                                                    popupAnchor: [0, -40]
-                                                                                  }
+                                                                                            bus.routeStops.forEach(stop => {
+                                                                                              console.log(stop)
+                                                                                  const stopIcon = new stopIconClass({
+                                                                                  iconUrl: '/assets/images/faces/bus-stop.png'
                                                                                 });
-
-                                                                                      bus.routeStops.forEach(stop => {
-                                                                                        console.log(stop)
-                                                                            const stopIcon = new stopIconClass({
-                                                                            iconUrl: '/assets/images/faces/bus-stop.png'
-                                                                          });
-                                                          const popupContent = `
-                                                            <div style="padding: 8px; border-radius: 8px; background-color: #f8f9fa; box-shadow: 0 2px 6px rgba(0,0,0,0.15); font-family: Arial; font-size: 14px;">
-                                                              <h4 style="margin: 0 0 5px;">🚌 ${stop.stopName}</h4>
-                                                              <p style="margin: 2px 0;">🌅 <strong>Morning:</strong> ${stop.morningTime}</p>
-                                                              <p style="margin: 2px 0;">🌇 <strong>Evening:</strong> ${stop.eveningTime}</p>
-                                                            </div>
+                                                                const popupContent = `
+                                                                  <div style="padding: 8px; border-radius: 8px; background-color: #f8f9fa; box-shadow: 0 2px 6px rgba(0,0,0,0.15); font-family: Arial; font-size: 14px;">
+                                                                    <h4 style="margin: 0 0 5px;">🚌 ${stop.stopName}</h4>
+                                                                    <p style="margin: 2px 0;">🌅 <strong>Morning:</strong> ${stop.morningTime}</p>
+                                                                    <p style="margin: 2px 0;">🌇 <strong>Evening:</strong> ${stop.eveningTime}</p>
+                                                                  </div>
 
 
 
-                                                          `;
+                                                                `;
 
 
-                                                                              var  iconMarker=           L.marker([stop.latitude,stop.longitude],{ icon: stopIcon }).bindPopup(popupContent)
-                                                                              const circleMarker = L.circleMarker([stop.latitude, stop.longitude], {
-                                                      radius: 20,           // radius in pixels
-                                                      color: 'red',
-                                                      fillColor: '#f03',
-                                                      fillOpacity: 0.3
-                                                    })
+                                                                                    var  iconMarker=           L.marker([stop.latitude,stop.longitude],{ icon: stopIcon }).bindPopup(popupContent)
+                                                                                    const circleMarker = L.circleMarker([stop.latitude, stop.longitude], {
+                                                            radius: 20,           // radius in pixels
+                                                            color: 'red',
+                                                            fillColor: '#f03',
+                                                            fillOpacity: 0.3
+                                                          })
 
 
-                                                                              iconStopLayerGroup.addLayer(iconMarker);
-                                                                              circularStopLayerGroup.addLayer(circleMarker)
+                                                                                    iconStopLayerGroup.addLayer(iconMarker);
+                                                                                    circularStopLayerGroup.addLayer(circleMarker)
 
 
-                                                                                      })
-                                                                                      //  Setting up Stops layer
+                                                                                            })
+                                                                                            //  Setting up Stops layer
 
-                                                                                      // over lyaer
-                                                                                      const overlays = {
-                                                                  "iconStops": iconStopLayerGroup,
-                                                                  "circularStops":circularStopLayerGroup,
-                                                                  "busMarker":busMarkerLayerGroup
+                                                                                            // over lyaer
+                                                                                            const overlays = {
+                                                                        "iconStops": iconStopLayerGroup,
+                                                                        "circularStops":circularStopLayerGroup,
+                                                                        "busMarker":busMarkerLayerGroup
 
-                                                                };
-                                                                                      // over lyaer
+                                                                      };
+                                                                                            // over lyaer
 
 
-                                                                      L.control.layers(baseMaps, overlays).addTo(map);
+                                                                            L.control.layers(baseMaps, overlays).addTo(map);
     </script>
     <script
       src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"

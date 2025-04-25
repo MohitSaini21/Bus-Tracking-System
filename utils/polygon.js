@@ -12,7 +12,7 @@ const tmuHeadCampus = turf.polygon([
   ],
 ]);
 
-export function checkEntryExit(data) {
+export function checkEntryExit(io, data, administratorIds) {
   const { previousPoint, currentPoint, bus } = data;
 
   // Convert the points into GeoJSON format
@@ -37,11 +37,44 @@ export function checkEntryExit(data) {
 
   // Log entry or exit based on the previous and current positions
   if (!wasInside && isInside) {
-    console.log(`Bus ${bus} has entered the campus.`);
-    
+    // Temproary
+
+    // Temprorary Alerts
+
+    if (administratorIds.length) {
+      for (let i = 0; i < administratorIds.length; i++) {
+        io.to(administratorIds[i]).emit(
+          "campusAlert",
+          `Bus ${bus.busNumber} has entered the campus.`
+        );
+      }
+    }
+
+    // Temprorary Alerts
+    // Temproary
+
+    console.log(`Bus ${bus.busNumber} has entered the campus.`);
   } else if (wasInside && !isInside) {
+
+        if (administratorIds.length) {
+          for (let i = 0; i < administratorIds.length; i++) {
+            io.to(administratorIds[i]).emit(
+              "campusAlert",
+              `Bus ${bus} has exited the campus.`
+            );
+          }
+        }
     console.log(`Bus ${bus} has exited the campus.`);
   } else {
+
+      if (administratorIds.length) {
+        for (let i = 0; i < administratorIds.length; i++) {
+          io.to(administratorIds[i]).emit(
+            "campusAlert",
+            `Bus ${bus.busNumber} is ${isInside ? "inside" : "outside"} the campus`
+          );
+        }
+      }
     console.log(
       `Bus ${bus.busNumber} is ${isInside ? "inside" : "outside"} the campus.`
     );

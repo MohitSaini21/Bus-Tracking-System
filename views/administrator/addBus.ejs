@@ -501,9 +501,8 @@ function getBusData(formId) {
 function Collect() {
   // Collect form data from each form
   const busData = getBusData("eventForm");
-  console.log(busData);
-  return ;
 
+  
 
   
 
@@ -530,7 +529,7 @@ function Collect() {
   ];
 
   // Make POST request with the array of objects
-  fetch('http://localhost:3000/tmu/admin/settings/addBus', {
+  fetch('http://localhost:3000/tmu/administrator/settings/addBus', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

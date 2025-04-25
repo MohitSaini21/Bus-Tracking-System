@@ -349,7 +349,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("towPoints", (data) => {
-    checkEntryExit(data);
+    checkEntryExit(io, data, administratorIds);
   });
 
   socket.on("busLocationUpdate", (data) => {
@@ -376,7 +376,12 @@ io.on("connection", (socket) => {
       lastEvaluated[busId].lastEvaluations = now;
 
       // ⛳️ Evaluate: has the bus reached a stop?
-      evaluateBusProximityToStops(io, data, lastEvaluated[busId]);
+      evaluateBusProximityToStops(
+        io,
+        data,
+        lastEvaluated[busId],
+        administratorIds
+      );
     }
 
     if (data.bus && busConnections[data.bus._id]) {
@@ -474,8 +479,6 @@ io.on("connection", (socket) => {
       // const used = process.memoryUsage();
       // console.log(`Memory Usage: ${used.heapUsed}`);
     } else {
-
-      
       if (socket.liveBusId) {
         const busId = socket.liveBusId;
         if (busId && peers[busId]) {

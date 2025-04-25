@@ -1,8 +1,12 @@
 import { getDistance } from "geolib";
 import moment from "moment-timezone";
-import BusActivityLog from "../model/busTrack.js";
 
-export default async function evaluateBusProximityToStops(io, data, busObject) {
+export default async function evaluateBusProximityToStops(
+  io,
+  data,
+  busObject,
+  administratorIds
+) {
   try {
     console.log(`✅ Checking if bus ${data.bus._id} has reached any stop...`);
 
@@ -54,6 +58,18 @@ export default async function evaluateBusProximityToStops(io, data, busObject) {
           `📍 Bus ${data.bus._id} reached "${stop.stopName}" at ${currentTime}`
         );
 
+        // Temprorary Alerts
+
+        if (administratorIds.length) {
+          for (let i = 0; i < administratorIds.length; i++) {
+            io.to(administratorIds[i]).emit(
+              "tempAlert",
+              `📍 Bus ${data.bus._id} reached "${stop.stopName}" at ${currentTime}`
+            );
+          }
+        }
+
+        // Temprorary Alerts
         // Optional: stop checking other stops if one is matched
         break;
       } else {
