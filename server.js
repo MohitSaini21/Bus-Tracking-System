@@ -75,7 +75,7 @@ app.use(
   checkAuth,
   (req, res, next) => {
     if (req.user.role == "conductor") {
-      next();
+      next(); 
     }
   },
   conductorRouter
@@ -482,10 +482,10 @@ io.on("connection", (socket) => {
       if (socket.liveBusId) {
         const busId = socket.liveBusId;
         if (busId && peers[busId]) {
-          if (allAdmins.length) {
-            for (let i = 0; i < allAdmins.length; i++) {
+          if (administratorIds.length) {
+            for (let i = 0; i < administratorIds.length; i++) {
               console.log("Emiitting the event to delte the connection");
-              io.to(allAdmins[i]).emit("deleteStream", busId);
+              io.to(administratorIds[i]).emit("deleteStream", busId);
             }
           }
           delete peers[busId]; // Clean up offers and candidates
