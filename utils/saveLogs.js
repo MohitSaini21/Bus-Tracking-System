@@ -5,11 +5,7 @@ import BusActivityLog from "../model/busTrack.js";
 export default async function saveLogs(busObject) {
   console.log(busObject.reachedStops);
 
-  if (
-    (!busObject.reachedStops && !busObject.path) ||
-    !busObject.busId ||
-    Object.keys(busObject.reachedStops).length === 0
-  ) {
+  if ((!busObject.reachedStops && !busObject.path) || !busObject.busId) {
     console.log("🛑 Bus has not covered any stops yet.");
     return;
   }

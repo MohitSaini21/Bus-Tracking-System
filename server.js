@@ -13,7 +13,7 @@ import { Socket } from "socket.io";
 import saveLogs from "./utils/saveLogs.js";
 
 import { checkAuth } from "./middlware/rootCheckAuth.js";
-
+  
 import { checkEntryExit } from "./utils/polygon.js";
 
 import ejs from "ejs";
