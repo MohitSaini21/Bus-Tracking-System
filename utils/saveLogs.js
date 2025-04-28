@@ -5,11 +5,10 @@ import BusActivityLog from "../model/busTrack.js";
 export default async function saveLogs(busObject) {
   console.log(busObject.reachedStops);
 
-  if ((!busObject.reachedStops && !busObject.path) || !busObject.busId) {
-    console.log("🛑 Bus has not covered any stops yet.");
-    return;
-  }
-
+if (!busObject.reachedStops && !busObject.path) {
+  console.log("🛑 Neither stops nor path provided. Cannot save log.");
+  return;
+}
   try {
     const todayStart = moment().tz("Asia/Kolkata").startOf("day").toDate();
     const todayEnd = moment().tz("Asia/Kolkata").endOf("day").toDate();
