@@ -11,10 +11,9 @@ import { publicRouter } from "./routes/public.js";
 import { Socket } from "socket.io";
 
 import saveLogs from "./utils/saveLogs.js";
-import { conductorRouter } from "./routes/conductor.js";
+
 import { checkAuth } from "./middlware/rootCheckAuth.js";
 
-import { driverRouter } from "./routes/driver.js";
 import { checkEntryExit } from "./utils/polygon.js";
 
 import ejs from "ejs";
@@ -83,26 +82,6 @@ app.use(
 // app.use("/admin");
 
 app.use("/", publicRouter);
-app.use(
-  "/driver",
-  checkAuth,
-  (req, res, next) => {
-    if (req.user.role == "driver") {
-      next();
-    }
-  },
-  driverRouter
-);
-app.use(
-  "/conductor",
-  checkAuth,
-  (req, res, next) => {
-    if (req.user.role == "conductor") {
-      next();
-    }
-  },
-  conductorRouter
-);
 
 app.use(
   "/DC",
