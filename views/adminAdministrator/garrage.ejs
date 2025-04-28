@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <title>Corona Admin</title>
+    <!-- plugins:css -->
+    <link
+      rel="stylesheet"
+      href="/assets/vendors/mdi/css/materialdesignicons.min.css"
+    />
+    
+    <link rel="stylesheet" href="/assets/vendors/css/vendor.bundle.base.css" />
+    <!-- endinject -->
+    <!-- Plugin css for this page -->
+    <!-- End Plugin css for this page -->
+    <!-- inject:css -->
+    <!-- endinject -->
+    <!-- Layout styles -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+    <!-- End layout styles -->
+    <link rel="shortcut icon" href="/assets/images/favicon.png" />
+<style>
+  a {
+    text-decoration: none; /* Remove underline by default */
+  }
+
+  a:hover {
+    text-decoration: none; /* Remove underline on hover */
+  }
+</style>
+
+
+
+    
+  </head>
+  <body>
+    <div class="container-scroller">
+      <!-- partial:../.../corePartials/_sidebar.html -->
+
+      <%- include('../corePartials/sidebar.ejs') %>
+      <!-- partial -->
+      <div class="container-fluid page-body-wrapper">
+        <!-- partial:../.../corePartials/_navbar.html -->
+
+        <%- include('../corePartials/nav.ejs') %>
+        <!-- partial -->
+        <div class="main-panel">
+          <div class="content-wrapper">
+          <div class="page-header">
+              <h3 class="page-title"> Garrage</h3>
+
+          
+            </div>
+                <div class="row">
+
+                                       <% if (buses && buses.length > 0) { %>
+  <% buses.forEach((bus,index) => { %>
+  <div class="col-md-4 grid-margin stretch-card d-flex justify-content-center">
+
+  
+  
+
+  
+  <div class="card shadow border-0 rounded-3 bg-warning"
+       style="max-width: 320px; height: 160px; position: relative; overflow: hidden;">
+
+    
+    <div class="card-body text-center p-3">
+      <!-- Bus Header -->
+       
+
+      
+      <!-- Bus Number -->
+      <div class="mt-2">
+
+            <% if (user.role=="administrator") { %>
+
+              <nav class="container d-flex justify-content-between bg-dark rounded p-2"
+     style="gap: 5px; overflow: hidden; border: 3px solid black;">
+  
+  <a href="/tmu/administrator/settings/conductorDriver?driverId=<%=bus.driver%>" class="small text-dark bg-white text-center py-1 rounded"
+     style="width: 22%; height: 35px; display: flex; align-items: center; justify-content: center; 
+            border: 2px solid black; box-shadow: inset 0 0 5px rgba(0,0,0,0.3); font-weight: bold;">
+    Dri..
+  </a>
+
+  <a href="http://localhost:3000/tmu/administrator/settings/conductorDriver?conductorId=<%=bus.conductor  %>" class="small text-dark bg-white text-center py-1 rounded"
+     style="width: 22%; height: 35px; display: flex; align-items: center; justify-content: center; 
+            border: 2px solid black; box-shadow: inset 0 0 5px rgba(0,0,0,0.3); font-weight: bold;">
+    Cond..
+  </a>
+
+  <a href="/tmu/administrator/settings/busEntire/<%=bus._id  %>" class="small text-dark bg-white text-center py-1 rounded"
+     style="width: 22%; height: 35px; display: flex; align-items: center; justify-content: center; 
+            border: 2px solid black; box-shadow: inset 0 0 5px rgba(0,0,0,0.3); font-weight: bold;">
+    Bus
+  </a>
+
+  <a href="/admin/CDB" class="small text-dark bg-white text-center py-1 rounded"
+     style="width: 22%; height: 35px; display: flex; align-items: center; justify-content: center; 
+            border: 2px solid black; box-shadow: inset 0 0 5px rgba(0,0,0,0.3); font-weight: bold;">
+    View
+  </a>
+
+</nav>
+
+<% } else { %>
+                <nav class="container d-flex justify-content-between bg-dark rounded p-2"
+     style="gap: 5px; overflow: hidden; border: 3px solid black;">
+  
+
+     
+
+  <a href="/admin/CDB" class="small text-dark bg-white text-center py-1 rounded"
+     style="width: 22%; height: 35px; display: flex; align-items: center; justify-content: center; 
+            border: 2px solid black; box-shadow: inset 0 0 5px rgba(0,0,0,0.3); font-weight: bold;">
+  View
+  </a>
+  <a href="/admin/CDB" class="small text-dark bg-white text-center py-1 rounded"
+     style="width: 22%; height: 35px; display: flex; align-items: center; justify-content: center; 
+            border: 2px solid black; box-shadow: inset 0 0 5px rgba(0,0,0,0.3); font-weight: bold;">
+ View 
+  </a>
+  <a href="/admin/CDB" class="small text-dark bg-white text-center py-1 rounded"
+     style="width: 22%; height: 35px; display: flex; align-items: center; justify-content: center; 
+            border: 2px solid black; box-shadow: inset 0 0 5px rgba(0,0,0,0.3); font-weight: bold;">
+  View
+  </a>
+  <a href="/admin/CDB" class="small text-dark bg-white text-center py-1 rounded"
+     style="width: 22%; height: 35px; display: flex; align-items: center; justify-content: center; 
+            border: 2px solid black; box-shadow: inset 0 0 5px rgba(0,0,0,0.3); font-weight: bold;">
+  View
+  </a>
+
+</nav>
+          <% } %>
+
+<br>
+<!-- 
+        <h6 class="text-dark font-weight-bold "></h6> -->
+         <p class="text-white mb-0 small">Bus Number : <strong><%=bus.busNumber %></strong></p>
+         <p class="text-white mb-0 small">Route : <b><%= bus.route  %></b></p>
+
+
+
+      </div>
+      <br>
+
+
+      
+    </div>
+
+
+    
+    <!-- Bus Wheels (Closer to edges, realistic) -->
+    <div class="d-flex justify-content-between px-3" 
+         style="position: absolute; bottom: -10px; left: 0; right: 0;">
+      <div class="bg-dark rounded-circle border border-secondary" style="width: 28px; height: 28px;"></div>
+      <div class="bg-dark rounded-circle border border-secondary" style="width: 28px; height: 28px;"></div>
+    </div>
+  </div>
+</div>
+
+  <% }); %>
+<% } else { %>
+
+    
+<% } %>
+
+
+                  
+
+
+
+
+
+
+              </div>
+     
+              
+       
+
+            
+          <!-- content-wrapper ends -->
+          <!-- partial:../.../corePartials/_footer.html -->
+        <%- include('../corePartials/footer.ejs') %>
+          <!-- partial -->
+        </div>
+        <!-- main-panel ends -->
+      </div>
+      <!-- page-body-wrapper ends -->
+    </div>
+    <!-- container-scroller -->
+    <!-- plugins:js -->
+    <script src="/assets/vendors/js/vendor.bundle.base.js"></script>
+    <!-- endinject -->
+    <!-- Plugin js for this page -->
+    <!-- End plugin js for this page -->
+    <!-- inject:js -->
+    <script src="/assets/js/off-canvas.js"></script>
+    <script src="/assets/js/hoverable-collapse.js"></script>
+    <script src="/assets/js/misc.js"></script>
+    <script src="/assets/js/settings.js"></script>
+    <script src="/assets/js/todolist.js"></script>
+    <!-- endinject -->
+    <!-- Custom js for this page -->
+    <!-- End custom js for this page -->
+  </body>
+</html>

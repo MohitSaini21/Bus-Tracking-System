@@ -6,7 +6,7 @@ export default async function saveLogs(busObject) {
   console.log(busObject.reachedStops);
 
   if (
-    !busObject.reachedStops ||
+    (!busObject.reachedStops && !busObject.path) ||
     !busObject.busId ||
     Object.keys(busObject.reachedStops).length === 0
   ) {
@@ -58,7 +58,9 @@ export default async function saveLogs(busObject) {
           log.stops.push(newStop);
         }
       }
-
+      if (busObject.path && busObject.path.length > 0) {
+        log.path = [...busObject.path];
+      }
       await log.save();
       console.log(`📝 Updated log for bus ${busObject.busId} on today.`);
     } else {
@@ -67,6 +69,7 @@ export default async function saveLogs(busObject) {
         bus: busId,
         date: new Date(),
         stops: stopsData,
+        path: busObject.path || [],
       });
 
       await newLog.save();

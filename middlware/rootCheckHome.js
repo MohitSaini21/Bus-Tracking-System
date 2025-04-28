@@ -16,18 +16,12 @@ export const checkAuthHome = (req, res, next) => {
 
       // Step 3: If the token is valid, print the payload (user data) and attach it to the request object
 
-      
       req.user = decoded; // Attach the decoded user data to the request object
 
-      
-
-      // Step 4: Proceed to the next middleware or route handler
-      if (decoded.role == "admin") {
+      if (decoded.role == "driver" || decoded.role == "conductor") {
+        return res.redirect("/DC");
+      } else if (decoded.role == "admin" || decoded.role == "administrator") {
         return res.redirect("/admin");
-      } else if (decoded.role == "driver") {
-        return res.redirect("/driver");
-      } else if (decoded.role == "conductor") {
-        return res.redirect("/conductor");
       }
     }
 

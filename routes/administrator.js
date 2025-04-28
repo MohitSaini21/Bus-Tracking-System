@@ -5,6 +5,7 @@ import Bus from "../model/bus.js";
 import Driver from "../model/driver.js";
 import Conductor from "../model/conductor.js";
 import multer from "multer";
+import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import generatePassword from "../utils/password.js";
@@ -15,7 +16,16 @@ let router = express.Router();
 // Configure Multer
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.resolve(`../public/uploads/`));
+    // Resolve the absolute path to 'public/uploads' directory
+    const uploadPath = path.join(__dirname, "public", "uploads");
+
+    // Check if the directory exists, if not, create it
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true }); // Create the uploads directory
+    }
+
+    // Set the directory where files should be stored
+    cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
     const FileName = `${Date.now()}-${file.originalname}`;
@@ -24,9 +34,14 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// Routes
-router.get("/", (req, res) => res.render("administrator/index.ejs"));
-router.get("/addBus", (req, res) => res.render("administrator/addBus.ejs"));
+router.get("/addBus", async (req, res) => {
+  const user = await CORE.findById(req.user.id);
+  if (!user) {
+    res.clearCookie("authToken"); // clear the correct cookie
+    return res.redirect("/coreLogin");
+  }
+  res.render("administrator/addBus.ejs", { user });
+});
 
 router.post("/addBus", async (req, res) => {
   const formDataArray = req.body; // The array of objects that was sent in the request body
@@ -135,14 +150,12 @@ router.post("/addBus", async (req, res) => {
   }
 });
 
-router.get("/garrage", async (req, res) => {
-  const buses = await Bus.find({});
-  console.log(buses);
-
-  res.render("administrator/garrage.ejs", { buses });
-});
-
 router.get("/conductorDriver", async (req, res) => {
+  const user = await CORE.findById(req.user.id);
+  if (!user) {
+    res.clearCookie("authToken"); // clear the correct cookie
+    return res.redirect("/coreLogin");
+  }
   let { driverId = "N/A", conductorId = "N/A" } = req.query;
 
   // ✅ Driver ID valid hai → Process karo
@@ -151,7 +164,10 @@ router.get("/conductorDriver", async (req, res) => {
       const driver = await Driver.findById(driverId);
       if (driver) {
         // console.log(driver);
-        return res.render("administrator/conDriver.ejs", { worker: driver });
+        return res.render("administrator/conDriver.ejs", {
+          worker: driver,
+          user,
+        });
       }
     } catch (error) {
       return; // ❌ No response → Hacker ko kuch bhi leak nahi hoga
@@ -164,7 +180,10 @@ router.get("/conductorDriver", async (req, res) => {
       const conductor = await Conductor.findById(conductorId);
       if (conductor) {
         // console.log(conductor);
-        return res.render("administrator/conDriver.ejs", { worker: conductor });
+        return res.render("administrator/conDriver.ejs", {
+          worker: conductor,
+          user,
+        });
       }
     } catch (error) {
       return; // ❌ No response → Hacker ko kuch bhi leak nahi hoga
@@ -374,12 +393,17 @@ router.post("/driverRow/:id", async (req, res) => {
 
 router.get("/busEntire/:id", async (req, res) => {
   try {
+    const user = await CORE.findById(req.user.id);
+    if (!user) {
+      res.clearCookie("authToken"); // clear the correct cookie
+      return res.redirect("/coreLogin");
+    }
     const { id } = req.params;
 
     const bus = await Bus.findById(id);
     console.log(bus);
 
-    return res.render("administrator/bus.ejs", { bus });
+    return res.render("administrator/bus.ejs", { bus, user });
   } catch (error) {}
 });
 router.post("/busEntire/:id", async (req, res) => {
@@ -415,9 +439,6 @@ router.post("/busEntire/:id", async (req, res) => {
         return null; // skip if any value is missing
       })
       .filter(Boolean); // removes all null entries
-
-
-      
 
     // Updating the bus document
     const bus = await Bus.findByIdAndUpdate(
@@ -532,16 +553,16 @@ router.post("/busImages/:id", upload.any(), async (req, res) => {
   }
 });
 
-// Bus
-
-router.get("/CDB", (req, res) => {
-  return res.render("administrator/CDB.ejs");
-});
-
 // Track Route
 
-router.get("/tracker", (req, res) => {
-  return res.render("administrator/tracker.ejs");
+router.get("/tracker", async (req, res) => {
+  const user = await CORE.findById(req.user.id);
+  if (user) {
+    return res.render("administrator/tracker.ejs"), { user };
+  } else {
+    res.clearCookie("authToken"); // clear the correct cookie
+    return res.redirect("/coreLogin");
+  }
 });
 
 router.get("/liveStream/:id", async (req, res) => {
@@ -556,7 +577,15 @@ router.get("/addAdmin", async (req, res) => {
   try {
     const admins = await CORE.find({ role: "admin" });
     // console.log(admins);
-    return res.render("administrator/addAdmin.ejs", { admins });
+
+    const user = await CORE.findById(req.user.id);
+
+    if (user) {
+      return res.render("administrator/addAdmin.ejs", { admins, user });
+    } else {
+      res.clearCookie("authToken"); // clear the correct cookie
+      return res.redirect("/coreLogin");
+    }
   } catch (error) {
     console.error("Error fetching admins:", error);
     return res
@@ -624,10 +653,5 @@ router.post("/deleteAdmin", async (req, res) => {
 });
 
 // particular bus live preview
-router.get("/particularBusLive/:id", async (req, res) => {
-  let bus = await Bus.findById(req.params.id);
-  if (bus) {
-    return res.render("administrator/paritcularBusLive.ejs", { bus });
-  }
-});
+
 export { router as administratorRouter };

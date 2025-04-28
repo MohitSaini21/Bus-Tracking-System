@@ -1,5 +1,7 @@
 import express from "express";
 import Driver from "../model/driver.js";
+import CORE from "../model/admin.js";
+
 import Conductor from "../model/conductor.js";
 import Fuse from "fuse.js";
 import Bus from "../model/bus.js";
@@ -77,45 +79,108 @@ router.get("/driverConductorLogin", checkAuthHome, async (req, res) => {
   return res.render("public/dcLogin.ejs");
 });
 router.post("/driverConductorLogin", checkAuthHome, async (req, res) => {
-  const { userId, password } = req.body;
-  if (!userId || !password) {
-  } else {
-    const driver = await Driver.findOne({
-      driverId: userId,
-    });
+  try {
+    // Trim user input to remove unnecessary spaces
+    const { userId, password } = req.body;
+
+    // Check if userId or password is missing
+    if (!userId || !password) {
+      return res.status(400).json({
+        message:
+          "Please fill out the form properly. Otherwise, you might get permanently blocked.",
+      });
+    }
+
+    // Trim any leading or trailing spaces
+    const trimmedUserId = userId.trim();
+    const trimmedPassword = password.trim();
+
+    // Look for the driver first
+    let driver = await Driver.findOne({ driverId: trimmedUserId });
     if (driver) {
-      if (password == driver.password) {
-        let token = generateTokenAndSetCookie(res, driver._id, driver.role);
+      if (trimmedPassword === driver.password) {
+        const token = generateTokenAndSetCookie(res, driver._id, driver.role);
         if (token) {
-          return res.json({ role: "driver" });
+          return res.status(200).json({ success: true });
         }
+      } else {
+        return res
+          .status(401)
+          .json({ message: "Incorrect password for driver" });
       }
     } else {
-      const conductor = await Conductor.findOne({
-        conductorId: userId,
-      });
+      // If driver not found, check for the conductor
+      let conductor = await Conductor.findOne({ conductorId: trimmedUserId });
       if (conductor) {
-        if (password == conductor.password) {
-          let token = generateTokenAndSetCookie(
+        if (trimmedPassword === conductor.password) {
+          const token = generateTokenAndSetCookie(
             res,
             conductor._id,
             conductor.role
           );
           if (token) {
-            return res.json({ role: "conductor" });
+            return res.status(200).json({ success: true });
           }
+        } else {
+          return res
+            .status(401)
+            .json({ message: "Incorrect password for conductor" });
         }
       } else {
+   return res.status(404).json({
+     message:
+       "Warning: This account is not registered as a driver or conductor. Unauthorized access attempt detected. Please contact support if this is a mistake.",
+   });
+
       }
     }
+  } catch (error) {
+    console.error("Error during login:", error);
+    return res
+      .status(500)
+      .json({ message: "Something went wrong, please try again later" });
   }
 });
 
-router.get("/adminLogin", async (req, res) => {
-  return res.render("public/adminLogin.ejs");
+router.get("/coreLogin", checkAuthHome, async (req, res) => {
+  return res.render("public/coreLogin.ejs");
 });
 
-router.get("/administratorLogin", (req, res) => {
-  return res.render("public/administratorLogin.ejs");
+router.post("/adminLogin", checkAuthHome, async (req, res) => {
+  let { userId, password } = req.body;
+  userId = userId.trim();
+  password = password.trim();
+
+  if (!userId || !password || userId.length === 0 || password.length === 0) {
+    return res.status(400).json({
+      message:
+        "Please fill out the form properly. Otherwise, you might get permanently blocked.",
+    });
+  }
+
+  try {
+    const user = await CORE.findOne({
+      $or: [{ adminId: userId }, { administratorId: userId }],
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    if (user.password !== password) {
+      return res.status(401).json({ message: "Incorrect password." });
+    }
+
+    // If password matched
+    generateTokenAndSetCookie(res, user._id, user.role);
+
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("Error during admin login:", error);
+    return res
+      .status(500)
+      .json({ message: "Something went wrong on the server." });
+  }
 });
+
 export { router as publicRouter };

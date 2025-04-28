@@ -11,6 +11,8 @@ const busLogSchema = new mongoose.Schema({
       durationInCampus: { type: Number, default: 0 }, // duration in minutes
     },
   ],
+  
+
 });
 
 const BusLog = mongoose.model("BusLog", busLogSchema);

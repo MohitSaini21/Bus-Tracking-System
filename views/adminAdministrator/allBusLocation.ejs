@@ -33,7 +33,22 @@
     
 
 
+<style>
+       /* Fixed size for the container */
+        #map-container {
+            width: 100%; /* Make the width 100% or you can set a fixed pixel value */
+            height: 500px; /* Set a fixed height for the map container */
+            position: relative;
+            overflow: hidden; /* Hide overflow to maintain a clean container */
+        }
 
+        /* Map element to ensure it's responsive inside the fixed container */
+        #map {
+            width: 100%;
+            height: 100%;
+            transform-origin: 0 0; /* Ensures that the zoom is from the top-left */
+        }
+</style>
 
     
   </head>
@@ -63,11 +78,16 @@
                 <div class="row"  id="mainRow">
                        <div class="col-md-12 grid-margin">
                 <div class="card">
-                  <div class="card-body" id="map" style="width: 100%; height: 700px !important" >
+                  <div class="card-body" 
+                  
+                  >
     
                     
          
-                    
+                      <div id="map-container">
+        <!-- Map embedding or element -->
+        <div id="map"></div>
+    </div> 
               
                     
             
@@ -125,106 +145,45 @@
       <script src="/socket.io/socket.io.js"></script>
 <script>
 
-function append(id) {
-  const mainRow = document.getElementById("mainRow");
-  console.log(mainRow);
-  const element = document.getElementById(id);
-            
-            // Removing the element from the DOM
-            if (element) {
-                element.remove();
-            } 
-            
 
-  const col = `
-    <div class="col-sm-4 grid-margin " id=${id}>
-      <div class="card m-1">
-        <div class="card-body  p-1">
-  
-          
-          <iframe
-            src="/tmu/administrator/settings/liveStream/${id}"
-            width="100%"
-            height="200"
-            allow="camera; microphone"
-            style="border-radius: 8px; border: none;"
-          ></iframe>
-        </div>
-      </div>
-    </div>
-  `;
 
-  const tempDiv = document.createElement("div");
-  tempDiv.innerHTML = col.trim();
-  const newCol = tempDiv.firstChild;
 
-mainRow.appendChild(newCol); // ✅ This appends it at the end
 
-}
 
-// append("67f5503b1adadc8c3c290007")
 
   
   const socket = io({
     query: {
-      administratorId: "1234567890"
+      adminId: "1234567890"
     }
   });
- socket.on("deleteStream",(busId)=>{
-    console.log(busId)
-    console.log("Disconnectoin")
-      const element = document.getElementById(busId);
-            
-            // Removing the element from the DOM
-            if (element) {
-                element.remove();
-            } 
-  })
-
-
-
-  // Temprorary
 
   
-// Temproray
+
+
+
+
+  
 
 socket.on("tempAlert", (message) => {
   alert(message); // ✅ This will show a browser alert popup
 });
 socket.on("campusAlert", (message) => {
-  // alert(message); // ✅ This will show a browser alert popup
+
+    
 
   console.log(message)
 });
 
 
-// Temproray
 
 
 
 
-  socket.on("newStream",(busid)=>{
-    console.log("newConection")
-
-    append(busid)
-  })
- 
 
 
-  setTimeout(() => {
-      socket.emit("allStream",(response)=>{
 
-        console.log(response)
 
-        
-
-        response.forEach(element => {
-          append(element)
-        });
-        
-
-  })
-  }, 5000);
 
 
 
@@ -484,7 +443,8 @@ function showBusDetails(data) {
               </div>
 
               <div class="col-md-6">
-                <div class="container">
+       
+                
         
                         <iframe
                           src="/locationBus/${data._id}"
@@ -496,14 +456,15 @@ function showBusDetails(data) {
                             display: block;
                           "
                         ></iframe>
-                </div>
+ 
+                        
               </div>
 
               <div class="container mt-4">
                 <div class="d-flex justify-content-end">
         
                   
-<a href="/tmu/administrator/settings/particularBusLive/${data._id}" class="btn btn-secondary btn-fw mr-2">
+<a href="/admin/particularBusLive/${data._id}" class="btn btn-secondary btn-fw mr-2">
   Live Track
 </a>
 

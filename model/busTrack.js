@@ -1,4 +1,3 @@
-import { timeStamp } from "console";
 import mongoose from "mongoose";
 
 const { Schema, model } = mongoose;
@@ -15,6 +14,12 @@ const busActivityLogSchema = new Schema({
   bus: { type: Schema.Types.ObjectId, ref: "Bus", required: true },
   date: { type: Date, required: true },
   stops: [stopLogSchema], // Array of stop logs
+  path: [
+    {
+      lat: { type: Number, required: true },
+      lon: { type: Number, required: true },
+    },
+  ],
 });
 
 const BusActivityLog = model("BusActivityLog", busActivityLogSchema);

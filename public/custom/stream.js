@@ -24,8 +24,8 @@ setTimeout(() => {
         <p class="card-description">
           ${
             user.role === "driver"
-              ? `This bus is already . <code>live</code>  and providing the bus location. You may go back.`
-              : `This bus is already <code>live</code> iand providing the bus location. You may go back.`
+              ? `This bus is already . <code>live</code> is live and providing the bus location. You may go back.`
+              : `This bus is already alive. <code>live</code> is live and providing the bus location. You may go back.`
           }
         </p>
         <div class="template-demo">
@@ -58,7 +58,7 @@ setTimeout(() => {
     </p>
                     <div class="template-demo">
                                    <button type="button" class="btn btn-secondary btn-fw"><a href="/DC">Checked Out</a></button>
-              <button type="button" class="btn btn-secondary btn-fw"><a href="  /DC/startStream">Start Streaming </a></button>
+              <button type="button" class="btn btn-secondary btn-fw"><a href="  /DC/goLive">Stop Streaming </a></button>
                       
              
                       
@@ -73,7 +73,17 @@ setTimeout(() => {
                 </div>
               </div>
   `;
-   let thirdCloumn = `<div class="col-md-6 grid-margin stretch-card" id="videoTag">
+
+    let newColumn = `
+  <div class="col-md-6 grid-margin stretch-card" id="videoTag">
+  <div class="card">
+    <div class="card-body p-0"> <!-- Remove padding for full container usage -->
+      <video id="driverVideo" autoplay></video>
+    </div>
+  </div>
+</div>`;
+
+    let thirdCloumn = `<div class="col-md-6 grid-margin stretch-card" id="videoTag">
   <div class="card">
     <div class="card-body p-0  vector-map"   id="audience-map"> <!-- Remove padding for full container usage -->
       <iframe
@@ -86,16 +96,23 @@ setTimeout(() => {
   </div>
 </div>
 `;
+
     const tempDiv = document.createElement("div");
     tempDiv.innerHTML = col.trim();
     const newCol = tempDiv.firstChild;
     document.getElementById("mainRow").innerHTML = "";
 
     document.getElementById("mainRow").appendChild(newCol); // ✅ This appends it at the end
+    // For the second section (video column)
+    tempDiv.innerHTML = newColumn.trim();
+    const newVideoCol = tempDiv.firstChild;
+    document.getElementById("rowMain").appendChild(newVideoCol);
+    tempDiv.innerHTML = thirdCloumn.trim();
+    const newIframeCol = tempDiv.firstChild;
+    document.getElementById("rowMain").appendChild(newIframeCol);
 
-        tempDiv.innerHTML = thirdCloumn.trim();
-        const newIframeCol = tempDiv.firstChild;
-        document.getElementById("mainRow").appendChild(newIframeCol);
+    // Call additional function for ICE candidates (if needed)
+    collectionIceCandidateInfo();
   });
 
   const saveLocation = (position) => {
@@ -205,4 +222,78 @@ setTimeout(() => {
       console.warn("Location fetch failed:", err.message);
     }
   }, 5000);
+
+  const iceConfig = {
+    iceServers: [
+      {
+        urls: "stun:stun.l.google.com:19302", // Google STUN server
+      },
+      // Optionally add TURN servers here
+    ],
+  };
+
+  var peerConnection;
+  async function collectionIceCandidateInfo() {
+    peerConnection = new RTCPeerConnection(iceConfig);
+
+    // Get media stream (video)
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: true,
+    });
+
+    // Add video tracks to the peer connection
+    stream
+      .getTracks()
+      .forEach((track) => peerConnection.addTrack(track, stream));
+
+    // Display driver's own video (optional, for preview)
+    const localVideo = document.getElementById("driverVideo");
+    localVideo.srcObject = stream;
+
+    // Handle ICE candidates
+    peerConnection.onicecandidate = (event) => {
+      if (event.candidate) {
+        socket.emit("ice-candidate", {
+          bus, // Send bus ID along with candidate
+          candidate: event.candidate,
+        });
+      }
+    };
+
+    // Create and send the offer
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+
+    socket.emit("driver-offer", {
+      bus,
+      offer,
+    });
+  }
+
+  // When the admin sends an answer to the driver (bus), set it as remote description
+  socket.on("admin-answer", ({ offer }) => {
+    peerConnection
+      .setRemoteDescription(new RTCSessionDescription(offer))
+      .catch((error) =>
+        console.error("Error setting remote description:", error)
+      );
+  });
+  socket.on("ice-candidate", ({ busId, candidate }) => {
+    console.log("admin ice candidate Asnwer received");
+    if (peerConnection) {
+      // Add the candidate to the peer connection
+      peerConnection
+        .addIceCandidate(new RTCIceCandidate(candidate))
+        .catch((error) => console.error("Error adding ICE candidate:", error));
+    }
+  });
+
+  socket.on("refresh", ({ bus }) => {
+    console.log("Admin disconnected, refreshing video stream...");
+
+    // Reconnect (restart the stream)
+    collectionIceCandidateInfo(); // re-initiate the connection
+  });
+
+  // Caputuring the media in chunks and sending  to ther server go tit
 }, 1000);

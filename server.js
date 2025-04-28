@@ -3,6 +3,7 @@ import express from "express"; // Core framework for building the server
 import { config } from "dotenv"; // For environment variable management
 import updateDistance from "./utils/distance.js";
 import evaluateBusProximityToStops from "./utils/stopsProximity.js";
+import { dcRouter } from "./routes/DC.js";
 
 import { administratorRouter } from "./routes/administrator.js";
 import { adminRouter } from "./routes/admin.js";
@@ -54,8 +55,30 @@ app.use(express.static("public")); // Serve static files from the "public" direc
 const server = http.createServer(app);
 
 // Routers
-app.use("/tmu/administrator/settings", administratorRouter);
-app.use("/admin", adminRouter);
+app.use(
+  "/tmu/administrator/settings",
+  checkAuth,
+  (req, res, next) => {
+    if (req.user?.role === "administrator") {
+      next();
+    } else {
+      return res.status(204).end(); // silent drop
+    }
+  },
+  administratorRouter
+);
+app.use(
+  "/admin",
+  checkAuth,
+  (req, res, next) => {
+    if (req.user?.role === "admin" || req.user?.role === "administrator") {
+      next();
+    } else {
+      return res.status(204).end(); // silent drop
+    }
+  },
+  adminRouter
+);
 
 // app.use("/admin");
 
@@ -75,12 +98,22 @@ app.use(
   checkAuth,
   (req, res, next) => {
     if (req.user.role == "conductor") {
-      next(); 
+      next();
     }
   },
   conductorRouter
 );
 
+app.use(
+  "/DC",
+  checkAuth,
+  (req, res, next) => {
+    if (req.user.role == "conductor" || req.user.role == "driver") {
+      next();
+    }
+  },
+  dcRouter
+);
 // Handler if user want's to communicate over webScoket protocols
 import { Server } from "socket.io";
 const io = new Server(server);
@@ -88,9 +121,9 @@ const io = new Server(server);
 let busConnections = {};
 
 let allAdmins = [];
-let liveBuses = [];
 let administratorIds = [];
 const peers = {};
+let liveBuses = [];
 
 let adminConnectionsBus = {};
 
@@ -133,7 +166,7 @@ function updateBusDistance(io, busId, latitude, longitude, timestamp) {
 
   const timeDiff = timestamp - lastLocation.timestamp;
   if (timeDiff < MIN_TIME_DIFF) {
-    console.log("Skipping update: too frequent");
+    console.log("Skipping update distacne : too frequent");
     return;
   }
 
@@ -146,7 +179,7 @@ function updateBusDistance(io, busId, latitude, longitude, timestamp) {
   console.log(distance);
 
   if (distance < MIN_DIST) {
-    console.log("Skipping update: distance too small");
+    console.log("Skipping update: distance too   small");
     return;
   }
 
@@ -376,11 +409,13 @@ io.on("connection", (socket) => {
       lastEvaluated[busId].lastEvaluations = now;
 
       // ⛳️ Evaluate: has the bus reached a stop?
+      console.log("Calling the evualte Bus procist Stops");
       evaluateBusProximityToStops(
         io,
         data,
         lastEvaluated[busId],
-        administratorIds
+        administratorIds,
+        data.timestamp
       );
     }
 
@@ -532,7 +567,6 @@ io.on("connection", (socket) => {
           if (distanceUpdated) {
             console.log("Distance has been updated for this bus ID");
             delete distanceSession[socket.liveBusId];
-            console.log(distanceSession);
           } else {
             console.log("Failed to update distance for this bus ID");
           }

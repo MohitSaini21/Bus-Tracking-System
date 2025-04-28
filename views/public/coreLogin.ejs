@@ -46,10 +46,10 @@
           >
             <div class="card col-lg-4 mx-auto">
               <div class="card-body">
-                <h3 class="card-title text-left">Driver And Conductor</h3>
+                <h3 class="card-title text-left">Admin and Administrator ID</h3>
                 <form id="loginForm">
                   <div class="form-group">
-                    <label>Enter Your Given Id</label>
+                    <label>Enter Your Admin and Administrator ID</label>
                     <input
                       type="text"
                       class="form-control p_input"
@@ -77,7 +77,8 @@
                   </div>
 
                   <p class="sign-up">
-                    Forgot Password<a href="#"> Contact Admin</a>
+                    This form has compeletly to do with the Admin and
+                    Administrator .
                   </p>
                 </form>
               </div>
@@ -121,7 +122,7 @@
           console.table(data);
 
           // Specify the API endpoint
-          const apiEndpoint = "/driverConductorLogin"; // Replace with your actual API URL
+          const apiEndpoint = "/adminLogin"; // Replace with your actual API URL
 
           // Make the POST request
           fetch(apiEndpoint, {
@@ -138,8 +139,6 @@
               } else {
                 alert(data.message);
               }
-              // You can handle the response here (e.g., show a success message, redirect, etc.)
-
               // You can handle the response here (e.g., show a success message, redirect, etc.)
             })
             .catch((error) => {

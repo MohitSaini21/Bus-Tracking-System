@@ -5,7 +5,8 @@ export default async function evaluateBusProximityToStops(
   io,
   data,
   busObject,
-  administratorIds
+  administratorIds,
+  timestamp
 ) {
   try {
     console.log(`✅ Checking if bus ${data.bus._id} has reached any stop...`);
@@ -14,6 +15,23 @@ export default async function evaluateBusProximityToStops(
     const busLat = parseFloat(data.latitude);
     const busLng = parseFloat(data.longitude);
     const RADIUS_METERS = 50;
+    const MIN_TIME_DIFF = 10 * 1000; // ms (5 seconds)
+
+    if (!busObject["lastPathTimestamp"]) {
+      busObject["lastPathTimestamp"] = timestamp;
+    } else {
+      const timeDiff = timestamp - busObject["lastPathTimestamp"];
+      if (timeDiff < MIN_TIME_DIFF) {
+        console.log("Skipping Tracking Path");
+      } else {
+        if (!busObject["path"]) {
+          busObject["path"] = [];
+        }
+        busObject["path"].push({ lat: busLat, lon: busLng });
+        busObject["lastPathTimestamp"] = timestamp; // update last tracking time
+        console.log("path has been updated  new lat and long has been added");
+      }
+    }
 
     const now = moment().tz("Asia/Kolkata"); // Change timezone if needed
     const isMorning = now.format("A") === "AM";
