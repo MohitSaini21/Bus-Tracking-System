@@ -52,7 +52,7 @@ export default async function saveLogs(busObject) {
         }
       }
       if (busObject.path && busObject.path.length > 0) {
-        log.path = [...busObject.path];
+        log.path = [...log.path, ...busObject.path];
       }
       await log.save();
       console.log(`📝 Updated log for bus ${busObject.busId} on today.`);
