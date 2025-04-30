@@ -13,7 +13,7 @@ import { Socket } from "socket.io";
 import saveLogs from "./utils/saveLogs.js";
 
 import { checkAuth } from "./middlware/rootCheckAuth.js";
-  
+
 import { checkEntryExit } from "./utils/polygon.js";
 
 import ejs from "ejs";
@@ -129,14 +129,21 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   return distanceInKm * 1000; // ✅ Returns distance in meters
 }
 
-function updateBusDistance(io, busId, latitude, longitude, timestamp) {
-  const MIN_TIME_DIFF = 10 * 1000; // 10 seconds
+function updateBusDistance(
+  io,
+  busId,
+  latitude,
+  longitude,
+  timestamp,
+  accuracy
+) {
+  const MIN_TIME_DIFF = 30 * 1000; // 30 seconds
   const MIN_DIST = 5; // in meters
 
   if (!distanceSession[busId]) {
     distanceSession[busId] = {
       totalDistance: 0,
-      lastLocation: { latitude, longitude, timestamp },
+      lastLocation: { latitude, longitude, timestamp, accuracy },
     };
     return;
   }
@@ -155,10 +162,15 @@ function updateBusDistance(io, busId, latitude, longitude, timestamp) {
     latitude,
     longitude
   );
-  console.log(distance);
 
-  if (distance < MIN_DIST) {
-    console.log("Skipping update: distance too   small");
+  const combinedAccuracy = (accuracy || 0) + (lastLocation.accuracy || 0);
+
+  if (distance < Math.max(MIN_DIST, combinedAccuracy)) {
+    console.log(
+      `Skipping update: distance ${distance.toFixed(
+        2
+      )}m < accuracy error ${combinedAccuracy}m`
+    );
     return;
   }
 
@@ -373,7 +385,8 @@ io.on("connection", (socket) => {
       data.bus._id,
       data.latitude,
       data.longitude,
-      data.timestamp
+      data.timestamp,
+      data.accuracy
     );
 
     if (
@@ -388,7 +401,7 @@ io.on("connection", (socket) => {
       lastEvaluated[busId].lastEvaluations = now;
 
       // ⛳️ Evaluate: has the bus reached a stop?
-      console.log("Calling the evualte Bus procist Stops");
+
       evaluateBusProximityToStops(
         io,
         data,
@@ -495,6 +508,15 @@ io.on("connection", (socket) => {
     } else {
       if (socket.liveBusId) {
         const busId = socket.liveBusId;
+
+        const index = liveBuses.indexOf(socket.liveBusId);
+        if (index !== -1) {
+          liveBuses.splice(index, 1);
+          console.log(
+            `Bus ${socket.liveBusId} was removed from live list.`,
+            liveBuses
+          );
+        }
         if (busId && peers[busId]) {
           if (administratorIds.length) {
             for (let i = 0; i < administratorIds.length; i++) {
@@ -505,15 +527,6 @@ io.on("connection", (socket) => {
           delete peers[busId]; // Clean up offers and candidates
 
           console.log(`Cleaned up peers for bus: ${busId}`);
-          console.log(peers);
-        }
-        const index = liveBuses.indexOf(socket.liveBusId);
-        if (index !== -1) {
-          liveBuses.splice(index, 1);
-          console.log(
-            `Bus ${socket.liveBusId} was removed from live list.`,
-            liveBuses
-          );
         }
 
         if (lastEvaluated[socket.liveBusId]) {
@@ -522,9 +535,6 @@ io.on("connection", (socket) => {
           delete lastEvaluated[socket.liveBusId];
         }
         if (distanceSession[socket.liveBusId]) {
-          console.log(
-            "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-          );
           console.log(distanceSession[socket.liveBusId]);
 
           if (
@@ -544,15 +554,10 @@ io.on("connection", (socket) => {
           );
 
           if (distanceUpdated) {
-            console.log("Distance has been updated for this bus ID");
             delete distanceSession[socket.liveBusId];
           } else {
             console.log("Failed to update distance for this bus ID");
           }
-
-          console.log(
-            "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-          );
         } else {
           console.log("No distance data found for bus ID:", socket.liveBusId);
         }

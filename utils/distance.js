@@ -5,6 +5,7 @@ export default async function updateDistance(id, distance) {
     // Update the bus document by incrementing the distanceTravelled field
 
     if (distance === 0) {
+      console.log("Distance is Zero");
       return false;
     }
     await Bus.findByIdAndUpdate(id, {
@@ -12,7 +13,6 @@ export default async function updateDistance(id, distance) {
     });
     return true;
   } catch (error) {
-    console.error("Error updating distance:", error);
     return false;
   }
 }

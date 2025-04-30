@@ -15,7 +15,7 @@ export default async function evaluateBusProximityToStops(
     const busLat = parseFloat(data.latitude);
     const busLng = parseFloat(data.longitude);
     const RADIUS_METERS = 50;
-    const MIN_TIME_DIFF = 10 * 1000; // ms (5 seconds)
+    const MIN_TIME_DIFF = 5000;; // ms (5 seconds)
 
     if (!busObject["lastPathTimestamp"]) {
       busObject["lastPathTimestamp"] = timestamp;

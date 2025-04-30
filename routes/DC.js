@@ -178,5 +178,40 @@ router.post(
   }
 );
 
+// The POST route to handle stream chunk uploads
+router.post(
+  "/saveStreamChunks",
+  checkUserExistenceAndRedirect, // Middleware to check user existence and redirect if necessary
+  upload.single("busStreamVideo"), // Handle the uploaded video file named 'busStreamVideo'
+  async (req, res) => {
+    console.log("hey i am in perfect working order ");
+    try {
+      // Get Bus details by user role (e.g., driver/conductor)
+      const bus = await getBusDetailsByRole(req.user.role, req.user.id);
 
+      if (!bus) {
+        return res.status(404).json({ message: "Bus not found." });
+      }
+
+      // Check if the uploaded file exists
+      if (!req.file) {
+        return res.status(400).json({ message: "No file uploaded." });
+      }
+
+      // Respond with success and uploaded file info
+      return res.status(200).json({
+        sucess: true,
+        message: "Stream chunk saved successfully.",
+        file: {
+          filename: req.file.filename,
+          path: uploadedFilePath,
+          size: req.file.size,
+        },
+      });
+    } catch (error) {
+      console.error("Error during file upload:", error);
+      return res.status(500).json({ message: "Internal server error." });
+    }
+  }
+);
 export { router as dcRouter };
