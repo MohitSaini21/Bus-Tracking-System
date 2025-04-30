@@ -25,6 +25,11 @@ setTimeout(() => {
       socket.connect(); // reconnect manually
     }, 3000);
   });
+
+  window.addEventListener("online", () => {
+    socket.connect(); // reconnect manually
+  });
+
   window.addEventListener("beforeunload", (e) => {
     // Always disconnect the socket first
     if (socket && socket.connected) {
