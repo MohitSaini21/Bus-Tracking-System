@@ -127,11 +127,10 @@ router.post("/driverConductorLogin", checkAuthHome, async (req, res) => {
             .json({ message: "Incorrect password for conductor" });
         }
       } else {
-   return res.status(404).json({
-     message:
-       "Warning: This account is not registered as a driver or conductor. Unauthorized access attempt detected. Please contact support if this is a mistake.",
-   });
-
+        return res.status(404).json({
+          message:
+            "Warning: This account is not registered as a driver or conductor. Unauthorized access attempt detected. Please contact support if this is a mistake.",
+        });
       }
     }
   } catch (error) {

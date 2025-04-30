@@ -52,6 +52,8 @@ export default async function saveLogs(busObject) {
         }
       }
       if (busObject.path && busObject.path.length > 0) {
+
+        // adding the exsiting pah log with the new one got it . 
         log.path = [...log.path, ...busObject.path];
       }
       await log.save();

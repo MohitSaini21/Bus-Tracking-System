@@ -1,10 +1,30 @@
 setTimeout(() => {
   const socket = io({
+    reconnection: false,
     query: {
       liveBusId: bus._id, // Convert the _id to a string (if it’s a MongoDB ObjectId)
     },
   });
+  socket.on("disconnect", () => {
+    // Show spinner UI
+    const col = `<div class="col-12 grid-margin stretch-card" id="goAhead">
+  <div class="text-center">
+    <div class="spinner-border" role="status"></div>
+  </div>
+  </div>`;
 
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = col.trim();
+    const newCol = tempDiv.firstChild;
+
+    const mainRow = document.getElementById("mainRow");
+    mainRow.innerHTML = "";
+    mainRow.appendChild(newCol);
+    console.log("Disconnected. Will attempt to reconnect after 3 seconds...");
+    setTimeout(() => {
+      socket.connect(); // reconnect manually
+    }, 3000);
+  });
   window.addEventListener("beforeunload", (e) => {
     // Always disconnect the socket first
     if (socket && socket.connected) {
@@ -73,7 +93,7 @@ setTimeout(() => {
                 </div>
               </div>
   `;
-   let thirdCloumn = `<div class="col-md-6 grid-margin stretch-card" id="videoTag">
+    let thirdCloumn = `<div class="col-md-6 grid-margin stretch-card" id="videoTag">
   <div class="card">
     <div class="card-body p-0  vector-map"   id="audience-map"> <!-- Remove padding for full container usage -->
       <iframe
@@ -93,9 +113,9 @@ setTimeout(() => {
 
     document.getElementById("mainRow").appendChild(newCol); // ✅ This appends it at the end
 
-        tempDiv.innerHTML = thirdCloumn.trim();
-        const newIframeCol = tempDiv.firstChild;
-        document.getElementById("mainRow").appendChild(newIframeCol);
+    tempDiv.innerHTML = thirdCloumn.trim();
+    const newIframeCol = tempDiv.firstChild;
+    document.getElementById("mainRow").appendChild(newIframeCol);
   });
 
   const saveLocation = (position) => {

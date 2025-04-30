@@ -1,5 +1,6 @@
 setTimeout(() => {
   const socket = io({
+    reconnection: false,
     query: {
       liveBusId: bus._id, // Convert the _id to a string (if it’s a MongoDB ObjectId)
     },
