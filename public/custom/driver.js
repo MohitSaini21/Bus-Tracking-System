@@ -1,44 +1,49 @@
 setTimeout(() => {
   const socket = io({
-    reconnection: false,
+    reconnection: true,
+    reconnectionAttempts: Infinity, // Keep trying forever
+    reconnectionDelay: 3000, // Start with 3s delay
+    reconnectionDelayMax: 10000,
     query: {
       liveBusId: bus._id, // Convert the _id to a string (if it’s a MongoDB ObjectId)
     },
   });
-  socket.on("disconnect", () => {
-    // Show spinner UI
-    const col = `<div class="col-12 grid-margin stretch-card" id="goAhead">
-  <div class="text-center">
-    <div class="spinner-border" role="status"></div>
-  </div>
-  </div>`;
 
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = col.trim();
-    const newCol = tempDiv.firstChild;
+  socket.on("disconnect", (reason) => {
+    if (reason == "io server disconnect") {
+      connectionDenied();
+      return;
+    } else if (reason == "'io client disconnect") {
+      return;
+    } else if (reason == "ping timeout" || reason == "transport close") {
+      const col = `
+          <div class="container">
 
-    const mainRow = document.getElementById("mainRow");
-    mainRow.innerHTML = "";
-    mainRow.appendChild(newCol);
-    console.log("Disconnected. Will attempt to reconnect after 3 seconds...");
-    setTimeout(() => {
-      socket.connect(); // reconnect manually
-    }, 3000);
-  });
+            <p>
+Connecting... Please wait.
 
-  window.addEventListener("online", () => {
-    socket.connect(); // reconnect manually
-  });
+            </p>
 
-  window.addEventListener("beforeunload", (e) => {
-    // Always disconnect the socket first
-    if (socket && socket.connected) {
-      socket.disconnect();
-      console.log("Socket disconnected properly before leaving.");
+          </div>
+`;
+
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = col.trim();
+      const newCol = tempDiv.firstChild;
+
+      const mainRow = document.getElementById("mainRow");
+      mainRow.innerHTML = "";
+      mainRow.appendChild(newCol);
     }
   });
 
-  socket.on("connectionDenied", (message) => {
+  window.addEventListener("beforeunload", (e) => {
+    if (socket && socket.connected) {
+      socket.disconnect();
+    }
+  });
+
+  function connectionDenied() {
     const col = `
      <div class="col-12 grid-margin stretch-card" id="goBack">
    <div class="card">
@@ -47,11 +52,10 @@ setTimeout(() => {
           ${user.name} (${user.role})
         </h4>
         <p class="card-description">
-          ${
-            user.role === "driver"
-              ? `This bus is already . <code>live</code>  and providing the bus location. You may go back.`
-              : `This bus is already <code>live</code> iand providing the bus location. You may go back.`
-          }
+         
+        This bus is already . <code>live</code>  and providing the bus location. You may go back.
+           
+              
         </p>
         <div class="template-demo">
           <button type="button" class="btn btn-secondary btn-fw">
@@ -69,7 +73,8 @@ setTimeout(() => {
     const newCol = tempDiv.firstChild;
     document.getElementById("mainRow").innerHTML = "";
     document.getElementById("mainRow").appendChild(newCol); // ✅ This appends it at the end
-  });
+  }
+
   socket.on("connectionApproved", (message) => {
     const col = `
         <div class="col-12 grid-margin stretch-card" id="goAhead">

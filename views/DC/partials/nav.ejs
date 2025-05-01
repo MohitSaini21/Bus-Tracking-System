@@ -251,7 +251,7 @@
               </div>
             </div>
             <div class="preview-item-content">
-              <p class="preview-subject mb-1">Log out</p>
+              <p class="preview-subject mb-1" onclick="Redirect()">Log out</p>
             </div>
           </a>
           <div class="dropdown-divider"></div>
@@ -268,3 +268,17 @@
     </button>
   </div>
 </nav>
+
+<script>
+  function Redirect() {
+    // Show confirmation dialog to the user
+    var userConfirmed = confirm("Are you sure you want to logout?");
+
+    // If the user confirms (clicks "OK"), redirect to the URL
+    if (userConfirmed) {
+      window.location.href = "/DC/logout"; // Replace with your logout URL
+    } else {
+      alert("Logout cancelled");
+    }
+  }
+</script>

@@ -15,18 +15,22 @@ export default async function evaluateBusProximityToStops(
     const busLat = parseFloat(data.latitude);
     const busLng = parseFloat(data.longitude);
     const RADIUS_METERS = 50;
-    const MIN_TIME_DIFF = 10 * 1000; // ms (5 seconds)
+    const PROXIMITY_METERS = 100;
+    const MIN_TIME_DIFF = 60 * 1000;
 
     if (!busObject["lastPathTimestamp"]) {
       busObject["lastPathTimestamp"] = timestamp;
+      if (!busObject["path"]) {
+        busObject["path"] = [];
+      }
+      busObject["path"].push({ lat: busLat, lon: busLng });
+      console.log("path has been updated  new lat and long has been added");
+      console.log(busObject["path"]);
     } else {
       const timeDiff = timestamp - busObject["lastPathTimestamp"];
       if (timeDiff < MIN_TIME_DIFF) {
         console.log("Skipping Tracking Path");
       } else {
-        if (!busObject["path"]) {
-          busObject["path"] = [];
-        }
         busObject["path"].push({ lat: busLat, lon: busLng });
         busObject["lastPathTimestamp"] = timestamp; // update last tracking time
         console.log("path has been updated  new lat and long has been added");
@@ -60,6 +64,9 @@ export default async function evaluateBusProximityToStops(
         { latitude: stopLat, longitude: stopLng }
       );
 
+      if (distance <= PROXIMITY_METERS) {
+        //  Heading closer notification
+      }
       if (distance <= RADIUS_METERS) {
         // Update memory
         if (!busObject.reachedStops[stopId]) {
@@ -76,18 +83,10 @@ export default async function evaluateBusProximityToStops(
           `📍 Bus ${data.bus._id} reached "${stop.stopName}" at ${currentTime}`
         );
 
-        // Temprorary Alerts
+        // Notification system  over here if reaching bus
 
-        if (administratorIds.length) {
-          for (let i = 0; i < administratorIds.length; i++) {
-            io.to(administratorIds[i]).emit(
-              "tempAlert",
-              `📍 Bus ${data.bus._id} reached "${stop.stopName}" at ${currentTime}`
-            );
-          }
-        }
+        // Notification system  over here
 
-        // Temprorary Alerts
         // Optional: stop checking other stops if one is matched
         break;
       } else {

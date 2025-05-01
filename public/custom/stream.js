@@ -1,5 +1,9 @@
 setTimeout(() => {
   const socket = io({
+    reconnection: true,
+    reconnectionAttempts: Infinity, // Keep trying forever
+    reconnectionDelay: 3000, // Start with 3s delay
+    reconnectionDelayMax: 10000,
     reconnection: false,
     query: {
       liveBusId: bus._id, // Convert the _id to a string (if it’s a MongoDB ObjectId)
@@ -14,7 +18,35 @@ setTimeout(() => {
     }
   });
 
-  socket.on("connectionDenied", (message) => {
+
+  socket.on("disconnect", (reason) => {
+    if (reason == "io server disconnect") {
+      connectionDenied();
+      return;
+    } else if (reason == "'io client disconnect") {
+      return;
+    } else if (reason == "ping timeout" || reason == "transport close") {
+      const col = `
+          <div class="container">
+
+            <p>
+Connecting... Please wait.
+
+            </p>
+
+          </div>
+`;
+
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = col.trim();
+      const newCol = tempDiv.firstChild;
+
+      const mainRow = document.getElementById("mainRow");
+      mainRow.innerHTML = "";
+      mainRow.appendChild(newCol);
+    }
+  });
+  function connectionDenied() {
     const col = `
      <div class="col-12 grid-margin stretch-card" id="goBack">
    <div class="card">
@@ -23,11 +55,10 @@ setTimeout(() => {
           ${user.name} (${user.role})
         </h4>
         <p class="card-description">
-          ${
-            user.role === "driver"
-              ? `This bus is already . <code>live</code> is live and providing the bus location. You may go back.`
-              : `This bus is already alive. <code>live</code> is live and providing the bus location. You may go back.`
-          }
+         
+        This bus is already . <code>live</code>  and providing the bus location. You may go back.
+           
+              
         </p>
         <div class="template-demo">
           <button type="button" class="btn btn-secondary btn-fw">
@@ -45,7 +76,10 @@ setTimeout(() => {
     const newCol = tempDiv.firstChild;
     document.getElementById("mainRow").innerHTML = "";
     document.getElementById("mainRow").appendChild(newCol); // ✅ This appends it at the end
-  });
+  }
+
+
+  
   socket.on("connectionApproved", (message) => {
     const col = `
         <div class="col-12 grid-margin stretch-card" id="goAhead">

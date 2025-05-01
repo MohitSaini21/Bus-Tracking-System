@@ -32,42 +32,43 @@ export default async function saveLogs(busObject) {
     }
 
     if (log) {
-      // 3️⃣ If log exists: update it — either append new stops or update existing ones
-      for (const newStop of stopsData) {
-        const existingStop = log.stops.find(
-          (s) => s.stop.toString() === newStop.stop
-        );
+      // Only update stops if stopsData is not empty
+      if (stopsData.length > 0) {
+        for (const newStop of stopsData) {
+          const existingStop = log.stops.find(
+            (s) => s.stop.toString() === newStop.stop
+          );
 
-        if (existingStop) {
-          // Update fields if they are not already set
-          if (newStop.morningArrival && !existingStop.morningArrival) {
-            existingStop.morningArrival = newStop.morningArrival;
+          if (existingStop) {
+            if (newStop.morningArrival && !existingStop.morningArrival) {
+              existingStop.morningArrival = newStop.morningArrival;
+            }
+            if (newStop.eveningArrival && !existingStop.eveningArrival) {
+              existingStop.eveningArrival = newStop.eveningArrival;
+            }
+          } else {
+            log.stops.push(newStop);
           }
-          if (newStop.eveningArrival && !existingStop.eveningArrival) {
-            existingStop.eveningArrival = newStop.eveningArrival;
-          }
-        } else {
-          // Add new stop entry
-          log.stops.push(newStop);
         }
       }
-      if (busObject.path && busObject.path.length > 0) {
 
-        // adding the exsiting pah log with the new one got it . 
+      if (busObject.path && busObject.path.length > 0) {
         log.path = [...log.path, ...busObject.path];
       }
+
       await log.save();
       console.log(`📝 Updated log for bus ${busObject.busId} on today.`);
     } else {
-      // 4️⃣ If no log exists: create a new one
       const newLog = new BusActivityLog({
         bus: busId,
         date: new Date(),
         stops: stopsData,
-        path: busObject.path || [],
+        path: busObject.path ? busObject.path : [],
       });
 
       await newLog.save();
+      busObject.path = [];
+
       console.log(`🆕 Created new log for bus ${busObject.busId}`);
     }
   } catch (err) {

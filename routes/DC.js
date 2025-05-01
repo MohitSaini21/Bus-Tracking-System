@@ -214,4 +214,9 @@ router.post(
     }
   }
 );
+
+router.get("/logout", (req, res) => {
+  res.clearCookie("authToken"); // clear the correct cookie
+  return res.redirect("/driverConductorLogin");
+});
 export { router as dcRouter };

@@ -1,6 +1,7 @@
 import * as turf from "@turf/turf";
 
-// Define a polygon using latitudes and longitudes
+import { logBusEvent } from "./updateExitEntry.js";
+
 const tmuHeadCampus = turf.polygon([
   [
     [78.66361657971697, 28.822244722324484],
@@ -12,10 +13,14 @@ const tmuHeadCampus = turf.polygon([
   ],
 ]);
 
-export function checkEntryExit(io, data, administratorIds) {
+export async function checkEntryExit(io, data, administratorIds) {
   const { previousPoint, currentPoint, bus } = data;
 
-  // Convert the points into GeoJSON format
+  if (!previousPoint || !currentPoint || !bus) {
+    console.warn("⚠️ Incomplete data provided to checkEntryExit.");
+    return;
+  }
+
   const previousGeoJsonPoint = turf.point([
     previousPoint.longitude,
     previousPoint.latitude,
@@ -25,7 +30,6 @@ export function checkEntryExit(io, data, administratorIds) {
     currentPoint.latitude,
   ]);
 
-  // Check if the previous and current points are inside the polygon (campus)
   const wasInside = turf.booleanPointInPolygon(
     previousGeoJsonPoint,
     tmuHeadCampus
@@ -35,48 +39,27 @@ export function checkEntryExit(io, data, administratorIds) {
     tmuHeadCampus
   );
 
-  // Log entry or exit based on the previous and current positions
-  if (!wasInside && isInside) {
-    // Temproary
-
-    // Temprorary Alerts
-
-    if (administratorIds.length) {
-      for (let i = 0; i < administratorIds.length; i++) {
-        io.to(administratorIds[i]).emit(
-          "campusAlert",
-          `Bus ${bus.busNumber} has entered the campus.`
-        );
-      }
+  try {
+    if (!wasInside && isInside) {
+      console.log(`🟢 Bus ${bus.busNumber} has ENTERED the campus.`);
+      await logBusEvent({
+        busId: bus._id,
+        eventType: "Entered",
+        lat: currentPoint.latitude,
+        lon: currentPoint.longitude,
+      });
+    } else if (wasInside && !isInside) {
+      console.log(`🔴 Bus ${bus.busNumber} has EXITED the campus.`);
+      await logBusEvent({
+        busId: bus._id,
+        eventType: "Exited",
+        lat: currentPoint.latitude,
+        lon: currentPoint.longitude,
+      });
+    } else {
+      console.log(`🟡 Bus ${bus.busNumber} has no entry/exit change.`);
     }
-
-    // Temprorary Alerts
-    // Temproary
-
-    console.log(`Bus ${bus.busNumber} has entered the campus.`);
-  } else if (wasInside && !isInside) {
-
-        if (administratorIds.length) {
-          for (let i = 0; i < administratorIds.length; i++) {
-            io.to(administratorIds[i]).emit(
-              "campusAlert",
-              `Bus ${bus} has exited the campus.`
-            );
-          }
-        }
-    console.log(`Bus ${bus} has exited the campus.`);
-  } else {
-
-      if (administratorIds.length) {
-        for (let i = 0; i < administratorIds.length; i++) {
-          io.to(administratorIds[i]).emit(
-            "campusAlert",
-            `Bus ${bus.busNumber} is ${isInside ? "inside" : "outside"} the campus`
-          );
-        }
-      }
-    console.log(
-      `Bus ${bus.busNumber} is ${isInside ? "inside" : "outside"} the campus.`
-    );
+  } catch (err) {
+    console.error("❌ Failed to log entry/exit:", err.message);
   }
 }
