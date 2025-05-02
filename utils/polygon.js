@@ -13,7 +13,7 @@ const tmuHeadCampus = turf.polygon([
   ],
 ]);
 
-export async function checkEntryExit(io, data, administratorIds) {
+export async function checkEntryExit(data) {
   const { previousPoint, currentPoint, bus } = data;
 
   if (!previousPoint || !currentPoint || !bus) {

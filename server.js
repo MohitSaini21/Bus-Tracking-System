@@ -155,12 +155,13 @@ function calculateSpeed(lat1, lon1, t1, lat2, lon2, t2) {
 function updateBusDistance(
   io,
   busId,
+  busNumber,
   latitude,
   longitude,
   timestamp,
   accuracy
 ) {
-  const MIN_TIME_DIFF = 30 * 1000; // 30 seconds
+  const MIN_TIME_DIFF = 60 * 1000; // 30 seconds
   const MIN_DIST = 5; // in meters
 
   if (!distanceSession[busId]) {
@@ -178,6 +179,19 @@ function updateBusDistance(
     console.log("Skipping update distacne : too frequent");
     return;
   }
+  const data = {
+    previousPoint: {
+      latitude: lastLocation.latitude,
+      longitude: lastLocation.longitude,
+    }, // Example coordinates
+    currentPoint: { latitude, longitude }, // Example coordinates
+    bus: {
+      _id: busId,
+      busNumber: busNumber,
+      // any other properties you may need
+    },
+  };
+  checkEntryExit(data);
 
   const distance = calculateDistance(
     lastLocation.latitude,
@@ -185,6 +199,7 @@ function updateBusDistance(
     latitude,
     longitude
   );
+
   const speed = calculateSpeed(
     lastLocation.latitude,
     lastLocation.longitude,
@@ -199,6 +214,7 @@ function updateBusDistance(
       io.to(id).emit("averageSpeed", speed);
     });
   }
+
   const combinedAccuracy = (accuracy || 0) + (lastLocation.accuracy || 0);
 
   if (distance < Math.max(MIN_DIST, combinedAccuracy)) {
@@ -407,9 +423,9 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("towPoints", (data) => {
-    checkEntryExit(io, data, administratorIds);
-  });
+  // socket.on("towPoints", (data) => {
+  //   checkEntryExit(data);
+  // });
 
   socket.on("busLocationUpdate", (data) => {
     const busId = data.bus._id;
@@ -418,6 +434,7 @@ io.on("connection", (socket) => {
     updateBusDistance(
       io,
       data.bus._id,
+      data.bus.busNumber,
       data.latitude,
       data.longitude,
       data.timestamp,
@@ -573,6 +590,8 @@ io.on("connection", (socket) => {
               socket.liveBusId,
               distanceSession[socket.liveBusId].totalDistance
             );
+
+            delete distanceSession[socket.liveBusId];
           }
         } else {
           console.log("No distance data found for bus ID:", socket.liveBusId);

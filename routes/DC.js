@@ -198,13 +198,15 @@ router.post(
         return res.status(400).json({ message: "No file uploaded." });
       }
 
+      console.log(req.file);
+
       // Respond with success and uploaded file info
       return res.status(200).json({
         sucess: true,
         message: "Stream chunk saved successfully.",
         file: {
           filename: req.file.filename,
-          path: uploadedFilePath,
+
           size: req.file.size,
         },
       });

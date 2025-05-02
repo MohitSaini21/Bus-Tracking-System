@@ -1,10 +1,12 @@
+var recorder;
+var chunks = [];
 setTimeout(() => {
   const socket = io({
     reconnection: true,
     reconnectionAttempts: Infinity, // Keep trying forever
     reconnectionDelay: 3000, // Start with 3s delay
     reconnectionDelayMax: 10000,
-    reconnection: false,
+
     query: {
       liveBusId: bus._id, // Convert the _id to a string (if it’s a MongoDB ObjectId)
     },
@@ -17,7 +19,6 @@ setTimeout(() => {
       console.log("Socket disconnected properly before leaving.");
     }
   });
-
 
   socket.on("disconnect", (reason) => {
     if (reason == "io server disconnect") {
@@ -42,6 +43,9 @@ Connecting... Please wait.
       const newCol = tempDiv.firstChild;
 
       const mainRow = document.getElementById("mainRow");
+      const rowMain = document.getElementById("rowMain");
+      rowMain.innerHTML = " ";
+
       mainRow.innerHTML = "";
       mainRow.appendChild(newCol);
     }
@@ -78,8 +82,6 @@ Connecting... Please wait.
     document.getElementById("mainRow").appendChild(newCol); // ✅ This appends it at the end
   }
 
-
-  
   socket.on("connectionApproved", (message) => {
     const col = `
         <div class="col-12 grid-margin stretch-card" id="goAhead">
@@ -92,8 +94,18 @@ Connecting... Please wait.
         To Stop providing  your bus location, please click the <code>Checked Out</code> button.
     </p>
                     <div class="template-demo">
-                                   <button type="button" class="btn btn-secondary btn-fw"><a href="/DC">Checked Out</a></button>
-              <button type="button" class="btn btn-secondary btn-fw"><a href="  /DC/goLive">Stop Streaming </a></button>
+<button type="button" class="btn btn-secondary btn-fw">
+  <a href="/DC">Checked Out</a>
+</button>
+<button type="button" class="btn btn-secondary btn-fw">
+  <a href="/DC/goLive">Stop Streaming</a>
+</button>
+<button type="button" class="btn btn-secondary btn-fw" id="saveStream" onclick="saveStream()">
+  Save Stream
+</button>
+
+
+              
                       
              
                       
@@ -228,35 +240,38 @@ Connecting... Please wait.
     });
   };
 
+  // it will get get deleted soon
   // Poll every 5 seconds
-  setInterval(async () => {
-    try {
-      const latestPoint = await getCurrentLocation();
 
-      if (!previousPoint) {
-        previousPoint = latestPoint;
-        return;
-      }
+  // it will get get deleted soon
+  // setInterval(async () => {
+  //     try {
+  //         const latestPoint = await getCurrentLocation();
 
-      currentPoint = latestPoint;
+  //         if (!previousPoint) {
+  //             previousPoint = latestPoint;
+  //             return;
+  //           }
 
-      // Send just lat & lng
-      const data = {
-        previousPoint,
-        currentPoint,
+  //     currentPoint = latestPoint;
 
-        bus,
-      };
+  //     // Send just lat & lng
+  //     const data = {
+  //       previousPoint,
+  //       currentPoint,
 
-      console.log("Sending only lat/lng:", data);
-      socket.emit("towPoints", data);
+  //       bus,
+  //     };
 
-      // Prepare for next run
-      previousPoint = currentPoint;
-    } catch (err) {
-      console.warn("Location fetch failed:", err.message);
-    }
-  }, 5000);
+  //     console.log("Sending only lat/lng:", data);
+  //     socket.emit("towPoints", data);
+
+  //     // Prepare for next run
+  //     previousPoint = currentPoint;
+  //   } catch (err) {
+  //     console.warn("Location fetch failed:", err.message);
+  //   }
+  // }, 5000);
 
   const iceConfig = {
     iceServers: [
@@ -268,6 +283,7 @@ Connecting... Please wait.
   };
 
   var peerConnection;
+
   async function collectionIceCandidateInfo() {
     peerConnection = new RTCPeerConnection(iceConfig);
 
@@ -275,7 +291,17 @@ Connecting... Please wait.
     const stream = await navigator.mediaDevices.getUserMedia({
       video: true,
     });
+    recorder = new MediaRecorder(stream);
 
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) chunks.push(event.data);
+    };
+
+    recorder.start();
+    recorder.onstop = () => {
+      const completeBlob = new Blob(chunks, { type: "video/webm" });
+      sendBlobToServer(completeBlob);
+    };
     // Add video tracks to the peer connection
     stream
       .getTracks()
@@ -332,3 +358,39 @@ Connecting... Please wait.
 
   // Caputuring the media in chunks and sending  to ther server go tit
 }, 1000);
+
+function saveStream() {
+  recorder.stop();
+}
+
+async function sendBlobToServer(blob) {
+  console.log(blob);
+  const url = "/DC/saveStreamChunks";
+  if (!blob) {
+    console.error("No Blob provided!");
+    alert("No video data available to upload.");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("busStreamVideo", blob, "busStreamVideo.webm");
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+    if (data.sucess) {
+      document.getElementById("saveStream").textContent = "Saved";
+      alert("🎉 Video Saved Successfully! ✅");
+      document.getElementById("saveStream").disabled = true; // Disable the button
+    } else {
+      alert(data.message);
+    }
+  } catch (error) {
+    console.error("Error during the request:", error);
+    alert(error.message);
+  }
+}

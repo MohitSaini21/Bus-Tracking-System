@@ -206,33 +206,33 @@ Connecting... Please wait.
     });
   };
 
-  // Poll every 5 seconds
-  setInterval(async () => {
-    try {
-      const latestPoint = await getCurrentLocation();
+  // // Poll every 5 seconds
+  // setInterval(async () => {
+  //   try {
+  //     const latestPoint = await getCurrentLocation();
 
-      if (!previousPoint) {
-        previousPoint = latestPoint;
-        return;
-      }
+  //     if (!previousPoint) {
+  //       previousPoint = latestPoint;
+  //       return;
+  //     }
 
-      currentPoint = latestPoint;
+  //     currentPoint = latestPoint;
 
-      // Send just lat & lng
-      const data = {
-        previousPoint,
-        currentPoint,
+  //     // Send just lat & lng
+  //     const data = {
+  //       previousPoint,
+  //       currentPoint,
 
-        bus,
-      };
+  //       bus,
+  //     };
 
-      console.log("Sending only lat/lng:", data);
-      socket.emit("towPoints", data);
+  //     console.log("Sending only lat/lng:", data);
+  //     socket.emit("towPoints", data);
 
-      // Prepare for next run
-      previousPoint = currentPoint;
-    } catch (err) {
-      console.warn("Location fetch failed:", err.message);
-    }
-  }, 5000);
+  //     // Prepare for next run
+  //     previousPoint = currentPoint;
+  //   } catch (err) {
+  //     console.warn("Location fetch failed:", err.message);
+  //   }
+  // }, 5000);
 }, 1000);

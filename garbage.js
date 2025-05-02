@@ -34,6 +34,8 @@ navigator.mediaDevices
     alert("persmiison deneided");
     console.error("Error accessing media devices:", error);
   });
+
+  
 async function sendBlobToServer(blob) {
   const url = "/DC/saveStreamChunks";
   if (!blob) {
