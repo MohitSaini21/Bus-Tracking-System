@@ -4,6 +4,8 @@ import { config } from "dotenv"; // For environment variable management
 import updateDistance from "./utils/distance.js";
 import evaluateBusProximityToStops from "./utils/stopsProximity.js";
 import { dcRouter } from "./routes/DC.js";
+import { Worker } from "worker_threads";
+import os from "os";
 
 import { administratorRouter } from "./routes/administrator.js";
 import { adminRouter } from "./routes/admin.js";
@@ -248,6 +250,109 @@ function updateBusDistance(
   );
 }
 
+//  NewArch Based Code
+
+const MAX_WORKERS = os.cpus().length - 1; // 8 in your case
+const workers = [];
+const availableWorkers = [];
+
+for (let i = 0; i < MAX_WORKERS; i++) {
+  const worker = new Worker("./workerTask.js");
+  workers.push(worker);
+  availableWorkers.push(worker);
+}
+// ---- TASK & QUEUE MAPS ----
+const taskQueues = new Map(); // Map<busId, Queue<Task>>
+const isProcessing = new Map(); // Map<busId, Boolean>
+
+// ---- Add task to bus queue ----
+function addTask(task) {
+  if (!taskQueues.has(task.bus._id)) {
+    taskQueues.set(task.bus._id, []);
+    isProcessing.set(task.bus._id, false);
+  }
+
+  taskQueues.get(task.bus._id).push(task);
+  processQueue(task.bus._id); // Try to start processing
+}
+
+function processQueue(busId) {
+  if (isProcessing.get(busId)) return;
+
+  const queue = taskQueues.get(busId);
+  if (!queue || queue.length === 0) return;
+
+  if (availableWorkers.length > 0) {
+    const task = queue.shift();
+    const worker = availableWorkers.shift();
+    const now = new Date();
+    const start = Date.now();
+
+    if (
+      !lastEvaluated[busId] ||
+      now - lastEvaluated[busId].lastEvaluations >= locationEvaluationCooldown
+    ) {
+      if (!lastEvaluated[busId]) {
+        lastEvaluated[busId] = {
+          busId,
+          reachedStops: {},
+          lastEvaluations: 0,
+        };
+      }
+
+      lastEvaluated[busId].lastEvaluations = now;
+      const busObject = lastEvaluated[busId];
+      isProcessing.set(busId, true);
+
+
+      
+
+      worker.postMessage({ task, busObject });
+
+      worker.once("message", (msg) => {
+   
+        
+        if (msg?.updatedBusObject && msg?.busId) {
+          isProcessing.set(msg.busId, false);
+          lastEvaluated[msg.busId] = msg.updatedBusObject;
+          availableWorkers.push(worker);
+          const timeTaken = Date.now() - start;
+          console.log(`✅ Worker done in ${timeTaken}ms`);
+          processQueue(msg.busId);
+        } else {
+          console.warn("❌ Malformed message from worker:", msg);
+          isProcessing.set(busId, false);
+          availableWorkers.push(worker);
+          processQueue(busId);
+        }
+      });
+
+      worker.once("error", (err) => {
+        console.error("Worker crashed:", err);
+        isProcessing.set(busId, false);
+        availableWorkers.push(worker);
+        processQueue(busId);
+      });
+
+      worker.once("exit", (code) => {
+        if (code !== 0) {
+          console.warn(`Worker exited abnormally with code ${code}`);
+        }
+        isProcessing.set(busId, false);
+        availableWorkers.push(worker);
+        processQueue(busId);
+      });
+    } else {
+      // Cooldown not passed, skip this round
+      availableWorkers.push(worker);
+      processQueue(busId);
+    }
+  }
+}
+
+
+//  NewArch Based Code
+
 io.on("connection", (socket) => {
   if (socket.handshake.query.busId) {
     const busId = socket.handshake.query.busId;
@@ -426,49 +531,13 @@ io.on("connection", (socket) => {
   // });
 
   socket.on("busLocationUpdate", (data) => {
-    const busId = data.bus._id;
-    const now = Date.now();
-
-    updateBusDistance(
-      io,
-      data.bus._id,
-      data.bus.busNumber,
-      data.latitude,
-      data.longitude,
-      data.timestamp,
-      data.accuracy
-    );
-
-    if (
-      !lastEvaluated[busId] ||
-      now - lastEvaluated[busId].lastEvaluations >= locationEvaluationCooldown
-    ) {
-      // Initialize the object if it doesn't exist
-      if (!lastEvaluated[busId]) {
-        lastEvaluated[busId] = { busId };
-      }
-
-      lastEvaluated[busId].lastEvaluations = now;
-
-      // ⛳️ Evaluate: has the bus reached a stop?
-
-      evaluateBusProximityToStops(
-        io,
-        data,
-        lastEvaluated[busId],
-        administratorIds,
-        data.timestamp
-      );
-    }
+    addTask(data);
 
     if (data.bus && busConnections[data.bus._id]) {
       for (let i = 0; i < busConnections[data.bus._id].length; i++) {
         io.to(busConnections[data.bus._id][i]).emit("receivelocation", data);
       }
     }
-
-    if (!lastLocation[data.bus._id]) lastLocation[data.bus._id] = {};
-    lastLocation[data.bus._id] = data;
 
     if (allAdmins.length) {
       for (let i = 0; i < allAdmins.length; i++) {
@@ -482,6 +551,19 @@ io.on("connection", (socket) => {
       }
     }
   });
+  // socket.on("busLocationUpdate", (data) => {
+
+  //   // updateBusDistance(
+  //   //   io,
+  //   //   data.bus._id,
+  //   //   data.bus.busNumber,
+  //   //   data.latitude,
+  //   //   data.longitude,
+  //   //   data.timestamp,
+  //   //   data.accuracy
+  //   // );
+
+  // });
 
   // You can listen for the disconnect event here
   socket.on("disconnect", async () => {
@@ -613,5 +695,5 @@ server.listen(PORT, () => {
   );
   console.log(`✅ Server is running and listneing at the port ${PORT}`);
 
-  // hey there how are you 
+  // hey there how are you
 });
