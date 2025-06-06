@@ -167,6 +167,7 @@ Connecting... Please wait.
         console.log("Emitting Cached Location:", lastLocation);
         socket.emit("busLocationUpdate", lastLocation);
       } else {
+        console.log("Sending Nothing");
       }
     },
     {

@@ -557,8 +557,9 @@ router.post("/busImages/:id", upload.any(), async (req, res) => {
 
 router.get("/tracker", async (req, res) => {
   const user = await CORE.findById(req.user.id);
+
   if (user) {
-    return res.render("administrator/tracker.ejs"), { user };
+    return res.render("administrator/liveViews.ejs", { user });
   } else {
     res.clearCookie("authToken"); // clear the correct cookie
     return res.redirect("/coreLogin");

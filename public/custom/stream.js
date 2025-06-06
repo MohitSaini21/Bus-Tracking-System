@@ -394,3 +394,6 @@ async function sendBlobToServer(blob) {
     alert(error.message);
   }
 }
+
+
+

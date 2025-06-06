@@ -80,8 +80,6 @@ app.use(
   adminRouter
 );
 
-// app.use("/admin");
-
 app.use("/", publicRouter);
 
 app.use(
@@ -614,4 +612,6 @@ server.listen(PORT, () => {
     "mongodb+srv://mohitsainisaini2680:misbaansari20@cluster0.wjx3j.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
   );
   console.log(`✅ Server is running and listneing at the port ${PORT}`);
+
+  // hey there how are you 
 });
