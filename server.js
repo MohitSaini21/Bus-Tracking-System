@@ -107,148 +107,33 @@ let liveBuses = [];
 
 let adminConnectionsBus = {};
 
-let lastLocation = {};
+let lastLocation = new Map();
 
 let locationEvaluationCooldown = 5 * 1000; // ms (5 seconds)
 let lastEvaluated = {}; // { [busId]: timestamp }
 
 // Cron Jobs
-cron.schedule("0 0 * * *", () => {
-  console.log("🕛 Midnight reset: Clearing all tracking state...");
+cron.schedule("45 23 * * *", () => {
+  console.log(
+    "🕥 11:45 PM: Saving full-day logs as yesterday’s final tracking..."
+  );
+
   for (const busId in lastEvaluated) {
-    delete lastEvaluated[busId]; // full reset
+    const busObj = lastEvaluated[busId];
+    if (busObj) {
+      saveLogs(busObj)
+        .then(() => {
+          delete lastEvaluated[busId]; // ✅ delete only after successful save
+          console.log(`🧹 Deleted memory for bus ${busId}`);
+        })
+        .catch((err) => {
+          console.error(`❌ Failed to save for bus ${busId}:`, err.message);
+        });
+    }
   }
 });
+
 // Cron Jobs
-
-// About the Distance
-
-const distanceSession = {}; // { busId: { totalDistance, lastLocation: { lat, lng, timestamp } } }
-
-function calculateDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371; // Earth's radius in kilometers
-  const toRad = (deg) => (deg * Math.PI) / 180;
-
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-
-  const distanceInKm = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return distanceInKm * 1000; // ✅ Returns distance in meters
-}
-function calculateSpeed(lat1, lon1, t1, lat2, lon2, t2) {
-  const distance = calculateDistance(lat1, lon1, lat2, lon2); // in meters
-  const timeDiff = (t2 - t1) / 1000; // in seconds
-
-  if (timeDiff === 0) return 0;
-
-  const speedMetersPerSecond = distance / timeDiff;
-  const speedKmPerHour = (speedMetersPerSecond * 3600) / 1000;
-
-  return {
-    mps: speedMetersPerSecond.toFixed(2),
-    kmph: speedKmPerHour.toFixed(2),
-  };
-}
-function updateBusDistance(
-  io,
-  busId,
-  busNumber,
-  latitude,
-  longitude,
-  timestamp,
-  accuracy
-) {
-  const MIN_TIME_DIFF = 60 * 1000; // 30 seconds
-  const MIN_DIST = 5; // in meters
-
-  if (!distanceSession[busId]) {
-    distanceSession[busId] = {
-      totalDistance: 0,
-      lastLocation: { latitude, longitude, timestamp, accuracy },
-    };
-    return;
-  }
-
-  const { lastLocation } = distanceSession[busId];
-
-  const timeDiff = timestamp - lastLocation.timestamp;
-  if (timeDiff < MIN_TIME_DIFF) {
-    console.log("Skipping update distacne : too frequent");
-    return;
-  }
-  const data = {
-    previousPoint: {
-      latitude: lastLocation.latitude,
-      longitude: lastLocation.longitude,
-    }, // Example coordinates
-    currentPoint: { latitude, longitude }, // Example coordinates
-    bus: {
-      _id: busId,
-      busNumber: busNumber,
-      // any other properties you may need
-    },
-  };
-  checkEntryExit(data);
-
-  const distance = calculateDistance(
-    lastLocation.latitude,
-    lastLocation.longitude,
-    latitude,
-    longitude
-  );
-
-  const speed = calculateSpeed(
-    lastLocation.latitude,
-    lastLocation.longitude,
-    lastLocation.timestamp,
-    latitude,
-    longitude,
-    timestamp
-  );
-  // ✅ Notify all connected admins for this bus spped how about this
-  if (adminConnectionsBus[busId]) {
-    adminConnectionsBus[busId].forEach((id) => {
-      io.to(id).emit("averageSpeed", speed);
-    });
-  }
-
-  const combinedAccuracy = (accuracy || 0) + (lastLocation.accuracy || 0);
-
-  if (distance < Math.max(MIN_DIST, combinedAccuracy)) {
-    console.log(
-      `Skipping update: distance ${distance.toFixed(
-        2
-      )}m < accuracy error ${combinedAccuracy}m`
-    );
-
-    distanceSession[busId].lastLocation.timestamp = timestamp;
-    return;
-  }
-
-  // Ensure totalDistance is always an integer
-  distanceSession[busId].totalDistance += Math.round(distance); // Rounds to nearest integer
-  distanceSession[busId].lastLocation = {
-    latitude,
-    longitude,
-    timestamp,
-    accuracy,
-  };
-  // ✅ Notify all connected admins for this bus
-  if (adminConnectionsBus[busId]) {
-    adminConnectionsBus[busId].forEach((id) => {
-      io.to(id).emit("distanceCovered", distanceSession[busId]);
-    });
-  }
-
-  console.log(
-    `✅ Updated: ${distance.toFixed(2)}m added | Total: ${distanceSession[
-      busId
-    ].totalDistance.toFixed(0)}m`
-  );
-}
 
 //  NewArch Based Code
 
@@ -304,14 +189,9 @@ function processQueue(busId) {
       const busObject = lastEvaluated[busId];
       isProcessing.set(busId, true);
 
-
-      
-
       worker.postMessage({ task, busObject });
 
       worker.once("message", (msg) => {
-   
-        
         if (msg?.updatedBusObject && msg?.busId) {
           isProcessing.set(msg.busId, false);
           lastEvaluated[msg.busId] = msg.updatedBusObject;
@@ -344,12 +224,12 @@ function processQueue(busId) {
       });
     } else {
       // Cooldown not passed, skip this round
+      console.log("Skipping frequent Evulatating proximiy");
       availableWorkers.push(worker);
       processQueue(busId);
     }
   }
 }
-
 
 //  NewArch Based Code
 
@@ -428,14 +308,6 @@ io.on("connection", (socket) => {
     }
   }
 
-  socket.on("distanceTravelled", (busId, callback) => {
-    const session = distanceSession[busId];
-    if (session) {
-      callback(Math.round(session.totalDistance)); // return whole number in meters
-    } else {
-      callback(0);
-    }
-  });
   // allStream
   socket.on("allStream", (callback) => {
     callback(Object.keys(peers));
@@ -515,8 +387,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  // chekcin bus is live or not
-  // public to check whterthe bus is live or not
   socket.on("lastLocation", (busId, callback) => {
     if (!liveBuses.includes(busId)) {
       callback({
@@ -526,12 +396,9 @@ io.on("connection", (socket) => {
     }
   });
 
-  // socket.on("towPoints", (data) => {
-  //   checkEntryExit(data);
-  // });
-
   socket.on("busLocationUpdate", (data) => {
     addTask(data);
+    lastLocation.set(data.bus._id, locationData);
 
     if (data.bus && busConnections[data.bus._id]) {
       for (let i = 0; i < busConnections[data.bus._id].length; i++) {
@@ -551,21 +418,7 @@ io.on("connection", (socket) => {
       }
     }
   });
-  // socket.on("busLocationUpdate", (data) => {
 
-  //   // updateBusDistance(
-  //   //   io,
-  //   //   data.bus._id,
-  //   //   data.bus.busNumber,
-  //   //   data.latitude,
-  //   //   data.longitude,
-  //   //   data.timestamp,
-  //   //   data.accuracy
-  //   // );
-
-  // });
-
-  // You can listen for the disconnect event here
   socket.on("disconnect", async () => {
     if (socket.bus) {
       const busId = socket.bus; // Now we can access busId from the socket object
@@ -635,8 +488,6 @@ io.on("connection", (socket) => {
           );
         }
       }
-      // const used = process.memoryUsage();
-      // console.log(`Memory Usage: ${used.heapUsed}`);
     } else {
       if (socket.liveBusId) {
         const busId = socket.liveBusId;
@@ -663,18 +514,6 @@ io.on("connection", (socket) => {
 
         if (lastEvaluated[socket.liveBusId]) {
           saveLogs(lastEvaluated[socket.liveBusId]);
-        }
-        if (distanceSession[socket.liveBusId]) {
-          if (distanceSession[socket.liveBusId].totalDistance > 0) {
-            await updateDistance(
-              socket.liveBusId,
-              distanceSession[socket.liveBusId].totalDistance
-            );
-
-            delete distanceSession[socket.liveBusId];
-          }
-        } else {
-          console.log("No distance data found for bus ID:", socket.liveBusId);
         }
       }
     }
