@@ -7,8 +7,8 @@
       name="viewport"
       content="width=device-width, initial-scale=1, shrink-to-fit=no"
     />
-    <title>Corona Admin</title>
-    <!-- plugins:css -->
+    <title>Admin and Administrator Login Page</title>
+
     <link
       rel="stylesheet"
       href="../../assets/vendors/mdi/css/materialdesignicons.min.css"
@@ -34,6 +34,50 @@
         background-position: center !important; /* Center the background image */
         background-repeat: no-repeat !important; /* Prevent the background from repeating */
       }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f5f7fa;
+        color: #333;
+      }
+
+      .card {
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .form-label {
+        font-size: 1rem;
+      }
+
+      .p_input {
+        font-size: 1rem;
+        padding: 10px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        transition: border-color 0.3s ease;
+      }
+
+      .p_input:focus {
+        border-color: #4a90e2;
+        outline: none;
+        box-shadow: 0 0 6px rgba(74, 144, 226, 0.5);
+      }
+
+      .btn-primary {
+        background-color: #004085;
+        border-color: #004085;
+        font-size: 1rem;
+      }
+
+      .btn-primary:hover {
+        background-color: #003366;
+        border-color: #003366;
+      }
+
+      .text-muted {
+        color: #6c757d;
+      }
     </style>
   </head>
   <body>
@@ -44,41 +88,70 @@
             class="content-wrapper full-page-wrapper d-flex align-items-center auth login-bg"
             id="auth"
           >
-            <div class="card col-lg-4 mx-auto">
+            <div class="card col-lg-4 mx-auto shadow-sm">
               <div class="card-body">
-                <h3 class="card-title text-left">Admin and Administrator ID</h3>
-                <form id="loginForm">
-                  <div class="form-group">
-                    <label>Enter Your Admin and Administrator ID</label>
+                <h3
+                  class="card-title text-center mb-4"
+                  style="
+                    font-weight: 600;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                  "
+                >
+                  Admin/Administrator ID
+                </h3>
+                <form id="loginForm" novalidate>
+                  <div class="form-group mb-3">
+                    <label
+                      for="userId"
+                      class="form-label"
+                      style="font-weight: 500"
+                    >
+                      Admin/Administrator ID
+                    </label>
                     <input
                       type="text"
                       class="form-control p_input"
                       id="userId"
+                      placeholder="Enter your Admin/Administrator ID"
+                      required
                     />
                   </div>
-                  <div class="form-group">
-                    <label>Password</label>
+                  <div class="form-group mb-4">
+                    <label
+                      for="password"
+                      class="form-label"
+                      style="font-weight: 500"
+                    >
+                      Password
+                    </label>
                     <input
-                      type="text"
+                      type="password"
                       class="form-control p_input"
                       id="password"
+                      autocomplete="current-password"
+                      placeholder="Enter your password"
+                      required
                     />
                   </div>
-                  <div
-                    class="form-group d-flex align-items-center justify-content-between"
-                  ></div>
+
                   <div class="text-center">
                     <button
                       type="submit"
+                      id="submit"
                       class="btn btn-primary btn-block enter-btn"
+                      style="font-weight: 600"
                     >
                       Login
                     </button>
                   </div>
 
-                  <p class="sign-up">
-                    This form has compeletly to do with the Admin and
-                    Administrator .
+                  <p
+                    class="text-muted text-center mt-3"
+                    style="font-size: 0.9rem"
+                  >
+                    <em id="mesg"
+                      >Access restricted to authorized  Admin/Administrator ID only.</em
+                    >
                   </p>
                 </form>
               </div>
@@ -90,6 +163,7 @@
       </div>
       <!-- page-body-wrapper ends -->
     </div>
+
     <!-- container-scroller -->
     <!-- plugins:js -->
     <script src="../../assets/vendors/js/vendor.bundle.base.js"></script>
@@ -109,47 +183,80 @@
         .addEventListener("submit", function (event) {
           event.preventDefault(); // Prevent form submission (page reload)
 
+          // Clear any previous message
+          const msgElem = document.getElementById("mesg");
+
           // Collect data from form fields
-          const userId = document.getElementById("userId").value;
-          const password = document.getElementById("password").value;
+          const userId = document.getElementById("userId").value.trim();
+          const password = document.getElementById("password").value.trim();
 
           // Prepare data to be sent in the POST request
-          const data = {
-            userId: userId,
-            password: password,
-          };
+          if (userId.length == 0 || password.length == 0) {
+            msgElem.style.color = "red";
+            msgElem.innerText =
+              "Please complete all required fields before submitting the form";
+          }
 
-          console.table(data);
+          const data = { userId, password };
 
-          // Specify the API endpoint
-          const apiEndpoint = "/adminLogin"; // Replace with your actual API URL
+          msgElem.style.color = "green";
+
+          msgElem.innerText = "Validating............";
 
           // Make the POST request
-          fetch(apiEndpoint, {
+          fetch("/adminLogin", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
             body: JSON.stringify(data),
           })
-            .then((response) => response.json())
-            .then((data) => {
-              if (data.success) {
-                window.location.reload();
-              } else {
-                alert(data.message);
+            .then(async (response) => {
+              const data = await response.json();
+
+              if (!response.ok) {
+                if (response.status === 429) {
+                  msgElem.style.color = "red";
+                  const submitBtn = document.getElementById("submit");
+                  submitBtn.setAttribute("disabled", "disabled");
+
+                  // Start 60-second countdown timer for button re-enable
+                  let countdown = data.retryAfter || 60; // fallback to 60 if not present
+                  msgElem.innerText = `Too many requests. Please wait ${countdown} seconds before trying again.`;
+                  const timer = setInterval(() => {
+                    countdown--;
+                    if (countdown > 0) {
+                      msgElem.innerText = `Too many requests. Please wait ${countdown} seconds before trying again.`;
+                    } else {
+                      clearInterval(timer);
+                      msgElem.innerText = "";
+                      submitBtn.removeAttribute("disabled");
+                    }
+                  }, 1000);
+
+                  return;
+                } else {
+                  // Show error message in red
+                  msgElem.style.color = "red";
+                  msgElem.innerText =
+                    data.message || "An unexpected error occurred.";
+                  return;
+                }
               }
-              // You can handle the response here (e.g., show a success message, redirect, etc.)
+
+              // Success message in green
+              msgElem.style.color = "green";
+              msgElem.innerText =
+                data.message || "Login successful. Redirecting...";
+
+              setTimeout(() => {
+                window.location.href = "/admin";
+              }, 2000);
             })
             .catch((error) => {
-              // If it's a network issue or any other error
-              if (error.name === "TypeError") {
-                alert(
-                  "Network issue: Unable to make the request. Please check your connection and try again."
-                );
-              } else {
-                alert("An error occurred: " + error.message);
-              }
+              msgElem.style.color = "red";
+              msgElem.innerText =
+                error.message || "An unexpected error occurred.";
             });
         });
     </script>

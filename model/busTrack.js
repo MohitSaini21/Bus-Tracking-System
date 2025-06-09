@@ -4,10 +4,8 @@ const { Schema, model } = mongoose;
 
 const stopLogSchema = new Schema({
   stop: { type: Schema.Types.ObjectId, ref: "Stop", required: true },
-  morningArrival: Date,
-  eveningArrival: Date,
-  morningDeparture: Date,
-  eveningDeparture: Date,
+  morningTime: Date,
+  eveningTime: Date,
 });
 
 const busActivityLogSchema = new Schema({
@@ -23,16 +21,11 @@ const busActivityLogSchema = new Schema({
   events: [
     {
       event: { type: String, enum: ["Entered", "Exited"], required: true },
-      gateNumber: { type: String, required: false },
+
       timestamp: { type: Date, required: true },
       coordinates: { type: [Number], required: true }, // [longitude, latitude]
     },
   ],
-  distance: {
-    type: Number, // Assuming this is the total distance in meters or kilometers
-    required: false, // This can be optional if it’s updated later
-    default: 0, // Default to 0 if not set initially
-  },
 });
 
 const BusActivityLog = model("BusActivityLog", busActivityLogSchema);

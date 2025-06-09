@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <title>Corona Admin</title>
+    <!-- plugins:css -->
+    <link
+      rel="stylesheet"
+      href="/assets/vendors/mdi/css/materialdesignicons.min.css"
+    />
+    <link rel="stylesheet" href="/assets/vendors/css/vendor.bundle.base.css" />
+    <!-- endinject -->
+    <!-- Plugin css for this page -->
+    <link
+      rel="stylesheet"
+      href="/assets/vendors/jvectormap/jquery-jvectormap.css"
+    />
+    <link
+      rel="stylesheet"
+      href="/assets/vendors/flag-icon-css/css/flag-icon.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="/assets/vendors/owl-carousel-2/owl.carousel.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="/assets/vendors/owl-carousel-2/owl.theme.default.min.css"
+    />
+
+    <!-- You can add this inside your page CSS or <style> -->
+    <style>
+      .stops-container {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 10px 0;
+        text-align: center;
+      }
+
+      .stop-item {
+        min-width: 90px;
+        max-width: 120px;
+        word-wrap: break-word;
+      }
+
+      .stop-name {
+        font-weight: 600;
+        font-size: 1rem;
+      }
+
+      .time {
+        font-size: 0.8rem;
+        color: #777;
+      }
+
+      .arrow {
+        font-size: 1.5rem;
+        color: #444;
+      }
+
+      @media (max-width: 768px) {
+        .stops-container {
+          flex-direction: column;
+        }
+
+        .arrow {
+          transform: rotate(90deg); /* → becomes ↓ */
+          margin: 5px 0;
+        }
+
+        .stop-item {
+          min-width: auto;
+          max-width: none;
+        }
+      }
+    </style>
+
+    <!-- End plugin css for this page -->
+    <!-- inject:css -->
+    <!-- endinject -->
+    <!-- Layout styles -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+    <!-- End layout styles -->
+    <link rel="shortcut icon" href="/assets/images/favicon.png" />
+  </head>
+  <body>
+    <div class="container-scroller">
+      <!-- partial:partials/_sidebar.html -->
+
+      <%- include('../corePartials/sidebar.ejs') %>
+      <!-- partial -->
+      <div class="container-fluid page-body-wrapper">
+        <!-- partial:partials/_navbar.html -->
+
+        <%- include('../corePartials/nav.ejs') %>
+        <!-- partial -->
+        <div class="main-panel">
+          <div class="content-wrapper">
+            <h3 class="h4 border-bottom pb-2 mb-3">
+              Bus No: <span class="text-white">UP670890</span>
+            </h3>
+
+            <p class="mb-2">
+              <strong>Driver:</strong> <%=bus.driver.name %>
+              <span class="text-muted">(<%=bus.driver.phone %>)</span>
+            </p>
+
+            <p class="mb-0">
+              <strong>Conductor:</strong> <%=bus.conductor.name %>
+              <span class="text-muted">(<%=bus.conductor.phone %>)</span>
+            </p>
+
+            <br />
+
+            <div class="row m-0 p-0">
+              <div class="col-12 m-0 p-0">
+                <div class="card m-0 p-1">
+                  <div class="card-body m-0 p-1">
+                    <div class="row">
+                      <div class="col-md-5">
+                        <iframe
+                          src="/"
+                          style="
+                            height: 300px;
+                            width: 100%;
+                            border: none;
+                            display: block;
+                          "
+                        ></iframe>
+                      </div>
+                      <div class="col-md-7">
+                        <% if (user.role === "administrator") { %>
+                        <iframe
+                          src="/tmu/administrator/settings/liveStream/<%=bus._id  %>"
+                          style="
+                            height: 300px;
+                            width: 100%;
+                            border: none;
+                            display: block;
+                          "
+                        ></iframe>
+                        <% } else { %>
+                        <div
+                          class="d-flex justify-content-center align-items-center"
+                          style="height: 300px"
+                        >
+                          <p class="text-muted h5 mb-0">
+                            You Can not Enjoy live Camera View Vehchiles
+                          </p>
+                        </div>
+                        <% } %>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <br />
+            <div class="row">
+              <div class="col-12">
+                <div class="card">
+                  <div class="card-body">
+                    <h4 class="card-title">Events and Logs</h4>
+                    <div class="row">
+                      <div class="col-md-5">
+                        <div class="table-responsive">
+                          <table class="table">
+                            <table class="table table-striped">
+                              <thead>
+                                <tr>
+                                  <th>#</th>
+                                  <th>Event</th>
+                                  <th class="text-right">Timestamp</th>
+                                  <th class="text-right">Coordinates</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <% if (bus && bus.events && bus.events.length >
+                                0) { %> <% log.events.forEach((ev, index) => {
+                                %>
+                                <tr>
+                                  <td><%= index + 1 %></td>
+                                  <td><%= ev.event %></td>
+                                  <td class="text-right">
+                                    <%= new Date(ev.timestamp).toLocaleString()
+                                    %>
+                                  </td>
+                                  <td class="text-right font-weight-medium">
+                                    [<%= ev.coordinates[1] %>, <%=
+                                    ev.coordinates[0] %>]
+                                  </td>
+                                </tr>
+                                <% }) %> <% } else { %>
+                                <tr>
+                                  <td
+                                    colspan="4"
+                                    class="text-center text-muted"
+                                  >
+                                    No event logs available.
+                                  </td>
+                                </tr>
+                                <% } %>
+                              </tbody>
+                            </table>
+                          </table>
+                        </div>
+                      </div>
+                      <div class="col-md-7">
+                        <div class="table-responsive">
+                          <table class="table">
+                            <table class="table table-bordered table-striped">
+                              <thead class="thead-dark">
+                                <tr>
+                                  <th>SN.</th>
+                                  <th>Stop Name</th>
+                                  <th class="text-right">Morning Time</th>
+                                  <th class="text-right">Evening Time</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <% if (bus.routeStops && bus.routeStops.length >
+                                0) { %> <% bus.routeStops.forEach((stop, index)
+                                => { %>
+                                <tr>
+                                  <td><%= index + 1 %></td>
+                                  <td class="text-capitalize">
+                                    <%= stop.stopName %>
+                                  </td>
+                                  <td class="text-right">
+                                    <%= stop.morningTime || '-' %>
+                                  </td>
+                                  <td class="text-right">
+                                    <%= stop.eveningTime || '-' %>
+                                  </td>
+                                </tr>
+                                <% }) %> <% } else { %>
+                                <tr>
+                                  <td
+                                    colspan="4"
+                                    class="text-center text-muted"
+                                  >
+                                    No route stops available.
+                                  </td>
+                                </tr>
+                                <% } %>
+                              </tbody>
+                            </table>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- content-wrapper ends -->
+          <!-- partial:partials/_footer.html -->
+
+          <!-- partial -->
+        </div>
+        <!-- main-panel ends -->
+      </div>
+      <!-- page-body-wrapper ends -->
+    </div>
+    <!-- container-scroller -->
+    <!-- plugins:js -->
+    <script src="/assets/vendors/js/vendor.bundle.base.js"></script>
+    <!-- endinject -->
+    <!-- Plugin js for this page -->
+    <script src="/assets/vendors/chart.js/Chart.min.js"></script>
+    <script src="/assets/vendors/progressbar.js/progressbar.min.js"></script>
+    <script src="/assets/vendors/jvectormap/jquery-jvectormap.min.js"></script>
+    <script src="/assets/vendors/jvectormap/jquery-jvectormap-world-mill-en.js"></script>
+    <script src="/assets/vendors/owl-carousel-2/owl.carousel.min.js"></script>
+    <!-- End plugin js for this page -->
+    <!-- inject:js -->
+    <script src="/assets/js/off-canvas.js"></script>
+    <script src="/assets/js/hoverable-collapse.js"></script>
+    <script src="/assets/js/misc.js"></script>
+    <script src="/assets/js/settings.js"></script>
+    <script src="/assets/js/todolist.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <!-- endinject -->
+    <!-- Custom js for this page -->
+
+    <!-- custom Script  -->
+
+    <script>
+                        const user= <%- JSON.stringify(user) %>;
+                        const bus= <%- JSON.stringify(bus) %>;
+                  const socket = io({
+                    query: {
+                      adminId: user._id,
+                      bus: bus._id
+                    }
+                  });
+
+
+
+                  socket.emit("getObject", { busId: bus._id }, function (response) {
+
+      if(response.success){
+          console.log(response)
+      }else{
+
+        console.log("Data does not exits")
+      }
+            });
+    </script>
+
+    <!-- custom Script  -->
+    <script src="/assets/js/dashboard.js"></script>
+    <!-- End custom js for this page -->
+  </body>
+</html>

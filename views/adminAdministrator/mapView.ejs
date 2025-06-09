@@ -48,8 +48,25 @@
             height: 100%;
             transform-origin: 0 0; /* Ensures that the zoom is from the top-left */
         }
-</style>
 
+
+        
+      .fullscreen-map {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 9999;
+  background-color: white; /* Optional: add a white background */
+  margin: 0;
+  padding: 0;
+}
+
+   
+   
+</style>
+<link rel="stylesheet" href="/assets/loader.css" />
     
   </head>
   <body>
@@ -65,7 +82,19 @@
         <!-- partial -->
         <div class="main-panel">
           <div class="content-wrapper"  id="bodyContent">
- 
+            <div class="page-header">
+              <h3 class="page-title">
+                Press
+                <code>Ctrl + M</code> to expand map, <code>Ctrl + V</code> to exit
+              </h3>
+              <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                  <li class="breadcrumb-item"><a href="/admin/gridView">Grid View</a></li>
+                  <li class="breadcrumb-item active" aria-current="page">Live Map View</li>
+                </ol>
+              </nav>
+            </div>
+            
     
             
             <br>
@@ -74,50 +103,44 @@
 
 
             
+            <div class="row"  id="mainRow">
+              <div class="col-md-12 grid-margin">
+       <div class="card">
+         <div class="card-body" id="map" style="width: 100%; height: 700px !important" >
 
-                <div class="row"  id="mainRow">
-                       <div class="col-md-12 grid-margin">
-                <div class="card">
-                  <div class="card-body" 
-                  
-                  >
-    
-                    
-         
-                      <div id="map-container">
-        <!-- Map embedding or element -->
-        <div id="map"></div>
-    </div> 
-              
-                    
-            
-                    
-                  </div>
-                </div>
-              </div>
+           
+
+           
+     
+           
+   
+           
+         </div>
+       </div>
+     </div>
 
 
-              
-
-
-       
- 
-
-
-              
+     
 
 
 
-         
-              
-              
-       
-
-            
 
 
-              
-        </div>
+
+     
+
+
+
+
+     
+     
+
+
+   
+
+
+     
+</div>
 
         
 
@@ -128,7 +151,7 @@
     <!-- container-scroller -->
     <!-- plugins:js -->
 
-
+    <%- include('../corePartials/loader.ejs') %>
     <!-- custom Scripts -->
 
 
@@ -148,13 +171,16 @@
 
 
 
+window.onload = function () {
+        document.getElementById("loader").style.display = "none";
+      };
 
 
 
-  
+const user= <%- JSON.stringify(user) %>;
   const socket = io({
     query: {
-      adminId: "1234567890"
+      adminId: user._id
     }
   });
 
@@ -226,7 +252,9 @@ socket.on("campusAlert", (message) => {
   var map = L.map("map", {
     center: [29.4426,78.4327],
     zoom: 30,
-    layers: [googleTerrain] // default layer
+    layers: [googleTerrain], // default layer,
+
+    
   });
 
 
@@ -490,6 +518,30 @@ function showBusDetails(data) {
 
 
 
+
+function expandMapFullScreen() {
+  const mapContainer = document.querySelector(".col-md-12.grid-margin");
+  if (mapContainer) {
+    mapContainer.classList.add("fullscreen-map");
+  }
+}
+
+function exitFullScreenMap() {
+  const mapContainer = document.querySelector(".col-md-12.grid-margin");
+  if (mapContainer) {
+    mapContainer.classList.remove("fullscreen-map");
+  }
+}
+
+// Detect Ctrl+M and Ctrl+V
+document.addEventListener("keydown", function (e) {
+  if (e.ctrlKey && e.key.toLowerCase() === "m") {
+    expandMapFullScreen();
+  }
+  if (e.ctrlKey && e.key.toLowerCase() === "v") {
+    exitFullScreenMap();
+  }
+});
 
 
 

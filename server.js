@@ -97,6 +97,7 @@ app.use(
 // Handler if user want's to communicate over webScoket protocols
 import { Server } from "socket.io";
 const io = new Server(server);
+app.set("io", io); // <-- shared shelf mein rakh diy
 // Object to store busId -> array of socketIds
 let busConnections = {};
 
@@ -104,8 +105,6 @@ let allAdmins = [];
 let administratorIds = [];
 const peers = {};
 let liveBuses = [];
-
-let adminConnectionsBus = {};
 
 let lastLocation = new Map();
 
@@ -205,6 +204,8 @@ function processQueue(busId) {
           availableWorkers.push(worker);
           processQueue(busId);
         }
+        // Remove listeners to prevent memory leak
+        worker.removeAllListeners();
       });
 
       worker.once("error", (err) => {
@@ -212,6 +213,8 @@ function processQueue(busId) {
         isProcessing.set(busId, false);
         availableWorkers.push(worker);
         processQueue(busId);
+        // Remove listeners to prevent memory leak
+        worker.removeAllListeners();
       });
 
       worker.once("exit", (code) => {
@@ -221,6 +224,9 @@ function processQueue(busId) {
         isProcessing.set(busId, false);
         availableWorkers.push(worker);
         processQueue(busId);
+
+        // Remove listeners to prevent memory leak
+        worker.removeAllListeners();
       });
     } else {
       // Cooldown not passed, skip this round
@@ -235,6 +241,7 @@ function processQueue(busId) {
 
 io.on("connection", (socket) => {
   if (socket.handshake.query.busId) {
+    // public Connection For locations
     const busId = socket.handshake.query.busId;
 
     // Store busId in socket object so it can be accessed later in the disconnect event
@@ -255,27 +262,6 @@ io.on("connection", (socket) => {
       `Current connections for bus ${busId}: `,
       busConnections[busId]
     );
-  } else if (socket.handshake.query.bus && socket.handshake.query.adminId) {
-    const busId = socket.handshake.query.bus;
-
-    socket.bus = busId;
-    socket.adminId = socket.handshake.query.adminId;
-
-    if (!adminConnectionsBus[busId]) {
-      // If no array exists, create one
-      adminConnectionsBus[busId] = [];
-    }
-
-    // Push the new socket.id into the array for the given busId
-    adminConnectionsBus[busId].push(socket.id);
-
-    console.log(
-      `New connection (admiin or adminsistror ) for busId: ${busId} with socketId: ${socket.id}`
-    );
-    console.log(
-      `Current connections for bus ${busId}: `,
-      adminConnectionsBus[busId]
-    );
   } else if (socket.handshake.query.administratorId) {
     // We have to check from the databaes it's exist or not got it
     console.log(`New administrator Connection: ${socket.id}`);
@@ -290,6 +276,7 @@ io.on("connection", (socket) => {
     // Executes if condition1 is false, and condition2 is true
   } else {
     if (socket.handshake.query.liveBusId) {
+      // Bus(driver or conductor Connectiosn)
       const busId = socket.handshake.query.liveBusId;
 
       if (busId) {
@@ -307,6 +294,21 @@ io.on("connection", (socket) => {
       }
     }
   }
+
+  // asking about is ther ebus obejt exist
+  socket.on("getObject", async (data, callback) => {
+    try {
+      let bus = lastEvaluated[data.busId]; // ✅ Use data.busId
+      if (bus) {
+        callback({ success: true, data: bus });
+      } else {
+        callback({ success: false, message: "Bus not found" });
+      }
+    } catch (err) {
+      console.error("Error fetching bus:", err);
+      callback({ success: false, message: "Server error" });
+    }
+  });
 
   // allStream
   socket.on("allStream", (callback) => {
@@ -398,7 +400,7 @@ io.on("connection", (socket) => {
 
   socket.on("busLocationUpdate", (data) => {
     addTask(data);
-    lastLocation.set(data.bus._id, locationData);
+    lastLocation.set(data.bus._id, data);
 
     if (data.bus && busConnections[data.bus._id]) {
       for (let i = 0; i < busConnections[data.bus._id].length; i++) {
@@ -420,31 +422,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", async () => {
-    if (socket.bus) {
-      const busId = socket.bus; // Now we can access busId from the socket object
-
-      console.log(
-        `Socket ${socket.id} disconnected from busId (admin or adminstrartoor): ${busId}`
-      );
-
-      if (adminConnectionsBus[busId]) {
-        adminConnectionsBus[busId] = adminConnectionsBus[busId].filter(
-          (id) => id !== socket.id
-        );
-        console.log(
-          `Updated admin or administraot  connections for bus ${busId}: `,
-          adminConnectionsBus[busId]
-        );
-
-        // Optionally, remove the busId key if no socket is connected to it
-        if (adminConnectionsBus[busId].length === 0) {
-          delete adminConnectionsBus[busId];
-          console.log(
-            `No more connections for bus of admin and admisniartor  ${busId}, deleting busId entry.`
-          );
-        }
-      }
-    } else if (socket.adminId) {
+    if (socket.adminId) {
       if (allAdmins.includes(socket.id)) {
         // 2. Remove the element from the array
         let index = allAdmins.indexOf(socket.id);
@@ -512,9 +490,9 @@ io.on("connection", (socket) => {
           console.log(`Cleaned up peers for bus: ${busId}`);
         }
 
-        if (lastEvaluated[socket.liveBusId]) {
-          saveLogs(lastEvaluated[socket.liveBusId]);
-        }
+        // if (lastEvaluated[socket.liveBusId]) {
+        //   saveLogs(lastEvaluated[socket.liveBusId]);
+        // }
       }
     }
   });

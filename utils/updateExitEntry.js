@@ -18,8 +18,6 @@ export const logBusEvent = async ({ busId, eventType, lat, lon }) => {
       $setOnInsert: {
         bus: busId,
         date: today,
-        stops: [],
-        path: [],
       },
     };
 

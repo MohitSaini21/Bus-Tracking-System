@@ -15,14 +15,77 @@ router.get("/", async (req, res) => {
 });
 
 router.get("/garrage", async (req, res) => {
+  let filterCondition;
+
+  if (req.query.search) {
+    filterCondition = req.query.search;
+  }
+
   const user = await CORE.findById(req.user.id);
-  const buses = await Bus.find({});
+  const buses = await Bus.find(
+    {
+      status: filterCondition
+        ? filterCondition
+        : { $in: ["Operational", "Out of Service"] },
+    }, // Filter condition},
+    {
+      driver: 1,
+      conductor: 1,
+      route: 1,
+      busNumber: 1,
+    }
+  );
 
   if (user) {
-    res.render("adminAdministrator/garrage.ejs", { buses, user });
+    res.render("adminAdministrator/garrage.ejs", {
+      buses,
+      user,
+      filterCondition,
+    });
   } else {
-    res.clearCookie("authToken"); // clear the correct cookie
+    res.clearCookie("authToken");
+
     return res.redirect("/coreLogin");
+  }
+});
+
+router.post("/changeStatus", async (req, res) => {
+  const { selectedIds, status } = req.body;
+
+  try {
+    if (!Array.isArray(selectedIds) || !status) {
+      return res.status(400).json({ success: false, error: "Invalid input" });
+    }
+
+    const io = req.app.get("io");
+
+    // Update buses by busNumber
+    const result = await Bus.updateMany(
+      { busNumber: { $in: selectedIds } },
+      { $set: { status } }
+    );
+
+    // If status is "Out of Service", disconnect their sockets
+    if (status === "Out of Service") {
+      // Step 1: Find the _id of affected buses
+      const affectedBuses = await Bus.find({ busNumber: { $in: selectedIds } });
+      const liveBusIds = affectedBuses.map((bus) => bus._id.toString()); // Ensure string
+
+      // Step 2: Loop through all connected sockets
+      for (const [socketId, socket] of io.sockets.sockets) {
+        const queryBusId = socket.handshake.query?.liveBusId;
+
+        if (queryBusId && liveBusIds.includes(queryBusId)) {
+          socket.disconnect(true);
+          console.log(`🔌 Disconnected socket for busId: ${queryBusId}`);
+        }
+      }
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("❌ Error updating status or disconnecting:", err);
+    res.status(500).json({ success: false, error: "Server error" });
   }
 });
 
@@ -37,11 +100,26 @@ router.get("/CDB", async (req, res) => {
   }
 });
 
-router.get("/allBusLocaton", async (req, res) => {
+router.get("/mapView", async (req, res) => {
   const user = await CORE.findById(req.user.id);
 
   if (user) {
-    return res.render("adminAdministrator/allBusLocation.ejs", { user });
+    if (user.role == "administrator") {
+      return res.render("administrator/mapView.ejs", { user });
+    } else {
+      return res.render("adminAdministrator/mapView.ejs", { user });
+    }
+  } else {
+    res.clearCookie("authToken"); // clear the correct cookie
+    return res.redirect("/coreLogin");
+  }
+});
+
+router.get("/gridView", async (req, res) => {
+  const user = await CORE.findById(req.user.id);
+
+  if (user) {
+    return res.render("adminAdministrator/gridView.ejs", { user });
   } else {
     res.clearCookie("authToken"); // clear the correct cookie
     return res.redirect("/coreLogin");
@@ -49,11 +127,14 @@ router.get("/allBusLocaton", async (req, res) => {
 });
 
 router.get("/particularBusLive/:id", async (req, res) => {
-  let bus = await Bus.findById(req.params.id);
+  let bus = await Bus.findById(req.params.id)
+    .populate("driver", "name phone") // only fetch name and phone of driver
+    .populate("conductor", "name phone"); // only fetch name and phone of conductor
+
   const user = await CORE.findById(req.user.id);
 
   if (user) {
-    return res.render("adminAdministrator/paritcularBusLive.ejs", {
+    return res.render("adminAdministrator/pTracking.ejs", {
       bus,
       user,
     });

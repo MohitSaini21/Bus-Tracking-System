@@ -53,7 +53,7 @@ Connecting... Please wait.
         </h4>
         <p class="card-description">
          
-        This bus is already . <code>live</code>  and providing the bus location. You may go back.
+         Either you are not authorized to provide location again, or another mate is currently tracking this bus;
            
               
         </p>
@@ -128,24 +128,50 @@ Connecting... Please wait.
     document.getElementById("mainRow").appendChild(newIframeCol);
   });
 
+  let lastSavedTime = 0;
+  let previousPoint = null;
+
   const saveLocation = (position) => {
-    const locationData = {
-      latitude: position.coords.latitude,
-      longitude: position.coords.longitude,
+    const currentTime = Date.now();
 
-      accuracy: position.coords.accuracy,
-      timestamp: Date.now(),
-    };
-    localStorage.setItem("lastLocation", JSON.stringify(locationData));
-    return locationData;
-  };
+    if (currentTime - lastSavedTime > 5000 && previousPoint !== null) {
+      // 5 second ho gaye, aur previousPoint available hai
+      const locationData = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+        timestamp: currentTime,
+        previousPoint,
+      };
 
-  const getLastKnownLocation = () => {
-    const data = localStorage.getItem("lastLocation");
-    if (data) {
-      return JSON.parse(data);
+      // Update previousPoint for next call
+      previousPoint = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      };
+
+      lastSavedTime = currentTime;
+      return locationData;
+    } else {
+      // Pehli baar ya 5 second se kam, bina previousPoint ke
+      const locationData = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+        timestamp: currentTime,
+      };
+
+      // Pehli baar yahan pe previousPoint ko set kar rahe hain
+      if (previousPoint === null) {
+        previousPoint = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+        lastSavedTime = currentTime; // also set lastSavedTime first time
+      }
+
+      return locationData;
     }
-    return null;
   };
 
   navigator.geolocation.watchPosition(
@@ -158,17 +184,7 @@ Connecting... Please wait.
     },
     (error) => {
       console.error("GPS Error:", error.message);
-
-      let lastLocation = getLastKnownLocation();
-
-      if (lastLocation && Date.now() - lastLocation.timestamp < 5 * 60 * 1000) {
-        locationData[bus] = bus;
-
-        console.log("Emitting Cached Location:", lastLocation);
-        socket.emit("busLocationUpdate", lastLocation);
-      } else {
-        console.log("Sending Nothing");
-      }
+      console.log("Sending Nothing");
     },
     {
       enableHighAccuracy: true,

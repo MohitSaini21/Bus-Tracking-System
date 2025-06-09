@@ -1,8 +1,10 @@
 import { parentPort } from "worker_threads";
 import { getDistance } from "geolib";
+import { checkEntryExit } from "./utils/polygon.js";
 
 parentPort.on("message", ({ task, busObject }) => {
   const bus = task.bus;
+
   const busLat = parseFloat(task.latitude);
   const busLng = parseFloat(task.longitude);
   const RADIUS_METERS = 50;
@@ -10,8 +12,14 @@ parentPort.on("message", ({ task, busObject }) => {
   const MIN_TIME_DIFF = 60 * 1000;
   const timestamp = task.timestamp;
 
+  if (task.previousPoint) {
+    let currentPoint = { longitude: task.longitude, latitude: task.latitude };
+    let previousPoint = task.previousPoint;
+    checkEntryExit({ previousPoint, currentPoint, bus });
+  }
+
   if (!busObject["lastPathTimestamp"]) {
-    busObject["lastPathTimestamp"] = timestamp;
+    busObject["lastPathTimestamp"] = timestamp; 
     if (!busObject["path"]) {
       busObject["path"] = [];
     }
@@ -20,9 +28,9 @@ parentPort.on("message", ({ task, busObject }) => {
     console.log(busObject["path"]);
   } else {
     const timeDiff = timestamp - busObject["lastPathTimestamp"];
-            if (timeDiff < MIN_TIME_DIFF) {
-              console.log("Skipping Tracking Path");
-            } else {
+    if (timeDiff < MIN_TIME_DIFF) {
+      console.log("Skipping Tracking Path");
+    } else {
       busObject["path"].push({ lat: busLat, lon: busLng });
       busObject["lastPathTimestamp"] = task.timestamp; // update last tracking time
       console.log("path has been updated  new lat and long has been added");
@@ -62,9 +70,9 @@ parentPort.on("message", ({ task, busObject }) => {
       }
 
       if (isMorning) {
-        busObject.reachedStops[stopId].morning = currentTime;
+        busObject.reachedStops[stopId].morningTime = currentTime;
       } else {
-        busObject.reachedStops[stopId].evening = currentTime;
+        busObject.reachedStops[stopId].eveningTime = currentTime;
       }
 
       console.log(
