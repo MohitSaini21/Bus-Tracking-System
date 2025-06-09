@@ -1,7 +1,3 @@
-// public/js/firebase.js
-
-// Import the Firebase SDK
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.2/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.0.2/firebase-analytics.js";
 import {
@@ -122,11 +118,14 @@ async function getFcmToken(retryCount) {
 //   }
 // }
 
+alert("hey ther ehow areyou ");
+
 // Check if service workers are supported and then register
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker
-    .register("/firebase-messaging-sw.js")
-    .then(function (registration) {
+  .register("/firebase-messaging-sw.js")
+  .then(function (registration) {
+      alert("hey ther ehow areyou ");
       console.log("Service Worker registered with scope: ", registration.scope);
       getFcmToken(0);
     })
