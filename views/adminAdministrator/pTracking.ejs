@@ -165,118 +165,6 @@
             </div>
 
             <br />
-            <div class="row">
-              <div class="col-12">
-                <div class="card">
-                  <div class="card-body">
-                    <h4 class="card-title">Events and Logs</h4>
-                    <div class="row">
-                      <div class="col-md-4">
-                        <div class="table-responsive">
-                          <table class="table">
-                            <table class="table table-striped">
-                                <thead>
-                                  <tr>
-                                    <th>#</th>
-                                    <th>Event</th>
-                                    <th class="text-right">Timestamp</th>
-                                   
-                                    
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <% if (busLog && busLog.events && busLog.events.length > 0) { %>
-                                    <% busLog.events.forEach((ev, index) => { %>
-                                      <tr>
-                                        <td><%= index + 1 %></td>
-                                        <td><%= ev.event %></td>
-                    <td class="text-right"><%= new Date(ev.timestamp).toLocaleTimeString('en-IN', { hour12: false }) %></td>
-
-                                   
-                                        
-                                      </tr>
-                                    <% }) %>
-                                  <% } else { %>
-                                    <tr>
-                                      <td colspan="4" class="text-center text-muted">No event logs available.</td>
-                                    </tr>
-                                  <% } %>
-                                </tbody>
-                              </table>
-                              
-                          </table>
-                        </div>
-                      </div>
-                      <div class="col-md-8">
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-striped">
-                                <thead class="thead-dark">
-                                  <tr>
-                                    <th>SN.</th>
-                                    <th>Stop Name</th>
-                                    <th class="text-right">Eorning Time</th>
-                                    <th class="text-right">Morning Time</th>
-                                    <th class="text-right">Status</th>
-                                    <th class="text-right">eEvening Time</th>
-                                    <th class="text-right">Evening Time</th>
-                                    <th class="text-right">Status</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                    <% if (busLog && busLog.stops.length > 0) { %>
-                                      <% busLog.stops.forEach((stop, index) => { 
-                                          function getStatus(actualTime, scheduledTime) {
-                                            if (!actualTime || !scheduledTime) return { text: '-', class: '' };
-                                            const diffMinutes = (new Date(actualTime) - new Date(scheduledTime)) / 60000;
-                                            if (diffMinutes < -5) return { text: 'Early', class: 'text-success' };
-                                            else if (diffMinutes > 5) return { text: 'Late', class: 'text-danger' };
-                                            else return { text: 'On Time', class: 'text-primary' };
-                                          }
-                                  
-                                          const morningStatus = getStatus(stop.eMorningTime, stop.morningTime);
-                                          const eveningStatus = getStatus(stop.eEveningTime, stop.eveningTime);
-                                      %>
-                                        <tr>
-                                          <td><%= index + 1 %></td>
-                                          <td class="text-capitalize"><%= stop.stopName %></td>
-                                  
-                                          <td class="text-right">
-                                            <%= stop.morningTime ? new Date(stop.morningTime).toLocaleTimeString('en-IN', { hour12: false }) : '-' %>
-                                          </td>
-                                          <td class="text-right">
-                                            <%= stop.eMorningTime ? new Date(stop.eMorningTime).toLocaleTimeString('en-IN', { hour12: false }) : '-' %>
-                                          </td>
-                                          <td class="text-right <%= morningStatus.class %>">
-                                            <%= morningStatus.text %>
-                                          </td>
-                                  
-                                          <td class="text-right">
-                                            <%= stop.eveningTime ? new Date(stop.eveningTime).toLocaleTimeString('en-IN', { hour12: false }) : '-' %>
-                                          </td>
-                                          <td class="text-right">
-                                            <%= stop.eEveningTime ? new Date(stop.eEveningTime).toLocaleTimeString('en-IN', { hour12: false }) : '-' %>
-                                          </td>
-                                          <td class="text-right <%= eveningStatus.class %>">
-                                            <%= eveningStatus.text %>
-                                          </td>
-                                        </tr>
-                                      <% }) %>
-                                    <% } else { %>
-                                      <tr>
-                                        <td colspan="8" class="text-center text-muted">No stop data available.</td>
-                                      </tr>
-                                    <% } %>
-                                  </tbody>
-                                  
-                              </table>
-                              
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
           <!-- content-wrapper ends -->
           <!-- partial:partials/_footer.html -->
@@ -322,15 +210,19 @@
 
 
 
-                  socket.emit("getObject", { busId: bus._id }, function (response) {
 
-      if(response.success){
-          console.log(response)
-      }else{
 
-        console.log("Data does not exits")
-      }
-            });
+
+
+      //             socket.emit("getObject", { busId: bus._id }, function (response) {
+
+      // if(response.success){
+      //     console.log(response)
+      // }else{
+
+      //   console.log("Data does not exits")
+      // }
+      //       });
     </script>
 
     <!-- custom Script  -->
