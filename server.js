@@ -106,6 +106,8 @@ let administratorIds = [];
 const peers = {};
 let liveBuses = [];
 
+let adminConnectionsBus = {};
+
 let lastLocation = new Map();
 
 let locationEvaluationCooldown = 5 * 1000; // ms (5 seconds)
