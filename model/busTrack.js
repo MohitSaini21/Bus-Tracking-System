@@ -4,8 +4,11 @@ const { Schema, model } = mongoose;
 
 const stopLogSchema = new Schema({
   stop: { type: Schema.Types.ObjectId, ref: "Stop", required: true },
+  stopName: String,
   morningTime: Date,
+  eMorningTime: Date,
   eveningTime: Date,
+  eEveningTime: Date,
 });
 
 const busActivityLogSchema = new Schema({
@@ -30,3 +33,6 @@ const busActivityLogSchema = new Schema({
 
 const BusActivityLog = model("BusActivityLog", busActivityLogSchema);
 export default BusActivityLog;
+
+
+

@@ -1,6 +1,8 @@
 import express from "express";
 import CORE from "../model/admin.js";
 import Bus from "../model/bus.js";
+import moment from "moment-timezone";
+import BusActivityLog from "../model/busTrack.js";
 let router = express.Router();
 
 router.get("/", async (req, res) => {
@@ -133,10 +135,27 @@ router.get("/particularBusLive/:id", async (req, res) => {
 
   const user = await CORE.findById(req.user.id);
 
+  // Get current date in Asia/Kolkata
+  const indiaToday = moment().tz("Asia/Kolkata").startOf("day");
+
+  // Convert to UTC for MongoDB date comparison
+  const startOfDayUTC = indiaToday.toDate();
+  const endOfDayUTC = indiaToday.clone().endOf("day").toDate();
+
+  // Find today's log for a specific bus
+  const busLog = await BusActivityLog.findOne({
+    bus: bus._id,
+    date: {
+      $gte: startOfDayUTC,
+      $lte: endOfDayUTC,
+    },
+  }).populate("stops.stop", "stopName");
+
   if (user) {
     return res.render("adminAdministrator/pTracking.ejs", {
       bus,
       user,
+      busLog,
     });
   } else {
     res.clearCookie("authToken"); // clear the correct cookie

@@ -1,94 +1,116 @@
 import { parentPort } from "worker_threads";
 import { getDistance } from "geolib";
+import moment from "moment-timezone";
 import { checkEntryExit } from "./utils/polygon.js";
 
 parentPort.on("message", ({ task, busObject }) => {
-  const bus = task.bus;
+  try {
+    const bus = task.bus;
+    const busLat = parseFloat(task.latitude);
+    const busLng = parseFloat(task.longitude);
+    const timestamp = task.timestamp;
 
-  const busLat = parseFloat(task.latitude);
-  const busLng = parseFloat(task.longitude);
-  const RADIUS_METERS = 50;
-  const PROXIMITY_METERS = 100;
-  const MIN_TIME_DIFF = 60 * 1000;
-  const timestamp = task.timestamp;
+    const RADIUS_METERS = 50;
+    const MIN_TIME_DIFF = 60 * 1000;
 
-  if (task.previousPoint) {
-    let currentPoint = { longitude: task.longitude, latitude: task.latitude };
-    let previousPoint = task.previousPoint;
-    checkEntryExit({ previousPoint, currentPoint, bus });
-  }
-
-  if (!busObject["lastPathTimestamp"]) {
-    busObject["lastPathTimestamp"] = timestamp; 
-    if (!busObject["path"]) {
-      busObject["path"] = [];
-    }
-    busObject["path"].push({ lat: busLat, lon: busLng });
-    console.log("path has been updated  new lat and long has been added");
-    console.log(busObject["path"]);
-  } else {
-    const timeDiff = timestamp - busObject["lastPathTimestamp"];
-    if (timeDiff < MIN_TIME_DIFF) {
-      console.log("Skipping Tracking Path");
-    } else {
-      busObject["path"].push({ lat: busLat, lon: busLng });
-      busObject["lastPathTimestamp"] = task.timestamp; // update last tracking time
-      console.log("path has been updated  new lat and long has been added");
-    }
-  }
-
-  const now = new Date();
-  const currentTime = now;
-  const hour = now.getHours();
-  const isMorning = hour < 12;
-
-  if (!busObject.reachedStops) busObject.reachedStops = {};
-
-  for (const stop of bus.routeStops) {
-    const stopId = stop._id.toString();
-
-    if (!stop.latitude || !stop.longitude) continue;
-
-    const stopLat = parseFloat(stop.latitude);
-    const stopLng = parseFloat(stop.longitude);
-
-    if (
-      (isMorning && busObject.reachedStops[stopId]?.morning) ||
-      (!isMorning && busObject.reachedStops[stopId]?.evening)
-    ) {
-      continue;
-    }
-
-    const distance = getDistance(
-      { latitude: busLat, longitude: busLng },
-      { latitude: stopLat, longitude: stopLng }
-    );
-
-    if (distance <= RADIUS_METERS) {
-      if (!busObject.reachedStops[stopId]) {
-        busObject.reachedStops[stopId] = {};
+    // 1. Check entry/exit polygon if previous point is provided
+    if (task.previousPoint) {
+      try {
+        checkEntryExit({
+          previousPoint: task.previousPoint,
+          currentPoint: { longitude: busLng, latitude: busLat },
+          bus,
+        });
+      } catch (err) {
+        console.error("checkEntryExit failed:", err);
       }
+    }
 
-      if (isMorning) {
-        busObject.reachedStops[stopId].morningTime = currentTime;
+    // 2. Path Tracking
+    if (!busObject.lastPathTimestamp) {
+      busObject.lastPathTimestamp = timestamp;
+      if (!Array.isArray(busObject.path)) {
+        busObject.path = [];
+      }
+      busObject.path.push({ lat: busLat, lon: busLng });
+      console.log("✅ Path initialized and updated");
+    } else {
+      const timeDiff = timestamp - busObject.lastPathTimestamp;
+      if (timeDiff >= MIN_TIME_DIFF) {
+        busObject.path.push({ lat: busLat, lon: busLng });
+        busObject.lastPathTimestamp = timestamp;
+        console.log("✅ Path updated with new point");
       } else {
-        busObject.reachedStops[stopId].eveningTime = currentTime;
+        console.log("⏩ Skipping path update — interval too short");
       }
-
-      console.log(
-        `📍 Bus ${task.bus._id} reached "${stop.stopName}" at ${currentTime}`
-      );
-      break; // Found the stop, break out
-    } else {
-      console.log(
-        `🚌 Bus ${task.bus._id} is ${distance}m away from stop "${stop.stopName}"`
-      );
     }
-  }
 
-  // ✅ Post message ONCE after processing all stops
-  parentPort.postMessage({
-    updatedBusObject: busObject,
-    busId: task.bus._id,
-  });
+    // 3. Handle stop proximity
+    const currentTime = moment().tz("Asia/Kolkata");
+    const isMorning = currentTime.hour() < 12;
+
+    if (!busObject.reachedStops) busObject.reachedStops = {};
+
+    for (const stop of task.bus.routeStops || []) {
+      if (!stop || !stop._id || !stop.latitude || !stop.longitude) continue;
+
+      const stopId = stop._id.toString();
+      const alreadyLogged = isMorning
+        ? busObject.reachedStops[stopId]?.morningTime
+        : busObject.reachedStops[stopId]?.eveningTime;
+
+      if (alreadyLogged) continue;
+
+      const stopLat = parseFloat(stop.latitude);
+      const stopLng = parseFloat(stop.longitude);
+      const distance = getDistance(
+        { latitude: busLat, longitude: busLng },
+        { latitude: stopLat, longitude: stopLng }
+      );
+
+      if (distance <= RADIUS_METERS) {
+        if (!busObject.reachedStops[stopId]) {
+          busObject.reachedStops[stopId] = {};
+        }
+
+        busObject.reachedStops[stopId].stopName = stop.stopName;
+
+        if (isMorning) {
+          const expectedTime = moment.tz(
+            `1970-01-01T${stop.morningTime}`,
+            "Asia/Kolkata"
+          );
+          busObject.reachedStops[stopId].eMorningTime = expectedTime.toDate();
+          busObject.reachedStops[stopId].morningTime = currentTime.toDate();
+        } else {
+          const expectedTime = moment.tz(
+            `1970-01-01T${stop.eveningTime}`,
+            "Asia/Kolkata"
+          );
+          busObject.reachedStops[stopId].eEveningTime = expectedTime.toDate();
+          busObject.reachedStops[stopId].eveningTime = currentTime.toDate();
+        }
+
+        console.log(
+          `📍 Bus ${bus._id} reached "${
+            stop.stopName
+          }" at ${currentTime.format()}`
+        );
+        break; // Only log one stop per location update
+      } else {
+        console.log(
+          `🚌 Bus ${bus._id} is ${distance}m away from "${stop.stopName}"`
+        );
+      }
+    }
+
+    // 4. Final response back to main thread
+    parentPort.postMessage({
+      updatedBusObject: busObject,
+      busId: bus._id,
+    });
+  } catch (err) {
+    console.error("🚨 Worker thread failed:", err);
+    parentPort.postMessage({ error: err.message });
+  }
 });

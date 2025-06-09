@@ -90,5 +90,6 @@ const busSchema = new mongoose.Schema(
 );
 
 const Bus = mongoose.model("Bus", busSchema);
+const Stop = mongoose.model("Stop", stopSchema);
 
 export default Bus;

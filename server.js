@@ -445,7 +445,31 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", async () => {
-    if (socket.adminId) {
+    if (socket.bus) {
+      const busId = socket.bus; // Now we can access busId from the socket object
+
+      console.log(
+        `Socket ${socket.id} disconnected from busId (admin or adminstrartoor): ${busId}`
+      );
+
+      if (adminConnectionsBus[busId]) {
+        adminConnectionsBus[busId] = adminConnectionsBus[busId].filter(
+          (id) => id !== socket.id
+        );
+        console.log(
+          `Updated admin or administraot  connections for bus ${busId}: `,
+          adminConnectionsBus[busId]
+        );
+
+        // Optionally, remove the busId key if no socket is connected to it
+        if (adminConnectionsBus[busId].length === 0) {
+          delete adminConnectionsBus[busId];
+          console.log(
+            `No more connections for bus of admin and admisniartor  ${busId}, deleting busId entry.`
+          );
+        }
+      }
+    } else if (socket.adminId) {
       if (allAdmins.includes(socket.id)) {
         // 2. Remove the element from the array
         let index = allAdmins.indexOf(socket.id);

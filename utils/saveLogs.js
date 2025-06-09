@@ -16,8 +16,11 @@ export default async function saveLogs(busObject) {
     for (const stopId in busObject.reachedStops) {
       const stopLog = {
         stop: stopId,
+        stopName: busObject.reachedStops[stopId].stopName || null,
         morningArrival: busObject.reachedStops[stopId].morningTime || null,
-        eveningArrival: busObject.reachedStops[stopId].eveningTime|| null,
+        eveningArrival: busObject.reachedStops[stopId].eveningTime || null,
+        eEveningTime: busObject.reachedStops[stopId].eEveningTime || null,
+        eMorningTime: busObject.reachedStops[stopId].eMorningTime || null,
       };
       stopsData.push(stopLog);
     }
