@@ -262,6 +262,27 @@ io.on("connection", (socket) => {
       `Current connections for bus ${busId}: `,
       busConnections[busId]
     );
+  } else if (socket.handshake.query.bus && socket.handshake.query.adminId) {
+    const busId = socket.handshake.query.bus;
+
+    socket.bus = busId;
+    socket.adminId = socket.handshake.query.adminId;
+
+    if (!adminConnectionsBus[busId]) {
+      // If no array exists, create one
+      adminConnectionsBus[busId] = [];
+    }
+
+    // Push the new socket.id into the array for the given busId
+    adminConnectionsBus[busId].push(socket.id);
+
+    console.log(
+      `New connection of admin or administrator for busId: ${busId} with socketId: ${socket.id}`
+    );
+    console.log(
+      `Current connections for bus ${busId}: `,
+      adminConnectionsBus[busId]
+    );
   } else if (socket.handshake.query.administratorId) {
     // We have to check from the databaes it's exist or not got it
     console.log(`New administrator Connection: ${socket.id}`);
