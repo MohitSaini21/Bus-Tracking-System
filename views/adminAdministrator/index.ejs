@@ -226,34 +226,47 @@
     <!-- endinject -->
     <!-- Custom js for this page -->
     <script src="/assets/js/dashboard.js"></script>
-    <script type="module" src="/firebase.js"></script>
-    <script type="module" src="/foreground.js"></script>
+    <script type="module" src="/afirebase.js"></script>
 
     <!-- End custom js for this page -->
     <!-- custom Script -->
 
     <script type="module">
-      import { fetchToken } from "/firebase.js";
+      import { fetchToken, sendTokenToServer } from "/afirebase.js";
 
-      const fcmToken = localStorage.getItem("fcmToken");
-      const expiryDateStr = localStorage.getItem("fcmTokenExpiryDate");
+      // Helper: Check if a cookie exists
+      function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(";").shift();
+      }
 
-      let isTokenValid = false;
+      // 1. If cookie exists, do nothing (admin refreshed the page)
+      if (getCookie("fcmTokenExpiry")) {
+        console.log("Cookie exists — skipping token logic (page refresh).");
+      } else {
+        // 2. Check localStorage token validity
+        const fcmToken = localStorage.getItem("fcmToken");
+        const expiryDateStr = localStorage.getItem("fcmTokenExpiryDate");
 
-      if (fcmToken && expiryDateStr) {
-        const now = new Date();
-        const expiryDate = new Date(expiryDateStr);
+        let isTokenValid = false;
 
-        if (now < expiryDate) {
-          isTokenValid = true;
+        if (fcmToken && expiryDateStr) {
+          const now = new Date();
+          const expiryDate = new Date(expiryDateStr);
+          if (now < expiryDate) {
+            isTokenValid = true;
+          }
+        }
+
+        if (!fcmToken || !isTokenValid) {
+          fetchToken();
+        } else {
+          sendTokenToServer(fcmToken, expiryDateStr);
         }
       }
 
-      if (!fcmToken || !isTokenValid) {
-        fetchToken();
-      } else {
-      }
-
+      // 3. Hide loader once window is loaded
       window.onload = function () {
         document.getElementById("loader").style.display = "none";
       };

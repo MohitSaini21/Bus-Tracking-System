@@ -5,6 +5,39 @@ import moment from "moment-timezone";
 import BusActivityLog from "../model/busTrack.js";
 let router = express.Router();
 
+// api
+router.post("/api/save-fcm-token", async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Unauthorized: No user ID" });
+    }
+
+    if (!token) {
+      return res.status(400).json({ message: "FCM token is required" });
+    }
+
+    const user = await CORE.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Save or update the token inside the user's schema (or in a separate FCM schema)
+    user.notificationToken = token; // Assuming `notificationToken` exists in user schema
+    await user.save();
+
+    res
+      .status(200)
+      .json({ success: true, message: "FCM token saved successfully" });
+  } catch (error) {
+    console.error("Error saving FCM token:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Server error while saving token" });
+  }
+});
+
 router.get("/", async (req, res) => {
   const user = await CORE.findById(req.user.id);
 
