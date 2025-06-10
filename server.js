@@ -309,6 +309,12 @@ io.on("connection", (socket) => {
         } else {
           // Register this socket as live
           liveBuses.push(busId);
+          if (allAdmins.length) {
+            for (let i = 0; i < allAdmins.length; i++) {
+              io.to(allAdmins[i]).emit("add", busId);
+            }
+          }
+
           console.log(`Bus ${busId} is now live with socket ${socket.id}`);
 
           socket.emit("connectionApproved", "You are now live.");
@@ -319,13 +325,12 @@ io.on("connection", (socket) => {
   }
 
   // asking about is ther ebus obejt exist
-  socket.on("getObject", async (data, callback) => {
+  socket.on("liveBuses", async (callback) => {
     try {
-      let bus = lastEvaluated[data.busId]; // ✅ Use data.busId
-      if (bus) {
-        callback({ success: true, data: bus });
+      if (liveBuses.length > 0) {
+        callback({ success: true, data: liveBuses });
       } else {
-        callback({ success: false, message: "Bus not found" });
+        callback({ success: false, message: "No live Bus" });
       }
     } catch (err) {
       console.error("Error fetching bus:", err);
@@ -520,6 +525,11 @@ io.on("connection", (socket) => {
         const index = liveBuses.indexOf(socket.liveBusId);
         if (index !== -1) {
           liveBuses.splice(index, 1);
+          if (allAdmins.length) {
+            for (let i = 0; i < allAdmins.length; i++) {
+              io.to(allAdmins[i]).emit("remove", busId);
+            }
+          }
           console.log(
             `Bus ${socket.liveBusId} was removed from live list.`,
             liveBuses

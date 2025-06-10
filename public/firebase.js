@@ -58,6 +58,7 @@ async function getFcmToken(retryCount) {
 
           localStorage.setItem("fcmToken", token);
 
+          setCookie("notifPermissionPageLoaded", "true", 365); // Cookie expires in 1 year
           sendTokenToServer(token);
         } else {
           console.error("No FCM token received.");
@@ -67,7 +68,6 @@ async function getFcmToken(retryCount) {
       }
 
       // Mark the page as loaded by setting the "notifPermissionPageLoaded" cookie
-      setCookie("notifPermissionPageLoaded", "true", 365); // Cookie expires in 1 year
     } catch (error) {
       // If the error happens, retry fetching the token with exponential backoff
       if (retryCount < 5) {
@@ -118,14 +118,11 @@ async function getFcmToken(retryCount) {
 //   }
 // }
 
-alert("hey ther ehow areyou ");
-
 // Check if service workers are supported and then register
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker
-  .register("/firebase-messaging-sw.js")
-  .then(function (registration) {
-      alert("hey ther ehow areyou ");
+    .register("/firebase-messaging-sw.js")
+    .then(function (registration) {
       console.log("Service Worker registered with scope: ", registration.scope);
       getFcmToken(0);
     })

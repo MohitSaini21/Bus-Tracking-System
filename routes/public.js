@@ -42,46 +42,36 @@ router.get("/", (req, res) => {
 
 router.post("/", async (req, res) => {
   try {
-    const userRoute = req.body.route?.toLowerCase().trim(); // normalize
+    const busNumber = req.body.inputValue?.toLowerCase().trim();
 
-    if (!userRoute) {
+    if (!busNumber) {
       return res.status(400).json({
         success: false,
-        message: "Route is required.",
+        message: "busNumber is required.",
       });
     }
 
-    // Step 1: Fetch all buses for each search
-    const allBuses = await Bus.find(); // Move this inside the handler
-
-    // Step 2: Configure Fuse.js with options
-    const fuse = new Fuse(allBuses, {
-      keys: ["route"], // We're searching in the 'route' field
-      threshold: 0.3, // 0.0 = perfect match, 1.0 = complete mismatch
-      includeScore: true, // This will include a score for each result
+    // Case-insensitive exact match
+    const bus = await Bus.findOne({
+      busNumber: { $regex: new RegExp(`^${busNumber}$`, "i") },
     });
 
-    const fuzzyResults = fuse.search(userRoute); // Perform search
-
-    // Step 3: Get the matching buses from the search results
-    const matchingBuses = fuzzyResults.map((result) => result.item);
-
-    if (matchingBuses.length > 0) {
+    if (bus) {
       return res.json({
         success: true,
-        data: matchingBuses,
+        data: bus,
       });
     } else {
       return res.json({
         success: false,
-        message: "No buses found matching the route.",
+        message: "No matching bus found.",
       });
     }
   } catch (error) {
-    console.error("Error searching buses:", error);
+    console.error("Error searching bus:", error);
     return res.status(500).json({
       success: false,
-      message: "Something went wrong. Please try again later.",
+      message: "Something went wrong.",
     });
   }
 });
