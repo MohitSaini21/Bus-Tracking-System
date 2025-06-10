@@ -22,21 +22,25 @@
       type="text/css"
       href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css"
     />
-    
+
     <!-- bootstrap core css -->
     <link rel="stylesheet" type="text/css" href="/public/css/bootstrap.css" />
-    
+    <link rel="stylesheet" href="/assets/homeLoader.css" />
+
     <!-- fonts style -->
     <link
-    href="https://fonts.googleapis.com/css?family=Open+Sans:400,700|Poppins:400,600,700&display=swap"
-    rel="stylesheet"
+      href="https://fonts.googleapis.com/css?family=Open+Sans:400,700|Poppins:400,600,700&display=swap"
+      rel="stylesheet"
     />
 
     <!-- Custom styles for this template -->
     <link href="/public/css/style.css" rel="stylesheet" />
     <!-- responsive style -->
     <link href="/public/css/responsive.css" rel="stylesheet" />
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
     <style>
       /* Prevent horizontal scrolling */
       body,
@@ -456,6 +460,8 @@
               <div id="myNav" class="overlay">
                 <div class="overlay-content">
                   <a href="/">Home</a>
+
+                  <button onclick="Redirect()">Tracked Buses</button>
                 </div>
               </div>
             </div>
@@ -601,554 +607,13 @@
 
     <br /><br />
 
-    <!-- <section class="car_section layout_padding2-top layout_padding-bottom">
-      <div class="container">
-        <div class="heading_container">
-          <h2>Better Way For Find Your Bus</h2>
-          <p>
-            It is a long established fact that a reader will be distracted by
-            the readable
-          </p>
-        </div>
-        <div class="car_container">
-          <div class="box">
-            <div class="img-box">
-              <img src="/public/images/c-1.png" alt="" />
-            </div>
-            <div class="detail-box">
-              <h5>Choose Your Car</h5>
-              <p>
-                It is a long established fact that a reader will be distracted
-                by the readable content of a page when
-              </p>
-              <a href=""> Track Now</a>
-            </div>
-          </div>
-          <div class="box">
-            <div class="img-box">
-              <img src="/public/images/c-2.png" alt="" />
-            </div>
-            <div class="detail-box">
-              <h5>Get Your Car</h5>
-              <p>
-                It is a long established fact that a reader will be distracted
-                by the readable content of a page when
-              </p>
-              <a href=""> Read More </a>
-            </div>
-          </div>
-          <div class="box">
-            <div class="img-box">
-              <img src="/public/images/c-3.png" alt="" />
-            </div>
-            <div class="detail-box">
-              <h5>Contact Your Dealer</h5>
-              <p>
-                It is a long established fact that a reader will be distracted
-                by the readable content of a page when
-              </p>
-              <a href=""> Read More </a>
-            </div>
-          </div>
-        </div>
+    <!-- Loader -->
+    <div class="loader-overlay" id="loader">
+      <div class="loader-container">
+        <img src="/public/bus.gif" alt="Loading..." class="bus-icon-img" />
+        <div class="loader-text" id="loader-text">Loading, please wait...</div>
       </div>
-    </section> -->
-
-    <!-- end car section -->
-
-    <!-- about section -->
-
-    <!-- <section class="about_section layout_padding-bottom">
-      <div class="container-fluid">
-        <div class="row">
-          <div class="col-md-7 px-0">
-            <div class="img-box">
-              <img src="/public/images/about-img.png" alt="" />
-            </div>
-          </div>
-          <div class="col-md-4 col-lg-3">
-            <div class="detail-box">
-              <h2>About Our Cars</h2>
-              <p>
-                It is a long established fact that a reader will be distracted
-                by the readable content of a page when looking at its layout.
-                The point of using Lorem
-              </p>
-              <a href=""> Read More </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section> -->
-
-    <!-- end about section -->
-
-    <!-- best section -->
-    <!-- 
-    <section class="best_section">
-      <div class="container">
-        <div class="book_now">
-          <div class="detail-box">
-            <h2>Our Best Cars</h2>
-            <p>
-              It is a long established fact that a reader will be distracted by
-              the
-            </p>
-          </div>
-          <div class="btn-box">
-            <a href=""> Book Now </a>
-          </div>
-        </div>
-      </div>
-    </section> -->
-
-    <!-- end best section -->
-
-    <!-- rent section -->
-
-    <!-- <section class="rent_section layout_padding">
-      <div class="container">
-        <div class="rent_container">
-          <div class="box">
-            <div class="img-box">
-              <img src="images/r-1.png" alt="" />
-            </div>
-            <div class="price">
-              <a href=""> Rent $200 </a>
-            </div>
-          </div>
-          <div class="box">
-            <div class="img-box">
-              <img src="images/r-2.png" alt="" />
-            </div>
-            <div class="price">
-              <a href=""> Rent $200 </a>
-            </div>
-          </div>
-          <div class="box">
-            <div class="img-box">
-              <img src="images/r-3.png" alt="" />
-            </div>
-            <div class="price">
-              <a href=""> Rent $200 </a>
-            </div>
-          </div>
-          <div class="box">
-            <div class="img-box">
-              <img src="images/r-4.png" alt="" />
-            </div>
-            <div class="price">
-              <a href=""> Rent $200 </a>
-            </div>
-          </div>
-          <div class="box">
-            <div class="img-box">
-              <img src="images/r-5.png" alt="" />
-            </div>
-            <div class="price">
-              <a href=""> Rent $200 </a>
-            </div>
-          </div>
-          <div class="box">
-            <div class="img-box">
-              <img src="images/r-6.png" alt="" />
-            </div>
-            <div class="price">
-              <a href=""> Rent $200 </a>
-            </div>
-          </div>
-        </div>
-        <div class="btn-box">
-          <a href=""> See More </a>
-        </div>
-      </div>
-    </section> -->
-
-    <!-- end rent section -->
-
-    <!-- blog section -->
-
-    <!-- <section class="blog_section layout_padding">
-      <div class="container">
-        <div class="heading_container">
-          <h2>Our Latest Blog</h2>
-          <p>
-            It is a long established fact that a reader will be distracted by
-            the
-          </p>
-        </div>
-      </div>
-      <div class="blog_container">
-        <div class="layout_padding2-top">
-          <div class="carousel-wrap">
-            <div class="owl-carousel">
-              <div class="item">
-                <div class="box">
-                  <div class="date-box">
-                    <h6>04 Nov 2019</h6>
-                  </div>
-                  <div class="img-box">
-                    <img src="images/b-1.jpg" alt="" />
-                  </div>
-                  <div class="detail-box">
-                    <h5>Vintage</h5>
-                    <p>
-                      It is a long established fact that a reader will be
-                      distracted by the readable The point of using Lorem
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="item">
-                <div class="box">
-                  <div class="date-box">
-                    <h6>04 Nov 2019</h6>
-                  </div>
-                  <div class="img-box">
-                    <img src="images/b-2.jpg" alt="" />
-                  </div>
-                  <div class="detail-box">
-                    <h5>Steering wheels</h5>
-                    <p>
-                      It is a long established fact that a reader will be
-                      distracted by the readable The point of using Lorem
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="item">
-                <div class="box">
-                  <div class="date-box">
-                    <h6>04 Nov 2019</h6>
-                  </div>
-                  <div class="img-box">
-                    <img src="images/b-3.jpg" alt="" />
-                  </div>
-                  <div class="detail-box">
-                    <h5>Buick Car</h5>
-                    <p>
-                      It is a long established fact that a reader will be
-                      distracted by the readable The point of using Lorem
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <div class="item">
-                <div class="box">
-                  <div class="date-box">
-                    <h6>04 Nov 2019</h6>
-                  </div>
-                  <div class="img-box">
-                    <img src="images/b-2.jpg" alt="" />
-                  </div>
-                  <div class="detail-box">
-                    <h5>Steering wheels</h5>
-                    <p>
-                      It is a long established fact that a reader will be
-                      distracted by the readable The point of using Lorem
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section> -->
-
-    <!-- end blog section -->
-
-    <!-- us section -->
-
-    <!-- <section class="us_section">
-      <div class="container">
-        <div class="heading_container">
-          <h2>Why choose Us</h2>
-          <p>
-            It is a long established fact that a reader will be distracted by
-            the
-          </p>
-        </div>
-      </div>
-      <div class="us_container layout_padding2">
-        <div class="content_box">
-          <div class="box">
-            <div class="img-box">
-              <img src="images/u-1.png" alt="" />
-            </div>
-            <div class="detail-box">
-              <h5>Low Rent</h5>
-            </div>
-          </div>
-          <div class="box">
-            <div class="img-box">
-              <img src="images/u-2.png" alt="" />
-            </div>
-            <div class="detail-box">
-              <h5>Fast Car</h5>
-            </div>
-          </div>
-          <div class="box">
-            <div class="img-box">
-              <img src="images/u-3.png" alt="" />
-            </div>
-            <div class="detail-box">
-              <h5>Safe Car</h5>
-            </div>
-          </div>
-          <div class="box">
-            <div class="img-box">
-              <img src="images/u-4.png" alt="" />
-            </div>
-            <div class="detail-box">
-              <h5>Quick Support</h5>
-            </div>
-          </div>
-        </div>
-        <div class="btn-box">
-          <a href=""> Read More </a>
-        </div>
-      </div>
-    </section> -->
-
-    <!-- end us section -->
-
-    <!-- client section -->
-
-    <!-- <section class="client_section layout_padding">
-      <div class="container">
-        <div class="heading_container">
-          <h2>What Is say Customer</h2>
-          <p>
-            It is a long established fact that a reader will be distracted by
-            the
-          </p>
-        </div>
-        <div class="layout_padding2-top">
-          <div class="carousel-wrap">
-            <div class="owl-carousel">
-              <div class="item">
-                <div class="box">
-                  <div class="detail-box">
-                    <p>
-                      It is a long established fact that a reader will be
-                      distracted by the readable content of a page when looking
-                      at its layout. The point of using Lorem It is a long
-                      established fact that a reader will be distracted by the
-                      readable content of a page when looking at its layout. The
-                      point of using Lorem
-                    </p>
-                  </div>
-                  <div class="client_id">
-                    <div class="img-box">
-                      <img src="images/client-1.png" alt="" class="img-1" />
-                      <img
-                        src="images/client-1-white.png"
-                        alt=""
-                        class="img-2"
-                      />
-                    </div>
-                    <div class="name">
-                      <h6>Established</h6>
-                      <p>by the readable</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="item">
-                <div class="box">
-                  <div class="detail-box">
-                    <p>
-                      It is a long established fact that a reader will be
-                      distracted by the readable content of a page when looking
-                      at its layout. The point of using Lorem It is a long
-                      established fact that a reader will be distracted by the
-                      readable content of a page when looking at its layout. The
-                      point of using Lorem
-                    </p>
-                  </div>
-                  <div class="client_id">
-                    <div class="img-box">
-                      <img src="images/client-2.png" alt="" class="img-1" />
-                      <img
-                        src="images/client-2-white.png"
-                        alt=""
-                        class="img-2"
-                      />
-                    </div>
-                    <div class="name">
-                      <h6>Blished</h6>
-                      <p>by the readable</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="item">
-                <div class="box">
-                  <div class="detail-box">
-                    <p>
-                      It is a long established fact that a reader will be
-                      distracted by the readable content of a page when looking
-                      at its layout. The point of using Lorem It is a long
-                      established fact that a reader will be distracted by the
-                      readable content of a page when looking at its layout. The
-                      point of using Lorem
-                    </p>
-                  </div>
-                  <div class="client_id">
-                    <div class="img-box">
-                      <img src="images/client-1.png" alt="" class="img-1" />
-                      <img
-                        src="images/client-1-white.png"
-                        alt=""
-                        class="img-2"
-                      />
-                    </div>
-                    <div class="name">
-                      <h6>Establi</h6>
-                      <p>by the readable</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="item">
-                <div class="box">
-                  <div class="detail-box">
-                    <p>
-                      It is a long established fact that a reader will be
-                      distracted by the readable content of a page when looking
-                      at its layout. The point of using Lorem It is a long
-                      established fact that a reader will be distracted by the
-                      readable content of a page when looking at its layout. The
-                      point of using Lorem
-                    </p>
-                  </div>
-                  <div class="client_id">
-                    <div class="img-box">
-                      <img src="images/client-1.png" alt="" class="img-1" />
-                      <img
-                        src="images/client-1-white.png"
-                        alt=""
-                        class="img-2"
-                      />
-                    </div>
-                    <div class="name">
-                      <h6>Establi</h6>
-                      <p>by the readable</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section> -->
-
-    <!-- end client section -->
-
-    <!-- contact section -->
-
-    <!-- <section class="contact_section layout_padding">
-      <div class="container">
-        <div class="heading_container">
-          <h2>Complain Form</h2>
-        </div>
-        <div class="row">
-          <div class="col-md-8 mx-auto">
-            <div class="form_container">
-              <form>
-                <div class="form-row">
-                  <div class="form-group col-md-6">
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="inputName4"
-                      placeholder="Name "
-                    />
-                  </div>
-                  <div class="form-group col-md-6">
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="inputSubject4"
-                      placeholder="Phone"
-                    />
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group col">
-                    <input
-                      type="email"
-                      class="form-control"
-                      id="inputEmail4"
-                      placeholder="Email id"
-                    />
-                  </div>
-                </div>
-                <div class="form-group">
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="inputMessage"
-                    placeholder="Message"
-                  />
-                </div>
-                <div class="d-flex justify-content-center">
-                  <button type="submit" class="">Send</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-        <div class="contact_items">
-          <a href="">
-            <div class="img-box">
-              <img src="images/location.png" alt="" />
-            </div>
-            <h6>Loram Ipusum ari lo elisant na</h6>
-          </a>
-          <a href="">
-            <div class="img-box">
-              <img src="images/call.png" alt="" />
-            </div>
-            <h6>(+12 1234456789)</h6>
-          </a>
-          <a href="">
-            <div class="img-box">
-              <img src="images/mail.png" alt="" />
-            </div>
-            <h6>demo@gmail.com</h6>
-          </a>
-        </div>
-        <div class="social_container">
-          <div class="social-box">
-            <div>
-              <a href="">
-                <img src="images/fb.png" alt="" />
-              </a>
-            </div>
-            <div>
-              <a href="">
-                <img src="images/twitter.png" alt="" />
-              </a>
-            </div>
-            <div>
-              <a href="">
-                <img src="images/linkedin.png" alt="" />
-              </a>
-            </div>
-            <div>
-              <a href="">
-                <img src="images/insta.png" alt="" />
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section> -->
-
-    <!-- end contact section -->
+    </div>
 
     <!-- map section -->
 
@@ -1180,6 +645,17 @@
     </footer>
     <!-- footer section -->
 
+    <script>
+      function Redirect() {
+        const fcmToken = localStorage.getItem("fcmToken");
+        if (fcmToken) {
+          window.location.href = `/track/${fcmToken}`;
+        } else {
+          alert("You have not Tracked Any Bus Yet");
+        }
+      }
+    </script>
+
     <script type="module" src="/firebase.js"></script>
     <script type="module" src="/foreground.js"></script>
 
@@ -1190,7 +666,8 @@
     <script src="/public/js/custom.js"></script>
 
     <script src="/custom/public.js"></script>
-    <script>
+    <script type="module">
+      import { fetchToken } from "/firebase.js";
       async function Go() {
         const input = document.getElementById("busNumber");
         const inputValue = input.value.trim();
@@ -1198,7 +675,7 @@
         input.value = ""; // Clear the input
 
         try {
-          response = await fetch("/", {
+          let response = await fetch("/", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -1212,7 +689,6 @@
             alert(response.message);
           } else {
             console.log(response.data);
-
 
             localStorage.setItem(
               "lastSearchBus",
@@ -1235,67 +711,176 @@
         }
       }
 
+      window.Go = Go; // ✅ Makes it available in HTML onclick
+
       function appendBuses() {
-  // Clear previous content
-  document.getElementById("Buses").innerHTML = "";
+        // Clear previous content
+        document.getElementById("Buses").innerHTML = "";
 
-  let bus = JSON.parse(localStorage.getItem("lastSearchBus"));
-  console.log(bus);
+        let bus = JSON.parse(localStorage.getItem("lastSearchBus"));
+        console.log(bus);
 
-  if (bus) {
-    let cardHTML = `
+        if (bus) {
+          // Create stop options
+          let stopOptions = "";
+          if (bus.routeStops && bus.routeStops.length > 0) {
+            stopOptions = bus.routeStops
+              .map(
+                (stop) =>
+                  `<option value="${stop._id}">${stop.stopName}</option>`
+              )
+              .join("");
+          } else {
+            stopOptions = `<option disabled>No stops available</option>`;
+          }
+
+          let cardHTML = `
       <div class="card mb-3" style="width: 100%">
         <div class="row g-0">
-          <div class="col-md-4">
-        <img src="<%= bus.busImage && bus.busImage.length > 0 ? bus.busImage[0] : '/images/default-bus.jpg' %>" alt="Bus Image">
-
+          <div class="col-md-4">  
+            <img src="${
+              bus.busImages && bus.busImages.length > 0 ? bus.busImages[0] : ""
+            }" alt="Bus Image" class="img-fluid">
           </div>
           <div class="col-md-8">
             <div class="card-body">
               <h5 class="card-title">${bus.route}</h5>
               <a href="/particularBus/${bus._id}">Track Now</a>
               <p class="card-text">Bus Number: ${bus.busNumber}</p>
-
               <br>
- <!-- Button trigger modal -->
-<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
-Recieve Notification
-</button>
 
-<!-- Modal -->
-<div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h1 class="modal-title fs-5" id="staticBackdropLabel">Modal title</h1>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        ...
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary">Understood</button>
-      </div>
-    </div>
-  </div>
-</div>
+              <!-- Button trigger modal -->
+              <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+                Receive Notification
+              </button>
+
+              <!-- Modal -->
+              <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h1 class="modal-title fs-5" id="staticBackdropLabel">Select Stop</h1>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                      <form id="notifyForm">
+                        <div class="mb-3">
+                          <label for="stopSelect" class="form-label">Choose your stop</label>
+                          <select class="form-select" id="stopSelect" required>
+                            ${stopOptions}
+                          </select>
+                        </div>
+                        <div class="modal-footer">
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                          <button type="submit" class="btn btn-primary">Inform Me</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
       </div>
     `;
 
-    // ✅ Correctly assign the HTML
-    document.getElementById("Buses").innerHTML = cardHTML;
+          document.getElementById("Buses").innerHTML = cardHTML;
 
-  } else {
-    console.log("No buses found in localStorage.");
-  }
-}
+          // Add event listener for the form submission
+          setTimeout(() => {
+            document
+              .getElementById("notifyForm")
+              .addEventListener("submit", function (e) {
+                e.preventDefault();
+                const selectedStopId =
+                  document.getElementById("stopSelect").value;
+                console.log("Selected Stop ID:", selectedStopId);
+
+                sendNotificationRequest(selectedStopId, bus._id);
+              });
+          }, 100); // Wait for modal to load
+        }
+      }
 
       // Call the function to append buses when needed
       appendBuses();
+
+      async function sendNotificationRequest(stopId, busId) {
+        try {
+          const fcmToken = localStorage.getItem("fcmToken");
+          const expiryDateStr = localStorage.getItem("fcmTokenExpiryDate");
+
+          let isTokenValid = false;
+
+          if (fcmToken && expiryDateStr) {
+            const now = new Date();
+            const expiryDate = new Date(expiryDateStr);
+
+            if (now < expiryDate) {
+              isTokenValid = true;
+            }
+          }
+
+          if (!fcmToken || !isTokenValid) {
+            console.warn("FCM token is missing or expired.");
+
+            alert(
+              "Notifications are allowed, but your token is either missing or expired.\n" +
+                "Please try again or check your internet connection."
+            );
+
+            // Try to fetch the token again
+            fetchToken();
+
+            // Close the modal (Bootstrap 5)
+            const modalEl = document.querySelector("#staticBackdrop");
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (modalInstance) {
+              modalInstance.hide();
+            }
+
+            return;
+          }
+
+          const payload = {
+            token: fcmToken,
+            stopId,
+            busId,
+            createdAt: localStorage.getItem("fcmTokenCreatedAt"),
+            expireDate: localStorage.getItem("fcmTokenExpiryDate"),
+          };
+
+          // Send the POST request
+          const response = await fetch("/saveToken", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+
+          const result = await response.json();
+          console.log(result);
+
+          alert(result.message);
+
+          const modalEl = document.querySelector("#staticBackdrop");
+          const modalInstance = bootstrap.Modal.getInstance(modalEl);
+          if (modalInstance) {
+            modalInstance.hide(); // ✅ Closes the modal
+          }
+        } catch (error) {
+          console.error("Error sending notification request:", error);
+          alert("Something went wrong while subscribing for notifications.");
+        }
+      }
+
+      window.onload = function () {
+        document.getElementById("loader-text").textContent = "loaded";
+        document.getElementById("loader").style.display = "none";
+      };
     </script>
   </body>
 </html>

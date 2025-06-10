@@ -4,10 +4,12 @@ import CORE from "../model/admin.js";
 import rateLimit from "express-rate-limit";
 
 import Conductor from "../model/conductor.js";
-import Fuse from "fuse.js";
+
 import Bus from "../model/bus.js";
+import FCM from "../model/FCM.js";
 import { checkAuthHome } from "../middlware/rootCheckHome.js";
 import { generateTokenAndSetCookie } from "../utils/createJwtTokenSetCookie.js";
+
 let router = express.Router();
 
 const limiter = rateLimit({
@@ -75,6 +77,166 @@ router.post("/", async (req, res) => {
     });
   }
 });
+
+router.patch("/toggleFCM/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isActive } = req.body;
+
+    if (!id || typeof isActive !== "boolean") {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid request data" });
+    }
+
+    const fcm = await FCM.findById(id);
+    if (!fcm) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Tracking entry not found" });
+    }
+
+    fcm.isActive = isActive;
+    await fcm.save();
+
+    return res.json({ success: true, message: "Status updated" });
+  } catch (err) {
+    console.error("Error toggling FCM:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+router.delete("/deleteFCM/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await FCM.findByIdAndDelete(id);
+    if (!result) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Tracking entry not found" });
+    }
+
+    return res.json({ success: true, message: "Deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting FCM:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+
+router.get("/track/:token", async (req, res) => {
+  const { token } = req.params;
+
+  try {
+    if (!token) {
+      return res.render("public/track.ejs", {
+        message: "No Tracked Bus",
+        data: [],
+      });
+    }
+
+    const trackedEntries = await FCM.find({ fcmToken: token }).populate({
+      path: "busId",
+      select: "busNumber route _id",
+    });
+
+    if (!trackedEntries || trackedEntries.length === 0) {
+      return res.render("public/track.ejs", {
+        message: "No Tracked Bus",
+        data: [],
+      });
+    }
+
+    return res.render("public/track.ejs", {
+      data: trackedEntries,
+      message: null,
+    });
+  } catch (error) {
+    console.error("Error fetching FCM token tracking:", error);
+    return res.render("public/track.ejs", {
+      message: "Server Error",
+      data: [],
+    });
+  }
+});
+
+router.post("/saveToken", async (req, res) => {
+  try {
+    const {
+      token,
+      stopId,
+      busId,
+      role = "student",
+      createdAt,
+      expireDate,
+    } = req.body;
+
+    // Basic validation
+    if (!token || !stopId || !busId || !createdAt || !expireDate) {
+      return res.json({
+        success: false,
+        message:
+          "Missing required fields: token, stopId, busId, createdAt, or expireDate.",
+      });
+    }
+
+    // Check if the bus exists
+    const bus = await Bus.findById(busId);
+    if (!bus) {
+      return res.json({
+        success: false,
+        message: "Invalid busId: No such bus found.",
+      });
+    }
+
+    // Find stop within the bus routeStops
+    const stop = bus.routeStops.id(stopId);
+    if (!stop) {
+      return res.json({
+        success: false,
+        message: "Invalid stopId: Stop not found in this bus's route.",
+      });
+    }
+
+    // Check if token with this stopId already exists
+    const existing = await FCM.findOne({ fcmToken: token, stopId });
+
+    if (existing) {
+      // Update existing entry
+      existing.busId = busId;
+      existing.role = role;
+      existing.isActive = true;
+      existing.createdAt = new Date(createdAt);
+      existing.expireDate = new Date(expireDate);
+      existing.stop = stop.toObject(); // Save full stop data
+      await existing.save();
+    } else {
+      // Create new entry
+      await FCM.create({
+        fcmToken: token,
+        stopId,
+        busId,
+        role,
+        isActive: true,
+        createdAt: new Date(createdAt),
+        expireDate: new Date(expireDate),
+        stop: stop.toObject(), // Save full stop data
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "FCM token saved or updated successfully.",
+    });
+  } catch (error) {
+    console.error("Error in /saveToken:", error);
+    return res.json({
+      success: false,
+      message: "Server error while saving FCM token.",
+    });
+  }
+});
+
 
 router.get("/particularBus/:id", async (req, res) => {
   const { id } = req.params;

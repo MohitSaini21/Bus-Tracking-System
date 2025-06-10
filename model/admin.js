@@ -27,6 +27,9 @@ const userSchema = new Schema(
     notificationToken: {
       type: String, // e.g., FCM device token
     },
+    notificationToken: {
+      type: String,
+    },
     permissions: [String], // optional: custom access flags
   },
   { timestamps: true }

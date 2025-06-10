@@ -41,30 +41,29 @@
     <!-- End layout styles -->
     <link rel="shortcut icon" href="/assets/images/favicon.png" />
     <style>
-        .vehicle-moving {
-    animation: drive 2s linear infinite;
-    display: inline-block;
-  }
+      .vehicle-moving {
+        animation: drive 2s linear infinite;
+        display: inline-block;
+      }
 
-  @keyframes drive {
-    0% {
-      transform: translateX(0);
-    }
-    50% {
-      transform: translateX(5px);
-    }
-    100% {
-      transform: translateX(0);
-    }
-  }
+      @keyframes drive {
+        0% {
+          transform: translateX(0);
+        }
+        50% {
+          transform: translateX(5px);
+        }
+        100% {
+          transform: translateX(0);
+        }
+      }
     </style>
   </head>
   <body>
     <div class="container-scroller">
       <!-- partial:partials/_sidebar.html -->
 
-      <%- include('../corePartials/sidebar.ejs') %> <%-
-      include('../corePartials/loader.ejs') %>
+      <%- include('../corePartials/sidebar.ejs') %>
       <!-- partial -->
       <div class="container-fluid page-body-wrapper">
         <!-- partial:partials/_navbar.html -->
@@ -94,8 +93,8 @@
                         class="col-4 col-sm-12 col-xl-4 text-center text-xl-right"
                       >
                         <i
-                          class="icon-lg mdi mdi-jeepney 
-                           ml-auto vehicle-moving" style="color: #FFC107;"
+                          class="icon-lg mdi mdi-jeepney ml-auto vehicle-moving"
+                          style="color: #ffc107"
                         ></i>
                       </div>
                     </div>
@@ -106,7 +105,9 @@
                 <div class="card">
                   <div class="card-body">
                     <h5>
-                      <a href="/admin/garrage?search=Out+of+Service" style="text-decoration: none"
+                      <a
+                        href="/admin/garrage?search=Out+of+Service"
+                        style="text-decoration: none"
                         >Out Of Service Vehicles</a
                       >
                     </h5>
@@ -123,7 +124,7 @@
                         class="col-4 col-sm-12 col-xl-4 text-center text-xl-right"
                       >
                         <i
-                          class="icon-lg mdi mdi-jeepney text-danger ml-auto  vehicle-moving"
+                          class="icon-lg mdi mdi-jeepney text-danger ml-auto vehicle-moving"
                         ></i>
                       </div>
                     </div>
@@ -134,7 +135,9 @@
                 <div class="card">
                   <div class="card-body">
                     <h5>
-                      <a href="/admin/garrage?search=Operational" style="text-decoration: none"
+                      <a
+                        href="/admin/garrage?search=Operational"
+                        style="text-decoration: none"
                         >Operational Vehicles</a
                       >
                     </h5>
@@ -157,39 +160,47 @@
                   </div>
                 </div>
               </div>
-<% if (user.role=="administrator") { %>
- 
-  <div class="col-sm-4 grid-margin">
-    <div class="card">
-      <div class="card-body">
-        <h5><a href="/tmu/administrator/settings/addAdmin" style="text-decoration: none;">Total Admins</a></h5>
-        <div class="row">
-          <div class="col-8 col-sm-12 col-xl-8 my-auto">
-            <div
-              class="d-flex d-sm-block d-md-flex align-items-center"
-            >
-              <h2 class="mb-0">4</h2>
-            </div>
-          </div>
-          <div
-            class="col-4 col-sm-12 col-xl-4 text-center text-xl-right"
-          >
-            <i
-              class="icon-lg mdi mdi-account-multiple-plus text-success ml-auto"
-            ></i>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-<% } %>
+              <% if (user.role=="administrator") { %>
 
+              <div class="col-sm-4 grid-margin">
+                <div class="card">
+                  <div class="card-body">
+                    <h5>
+                      <a
+                        href="/tmu/administrator/settings/addAdmin"
+                        style="text-decoration: none"
+                        >Total Admins</a
+                      >
+                    </h5>
+                    <div class="row">
+                      <div class="col-8 col-sm-12 col-xl-8 my-auto">
+                        <div
+                          class="d-flex d-sm-block d-md-flex align-items-center"
+                        >
+                          <h2 class="mb-0">4</h2>
+                        </div>
+                      </div>
+                      <div
+                        class="col-4 col-sm-12 col-xl-4 text-center text-xl-right"
+                      >
+                        <i
+                          class="icon-lg mdi mdi-account-multiple-plus text-success ml-auto"
+                        ></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <% } %>
             </div>
           </div>
           <!-- content-wrapper ends -->
           <!-- partial:partials/_footer.html -->
-          <!-- <%- include('../corePartials/footer.ejs') %> -->
-          <!-- partial -->
+          <!-- <%- include('../corePartials/footer.ejs') %> --
+         
+        partial -->
+
+          <%-include('../corePartials/loader.ejs') %>
         </div>
         <!-- main-panel ends -->
       </div>
@@ -215,10 +226,34 @@
     <!-- endinject -->
     <!-- Custom js for this page -->
     <script src="/assets/js/dashboard.js"></script>
+    <script type="module" src="/firebase.js"></script>
+    <script type="module" src="/foreground.js"></script>
 
     <!-- End custom js for this page -->
     <!-- custom Script -->
-    <script>
+
+    <script type="module">
+      import { fetchToken } from "/firebase.js";
+
+      const fcmToken = localStorage.getItem("fcmToken");
+      const expiryDateStr = localStorage.getItem("fcmTokenExpiryDate");
+
+      let isTokenValid = false;
+
+      if (fcmToken && expiryDateStr) {
+        const now = new Date();
+        const expiryDate = new Date(expiryDateStr);
+
+        if (now < expiryDate) {
+          isTokenValid = true;
+        }
+      }
+
+      if (!fcmToken || !isTokenValid) {
+        fetchToken();
+      } else {
+      }
+
       window.onload = function () {
         document.getElementById("loader").style.display = "none";
       };

@@ -21,25 +21,8 @@ const analytics = getAnalytics(app);
 
 const messaging = getMessaging(app);
 
-function setCookie(name, value, days) {
-  const d = new Date();
-  d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
-  let expires = "expires=" + d.toUTCString();
-  document.cookie = name + "=" + value + ";" + expires + ";path=/";
-}
-
-function getCookie(name) {
-  let nameEQ = name + "=";
-  let ca = document.cookie.split(";");
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i].trim();
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-  }
-  return null;
-}
-
 async function getFcmToken(retryCount) {
-  const isPermissionRequested = getCookie("notifPermissionPageLoaded");
+  const isPermissionRequested = false;
 
   if (!isPermissionRequested) {
     try {
@@ -55,16 +38,21 @@ async function getFcmToken(retryCount) {
 
         if (token) {
           console.log("FCM Token:", token);
+          const createdAt = new Date().toISOString(); // Current ISO timestamp
 
+          // 1. Save token and createdAt
           localStorage.setItem("fcmToken", token);
-
-          setCookie("notifPermissionPageLoaded", "true", 365); // Cookie expires in 1 year
-          sendTokenToServer(token);
+          localStorage.setItem("fcmTokenCreatedAt", createdAt);
+          const expiryDate = new Date();
+          expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+          // Store expiryDate in localStorage too (optional but helpful)
+          localStorage.setItem("fcmTokenExpiryDate", expiryDate.toISOString());
         } else {
           console.error("No FCM token received.");
         }
       } else {
-        console.log("Notification permission denied.");
+        document.getElementById("loader-text").innerHTML =
+          "Notification permission denied. pls Allow";
       }
 
       // Mark the page as loaded by setting the "notifPermissionPageLoaded" cookie
@@ -119,14 +107,20 @@ async function getFcmToken(retryCount) {
 // }
 
 // Check if service workers are supported and then register
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker
-    .register("/firebase-messaging-sw.js")
-    .then(function (registration) {
-      console.log("Service Worker registered with scope: ", registration.scope);
-      getFcmToken(0);
-    })
-    .catch(function (err) {
-      console.log("Service Worker registration failed: ", err);
-    });
+
+export function fetchToken() {
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker
+      .register("/firebase-messaging-sw.js")
+      .then(function (registration) {
+        console.log(
+          "Service Worker registered with scope: ",
+          registration.scope
+        );
+        getFcmToken(0);
+      })
+      .catch(function (err) {
+        console.log("Service Worker registration failed: ", err);
+      });
+  }
 }
