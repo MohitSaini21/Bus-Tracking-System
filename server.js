@@ -4,6 +4,7 @@ import { config } from "dotenv"; // For environment variable management
 import updateDistance from "./utils/distance.js";
 import evaluateBusProximityToStops from "./utils/stopsProximity.js";
 import { dcRouter } from "./routes/DC.js";
+import { sendNotificationToClient } from "./utils/notify.js";
 import { Worker } from "worker_threads";
 import os from "os";
 
@@ -196,6 +197,17 @@ function processQueue(busId) {
         if (msg?.updatedBusObject && msg?.busId) {
           isProcessing.set(msg.busId, false);
           lastEvaluated[msg.busId] = msg.updatedBusObject;
+          if (adminConnectionsBus[msg.busId]) {
+            // Iterate through each connected admin socket
+            adminConnectionsBus[msg.busId].forEach((socket) => {
+              if (socket && socket.emit) {
+                socket.emit("busUpdate", {
+                  busObject: lastEvaluated[msg.busId],
+                });
+              }
+            });
+          }
+
           availableWorkers.push(worker);
           const timeTaken = Date.now() - start;
           console.log(`✅ Worker done in ${timeTaken}ms`);
@@ -417,6 +429,25 @@ io.on("connection", (socket) => {
     }
   });
 
+  // About pTracking
+  socket.on("getObject", async (data, callback) => {
+    try {
+      const busId = data.busId;
+
+      // Simulate fetching the bus object from a database
+      const busObject = lastEvaluated[busId]; // Use your DB model here
+
+      if (busObject) {
+        callback({ data: busObject }); // Send the object back to the client
+      } else {
+        callback({ data: null }); // Let the client know no data was found
+      }
+    } catch (error) {
+      console.error("Error fetching bus object:", error);
+      callback({ data: null, error: "Server error" });
+    }
+  });
+
   socket.on("lastLocation", (busId, callback) => {
     if (!liveBuses.includes(busId)) {
       callback({
@@ -567,6 +598,11 @@ server.listen(PORT, () => {
   ConnectDB(
     "mongodb+srv://mohitsainisaini2680:misbaansari20@cluster0.wjx3j.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
   );
+  // sendNotificationToClient(
+  //   "dlf0rTyD0ghxObSl6icyYd:APA91bHvI8bqTKzXDzl6oAdU8ns-J_CVxn7ZctjmQR4LahAw7_CuJw6k2M_P9oxKbbgGBXBiFAZMVY7gMlolSIYBrDxXt7DLYf24mEc6NfcLYLUs4n8443w",
+  //   "testing",
+  //   "Bus is approaching you be there"
+  // );
   console.log(`✅ Server is running and listneing at the port ${PORT}`);
 
   // hey there how are you

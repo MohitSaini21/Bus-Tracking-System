@@ -35,50 +35,20 @@
 
     <!-- You can add this inside your page CSS or <style> -->
     <style>
-      .stops-container {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        padding: 10px 0;
-        text-align: center;
+      .row-updated {
+        animation: blinkRow 0.3s ease-in-out 2;
+        background-color: #fff8dc !important; /* Light yellow highlight */
       }
 
-      .stop-item {
-        min-width: 90px;
-        max-width: 120px;
-        word-wrap: break-word;
-      }
-
-      .stop-name {
-        font-weight: 600;
-        font-size: 1rem;
-      }
-
-      .time {
-        font-size: 0.8rem;
-        color: #777;
-      }
-
-      .arrow {
-        font-size: 1.5rem;
-        color: #444;
-      }
-
-      @media (max-width: 768px) {
-        .stops-container {
-          flex-direction: column;
+      @keyframes blinkRow {
+        0% {
+          background-color: #fff8dc;
         }
-
-        .arrow {
-          transform: rotate(90deg); /* → becomes ↓ */
-          margin: 5px 0;
+        50% {
+          background-color: #fff4b2;
         }
-
-        .stop-item {
-          min-width: auto;
-          max-width: none;
+        100% {
+          background-color: #fff8dc;
         }
       }
     </style>
@@ -165,6 +135,111 @@
             </div>
 
             <br />
+            <div class="row">
+              <div class="col-lg-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body">
+                    <h4 class="card-title">Stops Covered</h4>
+
+                    <div class="table-responsive">
+                      <table
+                        class="table table-bordered text-center"
+                        id="stops-covered"
+                      >
+                        <thead class="thead-dark">
+                          <tr>
+                            <th>#</th>
+                            <th>Stop Name</th>
+                            <th>Morning</th>
+                            <th>Evening</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <% if (busLog && busLog.stops && busLog.stops.length >
+                          0) { %> <% busLog.stops.forEach((stopLog, index) => {
+                          %>
+                          <tr id="stop-<%= stopLog.stop._id || stopLog.stop %>">
+                            <td><%= index + 1 %></td>
+                            <td><%= stopLog.stopName || '__' %></td>
+
+                            <!-- Morning Times -->
+                            <td>
+                              <div>
+                                <strong>Expected:</strong> <%=
+                                stopLog.eMorningTime ? new
+                                Date(stopLog.eMorningTime).toLocaleTimeString()
+                                : '__' %>
+                              </div>
+                              <div>
+                                <strong>Actual:</strong> <%= stopLog.morningTime
+                                ? new
+                                Date(stopLog.morningTime).toLocaleTimeString() :
+                                '__' %>
+                              </div>
+                            </td>
+
+                            <!-- Evening Times -->
+                            <td>
+                              <div>
+                                <strong>Expected:</strong> <%=
+                                stopLog.eEveningTime ? new
+                                Date(stopLog.eEveningTime).toLocaleTimeString()
+                                : '__' %>
+                              </div>
+                              <div>
+                                <strong>Actual:</strong> <%= stopLog.eveningTime
+                                ? new
+                                Date(stopLog.eveningTime).toLocaleTimeString() :
+                                '__' %>
+                              </div>
+                            </td>
+
+                            <!-- Fluctuation (dummy logic, customize as needed) -->
+                            <!-- <td>
+                              <% if (stopLog.morningTime &&
+                              stopLog.eMorningTime) { const fluctuationMin =
+                              Math.round((new Date(stopLog.morningTime) - new
+                              Date(stopLog.eMorningTime)) / 60000); const sign =
+                              fluctuationMin > 0 ? '+' : ''; %>
+                              <span class="badge bg-warning text-dark"
+                                ><%= sign + fluctuationMin %> mins</span
+                              >
+                              <% } else { %>
+                              <span class="badge bg-secondary">__</span>
+                              <% } %>
+                            </td> -->
+
+                            <!-- Status -->
+                            <!-- <td>
+                              <% const actual = stopLog.morningTime; const
+                              expected = stopLog.eMorningTime; let statusText =
+                              "__", badgeClass = "bg-secondary"; if (actual &&
+                              expected) { const diff = Math.abs(new Date(actual)
+                              - new Date(expected)) / 60000; if (diff <= 5) {
+                              statusText = "On Time"; badgeClass = "bg-success";
+                              } else if (actual > expected) { statusText =
+                              "Late"; badgeClass = "bg-danger"; } else {
+                              statusText = "Early"; badgeClass = "bg-info"; } }
+                              %>
+                              <span class="badge <%= badgeClass %>"
+                                ><%= statusText %></span
+                              >
+                            </td> -->
+                          </tr>
+                          <% }) %> <% } else { %>
+                          <tr>
+                            <td colspan="6">No stops found</td>
+                          </tr>
+                          <% } %>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <br />
           </div>
           <!-- content-wrapper ends -->
           <!-- partial:partials/_footer.html -->
@@ -199,30 +274,120 @@
     <!-- custom Script  -->
 
     <script>
-                        const user= <%- JSON.stringify(user) %>;
-                        const bus= <%- JSON.stringify(bus) %>;
-                  const socket = io({
-                    query: {
-                      adminId: user._id,
-                      bus: bus._id
-                    }
-                  });
+                                    const user= <%- JSON.stringify(user) %>;
+                                    const bus= <%- JSON.stringify(bus) %>;
+                              const socket = io({
+                                query: {
+                                  adminId: user._id,
+                                  bus: bus._id
+                                }
+                              });
+
+      // fucntiom to update the row
+
+      function updateStopsCoveredTable(reachedStops) {
+        const tbody = document.querySelector("#stops-covered tbody");
+
+        Object.entries(reachedStops).forEach(([stopId, info], index) => {
+          const rowId = `stop-${stopId}`;
+          const existingRow = document.getElementById(rowId);
+
+          const stopName = info.stopName || "Unknown";
+
+          const eMorningTime = info.eMorningTime ? new Date(info.eMorningTime) : null;
+          const morningTime = info.morning ? new Date(info.morning) : null;
+
+          const eEveningTime = info.eEveningTime ? new Date(info.eveningTime) : null;
+          const eveningTime = info.evening ? new Date(info.evening) : null;
+
+          const formatTime = (d) => (d ? d.toLocaleTimeString() : "__");
+
+          let fluctuationCell = `<span class="badge bg-secondary">__</span>`;
+          if (morningTime && eMorningTime) {
+            const diffMin = Math.round((morningTime - eMorningTime) / 60000);
+            const sign = diffMin > 0 ? "+" : "";
+            fluctuationCell = `<span class="badge bg-warning text-dark">${sign}${diffMin} mins</span>`;
+          }
+
+          let statusText = "__";
+          let badgeClass = "bg-secondary";
+          if (morningTime && eMorningTime) {
+            const diff = Math.abs(morningTime - eMorningTime) / 60000;
+            if (diff <= 5) {
+              statusText = "On Time";
+              badgeClass = "bg-success";
+            } else if (morningTime > eMorningTime) {
+              statusText = "Late";
+              badgeClass = "bg-danger";
+            } else {
+              statusText = "Early";
+              badgeClass = "bg-info";
+            }
+          }
+
+          const newRowHTML = `
+            <tr id="${rowId}">
+              <td></td>
+              <td>${stopName}</td>
+
+              <td>
+                <div><strong>Expected:</strong> ${formatTime(eMorningTime)}</div>
+                <div><strong>Actual:</strong> ${formatTime(morningTime)}</div>
+              </td>
+
+              <td>
+                <div><strong>Expected:</strong> ${formatTime(eEveningTime)}</div>
+                <div><strong>Actual:</strong> ${formatTime(eveningTime)}</div>
+              </td>
+
+
+
+            </tr>
+          `;
+
+          if (existingRow) {
+            const tempDiv = document.createElement("div");
+            tempDiv.innerHTML = newRowHTML.trim();
+            const newRow = tempDiv.firstChild;
+
+            tbody.replaceChild(newRow, existingRow);
+
+            // ✨ Add blinking effect
+            newRow.classList.add("row-updated");
+
+            // 🧹 Remove after 3 seconds
+            setTimeout(() => {
+              newRow.classList.remove("row-updated");
+            }, 3000);
+          } else {
+            tbody.insertAdjacentHTML("beforeend", newRowHTML);
+          }
+        });
+
+        // Renumber all rows
+        Array.from(tbody.querySelectorAll("tr")).forEach((row, i) => {
+          const indexCell = row.querySelector("td:first-child");
+          if (indexCell) indexCell.textContent = i + 1;
+        });
+      }
+
+
+      // fucntiom to update the row
 
 
 
 
+      socket.emit("getObject", { busId: bus._id }, function (response) {
+        if (response.data) {
+          updateStopsCoveredTable(response.data.reachedStops);
+        }
+      });
 
-
-
-      //             socket.emit("getObject", { busId: bus._id }, function (response) {
-
-      // if(response.success){
-      //     console.log(response)
-      // }else{
-
-      //   console.log("Data does not exits")
-      // }
-      //       });
+      socket.on("busUpdate", function (data) {
+        if (data && data.busObject) {
+          updateStopsCoveredTable(data.busObject.reachedStops);
+        }
+      });
     </script>
 
     <!-- custom Script  -->

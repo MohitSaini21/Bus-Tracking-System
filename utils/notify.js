@@ -40,3 +40,4 @@ export function sendNotificationToClient(token, title, message) {
       console.log("Error sending message:", error);
     });
 }
+

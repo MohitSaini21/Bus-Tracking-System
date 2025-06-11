@@ -44,6 +44,9 @@ const conductorSchema = new mongoose.Schema({
     enum: ["Active", "Inactive", "On Leave"],
     default: "Active",
   },
+  notificationToken: {
+    type: String,
+  },
   role: {
     type: String,
     default: "conductor",

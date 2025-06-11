@@ -72,22 +72,20 @@ export default async function evaluateBusProximityToStops(
         if (!busObject.reachedStops[stopId]) {
           busObject.reachedStops[stopId] = {};
         }
+        busObject.reachedStops[stopId].stopName = stop.stopName;
 
         if (isMorning) {
           busObject.reachedStops[stopId].morning = currentTime;
+          busObject.reachedStops[stopId].eMorningTime = stop.morningTime;
         } else {
           busObject.reachedStops[stopId].evening = currentTime;
+          busObject.reachedStops[stopId].eEveningTime = currentTime;
         }
 
         console.log(
           `📍 Bus ${data.bus._id} reached "${stop.stopName}" at ${currentTime}`
         );
 
-        // Notification system  over here if reaching bus
-
-        // Notification system  over here
-
-        // Optional: stop checking other stops if one is matched
         break;
       } else {
         console.log(

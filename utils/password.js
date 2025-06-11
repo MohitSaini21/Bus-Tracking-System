@@ -1,6 +1,6 @@
- export default function generatePassword(length = 12) {
+ export default function generatePassword(length = 6) {
   const characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+[]{}|;:,.<>?";
+    "ABCDEFGHIJKLMNOPQRSTUVW";
   let password = "";
   for (let i = 0; i < length; i++) {
     const randomIndex = Math.floor(Math.random() * characters.length); // Using Math.random for randomness

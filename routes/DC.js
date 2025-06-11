@@ -91,6 +91,54 @@ router.get("/", checkUserExistenceAndRedirect, async (req, res) => {
   return res.render("DC/index.ejs", { user: req.worker }); // Passing user as req.worker
 });
 
+// api to save token
+router.post("/DC/api/save-fcm-token", async (req, res) => {
+  try {
+    const { token } = req.body;
+    const userId = req.user?.id;
+
+    if (!token) {
+      return res.status(400).json({ message: "FCM token is required" });
+    }
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized: User ID missing" });
+    }
+
+    let user;
+    let userType;
+
+    // Try to find Driver
+    user = await Driver.findById(userId);
+    if (user) {
+      userType = "Driver";
+    } else {
+      // Try Conductor if not a Driver
+      user = await Conductor.findById(userId);
+      if (user) {
+        userType = "Conductor";
+      }
+    }
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ message: "User not found in Driver or Conductor" });
+    }
+
+    user.notificationToken = token;
+    await user.save();
+
+    return res.status(200).json({
+      message: `FCM token saved successfully for ${userType}`,
+      userId,
+    });
+  } catch (error) {
+    console.error("Error saving FCM token:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
 router.get("/goLive", checkUserExistenceAndRedirect, async (req, res) => {
   try {
     // Checking the user role and fetching bus details accordingly

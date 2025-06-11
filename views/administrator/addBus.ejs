@@ -23,6 +23,7 @@
     <link rel="stylesheet" href="/assets/css/style.css" />
     <!-- End layout styles -->
     <link rel="shortcut icon" href="/assets/images/favicon.png" />
+    <link rel="stylesheet" href="/assets/loader.css" />
     <style>
         .preview{
   width: 150px; /* Set a fixed width */
@@ -351,6 +352,7 @@
           <!-- partial:../.../corePartials/_footer.html -->
 
           <%- include('../corePartials/footer.ejs') %>
+          <%-include('../corePartials/loader.ejs') %>
           <!-- partial -->
         </div>
         <!-- main-panel ends -->
@@ -364,63 +366,6 @@
     
     <!-- custom Scripts -->
 
-<script>
-// Adding additional stop inputs dynamically
-document.getElementById("add-stop").addEventListener("click", function () {
-  const additionalStops = document.getElementById("additional-stops");
-
-  const stopRow = `
-    <div class="row">
-      <div class="col-md-3">
-        <div class="form-group row">
-          <label class="col-sm-12 col-form-label">Stop Name</label>
-          <div class="col-sm-12">
-            <input type="text" class="form-control text-white" name="stopName[]" placeholder="Enter stop name" />
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-2">
-        <div class="form-group row">
-          <label class="col-sm-12 col-form-label">MT</label>
-          <div class="col-sm-12">
-            <input type="time" class="form-control text-white" name="morningTime[]" />
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-2">
-        <div class="form-group row">
-          <label class="col-sm-12 col-form-label">ET</label>
-          <div class="col-sm-12">
-            <input type="time" class="form-control text-white" name="eveningTime[]" />
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-2">
-        <div class="form-group row">
-          <label class="col-sm-12 col-form-label">Latitude</label>
-          <div class="col-sm-12">
-            <input type="number" step="any" class="form-control text-white" name="latitude[]" placeholder="Enter latitude" />
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-3">
-        <div class="form-group row">
-          <label class="col-sm-12 col-form-label">Longitude</label>
-          <div class="col-sm-12">
-            <input type="number" step="any" class="form-control text-white" name="longitude[]" placeholder="Enter longitude" />
-          </div>
-        </div>
-      </div>
-    </div>`;
-
-  additionalStops.insertAdjacentHTML("beforeend", stopRow);
-});
-</script>
-    <!-- custom Scripts -->
 
     <!-- Scirpt to collect Data -->
      <script>
@@ -432,6 +377,7 @@ function getFormData(id) {
   // Loop through each form element and collect its value
   Array.from(form.elements).forEach(element => {
 
+  
     
         formData[element.id] = element.value || '';  // Get the value of other inputs (e.g., text, date)
 
@@ -483,19 +429,49 @@ function getBusData(formId) {
   const finalData = {
     busNumber: data.busNumber,
     route: data.route,
-    capacity: data.capacity,
+    capacity: data.capacity ? data.capacity : "",
     status: data.status ? data.status : "",
     fuelType: data.fuelType ? data.fuelType : "",
-    lastServiced: data.lastServiced,
+    lastServiced: data.lastServiced ? data.lastServiced : "",
+   
+    
     stops: stops,
-      distanceTravelled:data.distanceTravelled,
-        averageSpeed:data.averageSpeed,
+      distanceTravelled:data.distanceTravelled ? data.distanceTravelled : 0,
+        averageSpeed:data.averageSpeed ? data.averageSpeed : 0,
 
   };
 
   return finalData; // Return the final data object
 }
 
+function validateBusData(busData) {
+  // Check required fields
+  if (!busData.busNumber?.trim() || !busData.route?.trim()) {
+    alert(`Bus number and route are required.`);
+    return false;
+  }else if(!busData.status?.trim()  || !busData.fuelType?.trim()){
+    alert(`Select status and fuelType.`);
+    return false;
+  }else if(busData.stops.length==0){
+  alert("Atleast Add one stop")
+  return false;
+  }else{
+  // Check each stop's fields
+  for (let i = 0; i < busData.stops.length; i++) {
+    const stop = busData.stops[i];
+    for (const [key, value] of Object.entries(stop)) {
+      if (value === null || value === undefined || value.trim() === "") {
+        alert(`Please fill all fields for stop "${stop.stopName || `#${i + 1}`}" — missing "${key}".`);
+        return false;
+      }
+    }
+  }
+  }
+
+
+
+  return true; // All good
+}
 
 
 
@@ -503,15 +479,50 @@ function Collect() {
   // Collect form data from each form
   const busData = getBusData("eventForm");
 
-  
+
+  if (!validateBusData(busData)) {
+  return; // Stop form submission
+}
+
+
+
+
 
   
 
-  const driverData = getFormData("driverForm");
-  console.log(driverData);
+  
+// Helper function to validate required fields
+function validateRequiredFields(data, fields) {
+  for (const field of fields) {
+    if (!data[field]?.trim()) {
+      alert(`${field} is required!`);
+      
+      return false;
+    }
+  }
+  return true;
+}
 
-  const conductorData = getFormData("conductorForm");
-  console.log(conductorData);
+// --- Driver Form Validation ---
+const driverData = getFormData("driverForm");
+if (!validateRequiredFields(driverData, ["driverName", "driverPhone"])) {
+  // Error already shown by helper function
+  return; // Stop execution if invalid
+}
+
+// --- Conductor Form Validation ---
+const conductorData = getFormData("conductorForm");
+if (!validateRequiredFields(conductorData, ["conductorName", "conductorPhone"])) {
+  // Error already shown by helper function
+  return; // Stop execution if invalid
+}
+
+// If we reach here, all data is valid!
+console.log("Driver Data:", driverData);
+console.log("Conductor Data:", conductorData);
+  
+
+  
 
   // Create an array of objects
   const formDataArray = [
@@ -529,8 +540,10 @@ function Collect() {
     }
   ];
 
-  // Make POST request with the array of objects
-  fetch('http://localhost:3000/tmu/administrator/settings/addBus', {
+  console.log(formDataArray)
+  document.getElementById("loader").style.display = "flex";
+
+  fetch('/tmu/administrator/settings/addBus', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -539,7 +552,9 @@ function Collect() {
   })
   .then(response   => response.json())
   .then(data => {
-    console.log('Success:', data.message);
+
+    document.getElementById("loader").style.display = "none";
+    alert(data.message)
   })
   .catch((error) => {
     console.log(error.message)
@@ -555,6 +570,74 @@ function Collect() {
   
      </script>
 
+<script>
+  
+      // 3. Hide loader once window is loaded
+      window.onload = function () {
+        document.getElementById("loader").style.display = "none";
+      };
+</script>
+
+<!-- additon new  stop  -->
+ 
+<script>
+  // Adding additional stop inputs dynamically
+  docuentment.getElementById("add-stop").addEventListener("click", function () {
+    const additionalStops = document.getElementById("additional-stops");
+  
+    const stopRow = `
+      <div class="row">
+        <div class="col-md-3">
+          <div class="form-group row">
+            <label class="col-sm-12 col-form-label">Stop Name</label>
+            <div class="col-sm-12">
+              <input type="text" class="form-control text-white" name="stopName[]" placeholder="Enter stop name" />
+            </div>
+          </div>
+        </div>
+  
+        <div class="col-md-2">
+          <div class="form-group row">
+            <label class="col-sm-12 col-form-label">MT</label>
+            <div class="col-sm-12">
+              <input type="time" class="form-control text-white" name="morningTime[]" />
+            </div>
+          </div>
+        </div>
+  
+        <div class="col-md-2">
+          <div class="form-group row">
+            <label class="col-sm-12 col-form-label">ET</label>
+            <div class="col-sm-12">
+              <input type="time" class="form-control text-white" name="eveningTime[]" />
+            </div>
+          </div>
+        </div>
+  
+        <div class="col-md-2">
+          <div class="form-group row">
+            <label class="col-sm-12 col-form-label">Latitude</label>
+            <div class="col-sm-12">
+              <input type="number" step="any" class="form-control text-white" name="latitude[]" placeholder="Enter latitude" />
+            </div>
+          </div>
+        </div>
+  
+        <div class="col-md-3">
+          <div class="form-group row">
+            <label class="col-sm-12 col-form-label">Longitude</label>
+            <div class="col-sm-12">
+              <input type="number" step="any" class="form-control text-white" name="longitude[]" placeholder="Enter longitude" />
+            </div>
+          </div>
+        </div>
+      </div>`;
+  
+    additionalStops.insertAdjacentHTML("beforeend", stopRow);
+  });
+  </script>
+      <!-- custom Scripts -->
+<!-- additon new  stop  -->
 
 
 

@@ -54,8 +54,8 @@
                     <form
                       class="form-sample"
                       id="eventForm"
-                      action="/tmu/administrator/settings/busEntire/<%=bus._id  %>"
-                      method="POST"
+
+                      
                     >
                       <p class="card-description">Bus Details</p>
 
@@ -218,7 +218,7 @@
     <div class="form-group row">
       <label class="col-sm-12 col-form-label">MT</label>
       <div class="col-sm-12">
-        <input type="time" value="<%=stop.morningTime  %>" class="form-control text-white" name="morningTime" />
+        <input type="time" value="<%=stop.morningTime  %>" class="form-control text-white" name="morningTime[]" />
       </div>
     </div>
   </div>
@@ -227,7 +227,7 @@
     <div class="form-group row">
       <label class="col-sm-12 col-form-label">ET</label>
       <div class="col-sm-12">
-        <input type="time" value="<%=stop.eveningTime  %>" class="form-control text-white" name="eveningTime" />
+        <input type="time" value="<%=stop.eveningTime  %>" class="form-control text-white" name="eveningTime[]" />
       </div>
     </div>
   </div>
@@ -236,7 +236,7 @@
     <div class="form-group row">
       <label class="col-sm-12 col-form-label">Latitude</label>
       <div class="col-sm-12">
-        <input type="number" step="any" class="form-control text-white"  value="<%=stop.latitude  %>" name="latitude" placeholder="Enter latitude" />
+        <input type="number" step="any" class="form-control text-white"  value="<%=stop.latitude  %>" name="latitude[]" placeholder="Enter latitude" />
       </div>
     </div>
   </div>
@@ -245,7 +245,7 @@
     <div class="form-group row">
       <label class="col-sm-12 col-form-label">Longitude</label>
       <div class="col-sm-12">
-        <input type="number" step="any" class="form-control text-white"  value="<%=stop.longitude  %>" name="longitude" placeholder="Enter longitude" />
+        <input type="number" step="any" class="form-control text-white"  value="<%=stop.longitude  %>" name="longitude[]" placeholder="Enter longitude" />
       </div>
     </div>
   </div>
@@ -297,7 +297,7 @@
                     <form
                       class="forms-sample"
                       id="multipleFiles"
-         action="/tmu/admin/settings/busDocuments/<%=bus._id  %>"
+         action="/tmu/administrator/settings/busDocuments/<%=bus._id  %>"
                       enctype="multipart/form-data"
                       method="POST"
                     >
@@ -370,7 +370,7 @@
                     </div>
                     <form
                       
-                      action="/tmu/admin/settings/busIcon/<%=bus._id  %>"
+                      action="/tmu/administrator/settings/busIcon/<%=bus._id  %>"
                       class="forms-sample"
                       id="row"
                       method="POST"
@@ -414,7 +414,7 @@
       <p class="card-description">Make sure you upload quality image as they are uploaded on public platform</p>
 
       <form
-        action="/tmu/admin/settings/busImages/<%= bus._id %>"
+        action="/tmu/administrator/settings/busImages/<%= bus._id %>"
         class="forms-sample"
         id="row"
         method="POST"
@@ -523,7 +523,7 @@
         <div class="form-group row">
           <label class="col-sm-12 col-form-label">Stop Name</label>
           <div class="col-sm-12">
-            <input type="text" class="form-control text-white" name="stopName" placeholder="Enter stop name" />
+            <input type="text" class="form-control text-white" name="stopName[]" placeholder="Enter stop name" />
           </div>
         </div>
       </div>
@@ -532,7 +532,7 @@
         <div class="form-group row">
           <label class="col-sm-12 col-form-label">MT</label>
           <div class="col-sm-12">
-            <input type="time" class="form-control text-white" name="morningTime" />
+            <input type="time" class="form-control text-white" name="morningTime[]" />
           </div>
         </div>
       </div>
@@ -541,7 +541,7 @@
         <div class="form-group row">
           <label class="col-sm-12 col-form-label">ET</label>
           <div class="col-sm-12">
-            <input type="time" class="form-control text-white" name="eveningTime" />
+            <input type="time" class="form-control text-white" name="eveningTime[]" />
           </div>
         </div>
       </div>
@@ -550,7 +550,7 @@
         <div class="form-group row">
           <label class="col-sm-12 col-form-label">Latitude</label>
           <div class="col-sm-12">
-            <input type="number" step="any" class="form-control text-white" name="latitude" placeholder="Enter latitude" />
+            <input type="number" step="any" class="form-control text-white" name="latitude[]" placeholder="Enter latitude" />
           </div>
         </div>
       </div>
@@ -559,7 +559,7 @@
         <div class="form-group row">
           <label class="col-sm-12 col-form-label">Longitude</label>
           <div class="col-sm-12">
-            <input type="number" step="any" class="form-control text-white" name="longitude" placeholder="Enter longitude" />
+            <input type="number" step="any" class="form-control text-white" name="longitude[]" placeholder="Enter longitude" />
           </div>
         </div>
       </div>
@@ -627,12 +627,16 @@
                     
                     <div class="media" >
                            <div class="media-body">
-                        <p class="card-text">${doc.name ? doc.name : "Image"}</p>
+                        <p class="card-text">${doc.name ? doc.name : "documentImage"}</p>
                       </div>
+<a href="${doc.url ? doc.url : doc}" title="View">
   <i class="mdi mdi-eye icon-sm" style="margin-right: 8px;"></i>
-                 
- <i class="mdi mdi-close icon-sm"></i> 
-                 
+</a>
+
+<a href="/tmu/administrator/settings/${doc._id ? "deleteBusDocument" : "deleteImage"}/${doc._id? doc._id : index}/${bus._id}" title="Delete">
+  <i class="mdi mdi-close icon-sm"></i>
+</a>
+
                     </div>
                   </div>
                 </div>
@@ -665,6 +669,154 @@
             reader.readAsDataURL(file); // Read the file as a data URL
           }
         });
+    </script>
+
+
+
+<!-- // Script to update bus data -->
+    <script>
+
+      
+
+
+function getBusData(formId) {
+  // Get the form element using the provided ID
+  const form = document.getElementById(formId);
+  
+  // Collecting form data
+  const formData = new FormData(form);
+
+  // Converting FormData to a JSON object
+  const data = {};
+
+  formData.forEach((value, key) => {
+    if (key.includes("stopName") || key.includes("morningTime") || key.includes("eveningTime") || key.includes("latitude") || key.includes("longitude")) {
+      // Handle array inputs like stopName[], morningTime[], eveningTime[], latitude[], longitude[]
+      if (!data[key]) {
+        data[key] = [];
+      }
+      data[key].push(value);
+    } else {
+      data[key] = value; // Handle single input values like busNumber, route, etc.
+    }
+  });
+
+  // Formatting stops array with their times and coordinates for better structure
+  const stops = [];
+  for (let i = 0; i < data["stopName[]"].length; i++) {
+    if (data["stopName[]"][i]) {
+      stops.push({
+        stopName: data["stopName[]"][i],
+        morningTime: data["morningTime[]"][i],
+        eveningTime: data["eveningTime[]"][i],
+        latitude: data["latitude[]"][i],    // Add latitude for the stop
+        longitude: data["longitude[]"][i],  // Add longitude for the stop
+      });
+    }
+  }
+
+  // Constructing final data object to return
+  const finalData = {
+    busNumber: data.busNumber,
+    route: data.route,
+    capacity: data.capacity ? data.capacity : "",
+    status: data.status ? data.status : "",
+    fuelType: data.fuelType ? data.fuelType : "",
+    lastServiced: data.lastServiced ? data.lastServiced : "",
+   
+    
+    stops: stops,
+      distanceTravelled:data.distanceTravelled ? data.distanceTravelled : 0,
+        averageSpeed:data.averageSpeed ? data.averageSpeed : 0,
+
+  };
+
+  return finalData; // Return the final data object
+}
+
+
+function validateBusData(busData) {
+  // Check required fields
+  if (!busData.busNumber?.trim() || !busData.route?.trim()) {
+    alert(`Bus number and route are required.`);
+    return false;
+  }else if(!busData.status?.trim()  || !busData.fuelType?.trim()){
+    alert(`Select status and fuelType.`);
+    return false;
+  }else if(busData.stops.length==0){
+  alert("Atleast Add one stop")
+  return false;
+  }else{
+  // Check each stop's fields
+  for (let i = 0; i < busData.stops.length; i++) {
+    const stop = busData.stops[i];
+    for (const [key, value] of Object.entries(stop)) {
+      if (value === null || value === undefined || value.trim() === "") {
+        alert(`Please fill all fields for stop "${stop.stopName || `#${i + 1}`}" — missing "${key}".`);
+        return false;
+      }
+    }
+  }
+  }
+
+
+
+  return true; // All good
+}
+
+
+
+  // Collect form data from each form
+  document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("eventForm");
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault(); // Prevent form from actually submitting
+
+      
+      const busData = getBusData("eventForm");
+
+
+      
+  
+      
+      if (validateBusData(busData)) {
+
+           
+        
+        fetch(`/tmu/administrator/settings/busEntire/${bus._id}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(busData),
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.error) {
+      alert("Error: " + data.error);
+    } else {
+      alert("✅ Bus updated successfully!");
+      console.log(data.bus);
+    }
+  })
+  .catch((error) => {
+    alert("Something went wrong. Please try again.");
+    console.error('Error:', error);
+  });
+       
+        
+}
+
+    });
+  });
+
+  
+  
+
+ 
+
+
     </script>
     <!-- custom Scripts -->
 

@@ -262,7 +262,8 @@
         if (!fcmToken || !isTokenValid) {
           fetchToken();
         } else {
-          sendTokenToServer(fcmToken, expiryDateStr);
+          const expiryDate = new Date(expiryDateStr); // 🔥 Convert string to Date object
+          sendTokenToServer(fcmToken, expiryDate);
         }
       }
 

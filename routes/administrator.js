@@ -7,24 +7,26 @@ import Conductor from "../model/conductor.js";
 import multer from "multer";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 import { v4 as uuidv4 } from "uuid";
 import generatePassword from "../utils/password.js";
 import { rewind } from "@turf/turf";
+import { create } from "domain";
 
 let router = express.Router();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Configure Multer
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    // Resolve the absolute path to 'public/uploads' directory
-    const uploadPath = path.join(__dirname, "public", "uploads");
+    const uploadPath = path.join(__dirname, "..", "public", "uploads");
 
-    // Check if the directory exists, if not, create it
     if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true }); // Create the uploads directory
+      fs.mkdirSync(uploadPath, { recursive: true });
     }
 
-    // Set the directory where files should be stored
     cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
@@ -401,7 +403,6 @@ router.get("/busEntire/:id", async (req, res) => {
     const { id } = req.params;
 
     const bus = await Bus.findById(id);
-    console.log(bus);
 
     return res.render("administrator/bus.ejs", { bus, user });
   } catch (error) {}
@@ -410,46 +411,55 @@ router.post("/busEntire/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      stopName,
-      morningTime,
-      eveningTime,
-      latitude,
-      longitude,
+      stops, // this should be an array of stop objects
       ...busData
     } = req.body;
 
-    // Creating routeStops array
-    const routeStops = stopName
-      .map((name, index) => {
-        const mTime = morningTime[index];
-        const eTime = eveningTime[index];
-        const lat = latitude[index];
-        const long = longitude[index];
+    const bus = await Bus.findById(id);
+    if (!bus) {
+      return res.status(404).json({ error: "Bus not found" });
+    }
 
-        if (name && mTime && eTime && lat && long) {
-          return {
-            stopName: name,
-            morningTime: mTime,
-            eveningTime: eTime,
-            latitude: lat,
-            longitude: long,
-          };
+    const existingStops = bus.routeStops || [];
+    const updatedStops = [];
+    const createStops = [];
+
+    for (let i = 0; i < stops.length; i++) {
+      const incomingStop = stops[i];
+
+      if (
+        incomingStop.stopName &&
+        incomingStop.morningTime &&
+        incomingStop.eveningTime &&
+        incomingStop.latitude &&
+        incomingStop.longitude
+      ) {
+        if (i < existingStops.length) {
+          // Update existing stop
+          existingStops[i].stopName = incomingStop.stopName;
+          existingStops[i].morningTime = incomingStop.morningTime;
+          existingStops[i].eveningTime = incomingStop.eveningTime;
+          existingStops[i].latitude = incomingStop.latitude;
+          existingStops[i].longitude = incomingStop.longitude;
+
+          updatedStops.push(existingStops[i]);
+        } else {
+          // Add new stop
+          createStops.push(incomingStop);
         }
+      }
+    }
+    bus.set({ ...busData, stops: updatedStops });
 
-        return null; // skip if any value is missing
-      })
-      .filter(Boolean); // removes all null entries
+    // 2. Add new stops to the routeStops array
+    if (createStops.length > 0) {
+      bus.routeStops.push(...createStops);
+    }
 
-    // Updating the bus document
-    const bus = await Bus.findByIdAndUpdate(
-      id,
-      { ...busData, routeStops }, // Merging other fields with routeStops
-      { new: true } // Return the updated document
-    );
+    // 3. Save the updated bus document
+    await bus.save();
 
-    console.log("Updated Bus:", bus);
-
-    return res.redirect(`/tmu/administrator/settings/busEntire/${bus._id}`);
+    return res.json({ message: "Bus updated successfully", bus });
   } catch (error) {
     console.error("Error updating bus:", error);
     return res.status(500).json({ error: "Internal Server Error" });
@@ -467,26 +477,67 @@ router.post("/busDocuments/:id", upload.any(), async (req, res) => {
     // Creating an array of document objects
     const documents = files.map((file, index) => ({
       name: documentNames[index] || "Unknown Document", // Default if name is missing
-      url: file.path, // File path
+      url: file.path.split("public")[1], /// File path
     }));
 
     // Find the conductor and update its documents
     const bus = await Bus.findById(id);
     if (!bus) {
-      return res.status(404).json({ message: "Conductor not found" });
+      return res.status(404).json({ message: "bus not found" });
     }
 
     bus.busDocuments.push(...documents);
     await bus.save();
 
-    return res.redirect(
-      `http://localhost:3000/tmu/administrator/settings/busEntire/${bus._id}`
-    );
+    return res.redirect(`/tmu/administrator/settings/busEntire/${bus._id}`);
   } catch (error) {
     console.error("Error uploading documents:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
+router.get("/deleteBusDocument/:docId/:busId", async (req, res) => {
+  try {
+    const { docId, busId } = req.params;
+
+    // Find the bus
+    const bus = await Bus.findById(busId);
+    if (!bus) {
+      return res.status(404).json({ message: "Bus not found" });
+    }
+
+    // Find the specific document
+    const targetDoc = bus.busDocuments.find(
+      (doc) => doc._id.toString() === docId
+    );
+
+    if (!targetDoc) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+
+    // Build absolute path from relative path
+    const absolutePath = path.join(process.cwd(), "public", targetDoc.url);
+
+    // Delete the file if it exists
+    if (fs.existsSync(absolutePath)) {
+      fs.unlinkSync(absolutePath);
+    }
+
+    // Remove the document from the array
+    bus.busDocuments = bus.busDocuments.filter(
+      (doc) => doc._id.toString() !== docId
+    );
+
+    await bus.save(); // Save updated bus
+
+    // Redirect back
+    return res.redirect(`/tmu/administrator/settings/busEntire/${bus._id}`);
+  } catch (error) {
+    console.error("Error deleting document:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 router.post("/busIcon/:id", upload.single("iconPhoto"), async (req, res) => {
   try {
     const { id } = req.params;
@@ -532,7 +583,7 @@ router.post("/busImages/:id", upload.any(), async (req, res) => {
       return relativePath; // Store only the relative path
     });
 
-    // Find the bus by ID and update its busImages field with the new image paths
+    // Find the bus by ID and x its busImages field with the new image paths
     const bus = await Bus.findById(id);
 
     if (!bus) {
@@ -550,6 +601,49 @@ router.post("/busImages/:id", upload.any(), async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).send("Error uploading images");
+  }
+});
+
+router.get("/deleteImage/:index/:busId", async (req, res) => {
+  try {
+    const { index, busId } = req.params;
+
+    // Find the bus
+    const bus = await Bus.findById(busId);
+    if (!bus) {
+      return res.status(404).json({ message: "Bus not found" });
+    }
+
+    // Make sure index is valid
+    const imageIndex = parseInt(index);
+    if (
+      isNaN(imageIndex) ||
+      imageIndex < 0 ||
+      imageIndex >= bus.busImages.length
+    ) {
+      return res.status(400).json({ message: "Invalid image index" });
+    }
+
+    // Get relative path from busImages (e.g., "/uploads/abc.jpg")
+    const relativePath = bus.busImages[imageIndex];
+
+    // Convert to absolute path
+    const absolutePath = path.join(process.cwd(), "public", relativePath);
+
+    // Delete file from disk if exists
+    if (fs.existsSync(absolutePath)) {
+      fs.unlinkSync(absolutePath);
+    }
+
+    // Remove the image from the array
+    bus.busImages.splice(imageIndex, 1);
+    await bus.save();
+
+    // Redirect to settings page
+    return res.redirect(`/tmu/administrator/settings/busEntire/${bus._id}`);
+  } catch (error) {
+    console.error("Error deleting image:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 });
 

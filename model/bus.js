@@ -52,6 +52,7 @@ const busSchema = new mongoose.Schema(
     fuelType: {
       type: String,
       enum: ["Diesel", "CNG"],
+      default: "Diesel", // Fallback if empty
     },
     lastServiced: {
       type: Date,

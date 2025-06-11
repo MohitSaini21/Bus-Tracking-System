@@ -168,21 +168,20 @@ router.get("/particularBusLive/:id", async (req, res) => {
 
   const user = await CORE.findById(req.user.id);
 
-  // Get current date in Asia/Kolkata
   const indiaToday = moment().tz("Asia/Kolkata").startOf("day");
 
-  // Convert to UTC for MongoDB date comparison
   const startOfDayUTC = indiaToday.toDate();
   const endOfDayUTC = indiaToday.clone().endOf("day").toDate();
 
-  // Find today's log for a specific bus
   const busLog = await BusActivityLog.findOne({
     bus: bus._id,
     date: {
       $gte: startOfDayUTC,
       $lte: endOfDayUTC,
     },
-  }).populate("stops.stop", "stopName");
+  });
+
+  console.log(busLog);
 
   if (user) {
     return res.render("adminAdministrator/pTracking.ejs", {
