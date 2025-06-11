@@ -123,7 +123,6 @@ router.delete("/deleteFCM/:id", async (req, res) => {
   }
 });
 
-
 router.get("/track/:token", async (req, res) => {
   const { token } = req.params;
 
@@ -237,10 +236,12 @@ router.post("/saveToken", async (req, res) => {
   }
 });
 
-
 router.get("/particularBus/:id", async (req, res) => {
   const { id } = req.params;
-  const bus = await Bus.findById(id);
+  const bus = await Bus.findById(id)
+    .populate("driver", "name phone") // only get driver's name and phone
+    .populate("conductor", "name phone"); // only get conductor's name and phone
+
   if (bus) {
     return res.render("public/particularBus.ejs", { bus });
   }

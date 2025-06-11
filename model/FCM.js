@@ -16,6 +16,7 @@ const fcmSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Stop",
     required: true,
+    index: true,
   },
   stop: {
     type: Object, // Embedded full stop details (stopName, morningTime, etc.)

@@ -167,8 +167,8 @@ function append(id) {
 
   const col = `
     <div class="col-sm-4 grid-margin " id=${id}>
-      <div class="card m-1">
-        <div class="card-body  p-1">
+ 
+             <div><a href="/admin/particularBusLive/${id}">Track</a></div>
   
           
           <iframe
@@ -176,16 +176,21 @@ function append(id) {
             width="100%"
             height="200"
             allow="camera; microphone"
-            style="border-radius: 8px; border: none;"
+            style="border-radius: 8px; border: none, pointer-events: none;"
+
           ></iframe>
-        </div>
-      </div>
+
+          
     </div>
   `;
 
   const tempDiv = document.createElement("div");
   tempDiv.innerHTML = col.trim();
   const newCol = tempDiv.firstChild;
+  newCol.addEventListener("click", () => {
+          window.location.href = `/admin/particularBusLive/${id}`;
+        });
+  
 
 mainRow.appendChild(newCol); // ✅ This appends it at the end
 

@@ -237,6 +237,51 @@
                   </div>
                 </div>
               </div>
+              <div class="col-lg-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body">
+                    <h4 class="card-title">Stops Covered</h4>
+
+                    <div class="table-responsive mt-4">
+                      <h5 class="text-center mb-3">Polygon Events</h5>
+                      <table class="table table-bordered text-center">
+                        <thead class="thead-dark">
+                          <tr>
+                            <th>#</th>
+                            <th>Event Type</th>
+                            <th>Timestamp</th>
+                            <th>Coordinates</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <% if (busLog && busLog.events && busLog.events.length > 0) { %>
+                            <% busLog.events.forEach((ev, index) => { %>
+                              <tr>
+                                <td><%= index + 1 %></td>
+                                <td>
+                                  <span class="badge <%= ev.event === 'Entered' ? 'bg-success' : 'bg-danger' %>">
+                                    <%= ev.event %>
+                                  </span>
+                                </td>
+                                <td><%= new Date(ev.timestamp).toLocaleString() %></td>
+                                <td>
+                                  Lat: <%= ev.coordinates[1] %>, Long: <%= ev.coordinates[0] %>
+                                </td>
+                              </tr>
+                            <% }) %>
+                          <% } else { %>
+                            <tr>
+                              <td colspan="4">No events recorded</td>
+                            </tr>
+                          <% } %>
+                        </tbody>
+                      </table>
+                    </div>
+                    
+                  </div>
+                </div>
+              </div>
+
             </div>
 
             <br />

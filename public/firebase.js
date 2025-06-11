@@ -47,12 +47,27 @@ async function getFcmToken(retryCount) {
           expiryDate.setFullYear(expiryDate.getFullYear() + 1);
           // Store expiryDate in localStorage too (optional but helpful)
           localStorage.setItem("fcmTokenExpiryDate", expiryDate.toISOString());
+          document.getElementById("loader-text").textContent =
+            "Good to Go. You may now choose a stop to receive real-time notifications.";
+
+          setTimeout(() => {
+            document.getElementById("loader").style.display = "none";
+          }, 2000);
         } else {
-          console.error("No FCM token received.");
+          document.getElementById("loader-text").textContent =
+            "Network Issue , you may try later";
+
+          setTimeout(() => {
+            document.getElementById("loader").style.display = "none";
+          }, 2000);
         }
       } else {
-        document.getElementById("loader-text").innerHTML =
-          "Notification permission denied. pls Allow";
+        document.getElementById("loader-text").textContent =
+          "Turn on notifications to get real-time updates from your selected stop.";
+
+        setTimeout(() => {
+          document.getElementById("loader").style.display = "none";
+        }, 2000);
       }
 
       // Mark the page as loaded by setting the "notifPermissionPageLoaded" cookie

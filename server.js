@@ -115,25 +115,16 @@ let locationEvaluationCooldown = 5 * 1000; // ms (5 seconds)
 let lastEvaluated = {}; // { [busId]: timestamp }
 
 // Cron Jobs
-cron.schedule("45 23 * * *", () => {
-  console.log(
-    "🕥 11:45 PM: Saving full-day logs as yesterday’s final tracking..."
-  );
+cron.schedule("0 0 * * *", () => {
+  console.log("🕛 12:00 AM: Clearing lastEvaluated memory...");
 
   for (const busId in lastEvaluated) {
-    const busObj = lastEvaluated[busId];
-    if (busObj) {
-      saveLogs(busObj)
-        .then(() => {
-          delete lastEvaluated[busId]; // ✅ delete only after successful save
-          console.log(`🧹 Deleted memory for bus ${busId}`);
-        })
-        .catch((err) => {
-          console.error(`❌ Failed to save for bus ${busId}:`, err.message);
-        });
-    }
+    delete lastEvaluated[busId];
   }
+
+  console.log("🧹 Cleared all entries from lastEvaluated");
 });
+
 
 // Cron Jobs
 
@@ -578,9 +569,9 @@ io.on("connection", (socket) => {
           console.log(`Cleaned up peers for bus: ${busId}`);
         }
 
-        // if (lastEvaluated[socket.liveBusId]) {
-        //   saveLogs(lastEvaluated[socket.liveBusId]);
-        // }
+        if (lastEvaluated[socket.liveBusId]) {
+          saveLogs(lastEvaluated[socket.liveBusId]);
+        }
       }
     }
   });

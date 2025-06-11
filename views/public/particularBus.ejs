@@ -16,12 +16,19 @@
     />
     <!-- bootstrap core css -->
     <link rel="stylesheet" type="text/css" href="/public/css/bootstrap.css" />
+    <link rel="stylesheet" href="/assets/homeLoader.css" />
 
     <!-- fonts style -->
     <link
       href="https://fonts.googleapis.com/css?family=Open+Sans:400,700|Poppins:400,600,700&display=swap"
       rel="stylesheet"
     />
+    <style>
+       .timeline {
+    position: relative;
+    padding-left: 20px;
+  }
+    </style>
 
     <!-- Custom styles for this template -->
     <link href="/public/css/style.css" rel="stylesheet" />
@@ -52,12 +59,11 @@
   <body>
     <div class="hero_area">
       <!-- header section strats -->
-      <!-- <header class="header_section">
+      <header class="header_section">
         <div class="container-fluid">
           <nav class="navbar navbar-expand-lg custom_nav-container">
-            <a class="navbar-brand" href="index.html">
-              <span><%=bus.route %></span>
-            </a>
+  
+            
 
             <div class="navbar-collapse" id="">
               <div class="custom_menu-btn">
@@ -70,12 +76,25 @@
               <div id="myNav" class="overlay">
                 <div class="overlay-content">
                   <a href="/">Home</a>
+                  <button
+                  onclick="Redirect()"
+                  style="
+                    all: unset;
+                    cursor: pointer;
+                    color: white;
+                    font-size: 16px;
+                  "
+                  onmouseover="this.style.color='black'"
+                  onmouseout="this.style.color='white'"
+                >
+                  TRACKED BUSES
+                </button>
                 </div>
               </div>
             </div>
           </nav>
         </div>
-      </header> -->
+      </header>
       <!-- end header section -->
       <!-- slider section -->
       <section class="slider_section position-relative">
@@ -98,30 +117,51 @@
               data-ride="carousel"
             >
               <div class="carousel-inner p-2">
-                <!-- Slide 1: Reliable Transport -->
+                <!-- Slide 1: Driver Details -->
                 <div class="carousel-item active">
-                  <div class="detail-box">
-                    <h1>Driver</h1>
-
-                    <a href="/">Contact Us</a>
+                  <div class="detail-box text-white p-4">
+                    <h2 class="mb-3">Driver Details</h2>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <strong>Name:</strong> <%=bus.driver.name %>
+                      </div>
+                      <br />
+                      <div class="col-md-6">
+                        <strong>Phone:</strong> <%=bus.driver.phone %>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <!-- Slide 2: GPS Enabled -->
+                <!-- Slide 2: Conductor Details -->
                 <div class="carousel-item">
-                  <div class="detail-box">
-                    <h1>Helper</h1>
-
-                    <a href="/">Contact Us</a>
+                  <div class="detail-box text-white p-4">
+                    <h2 class="mb-3">Helper Details</h2>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <strong>Name:</strong> <%=bus.conductor.name %>
+                      </div>
+                      <br />
+                      <div class="col-md-6">
+                        <strong>Phone:</strong> <%=bus.conductor.phone %>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <!-- Slide 3: Safety First -->
+                <!-- Slide 3: Bus Details -->
                 <div class="carousel-item">
-                  <div class="detail-box">
-                    <h1>Bus</h1>
-
-                    <a href="/">Contact Us</a>
+                  <div class="detail-box text-white p-4">
+                    <h2 class="mb-3">Bus Details</h2>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <strong>Bus Number:</strong><%=bus.busNumber %>
+                      </div>
+                      <div class="col-md-6">
+                        <strong>Route:</strong> <%=bus.route %>
+                      </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -154,23 +194,22 @@
         <form action="/" method="POST">
           <div class="row g-3 align-items-center">
             <div class="col-auto">
-              <label for="inputPassword6" class="col-form-label">Route</label>
+
+              <p>
+                If the live bus location is not available, you will be provided with the last known location of the bus. Please ensure this data is used responsibly and securely.
+                <br />
+                <strong>Powered by:</strong> Mohit Saini
+                <br />
+                <em>© 2025 Bus Tracking System. All rights reserved. Licensed under XYZ License.</em>
+              </p>
+              
             </div>
-            <div class="col-auto">
-              <input
-                type="text"
-                class="form-control aesthetic-input"
-                id="routeInput"
-                name="route"
-                placeholder="e.g. TMU to Nagina"
-                required
-              />
-            </div>
+       
+            
           </div>
           <br />
-          <button type="button" class="btn btn-outline-primary" onclick="Go()">
-            Go
-          </button>
+ 
+          
         </form>
       </div>
       <div class="img-box text-center">
@@ -183,19 +222,84 @@
       </div>
     </section>
 
-    <div class="container text-center">
+    <div class="container">
+
+      <h3>Demo Show (typical path)</h3>
       <div class="row">
         <div class="col-12 col-md-6 mb-3">
           <div id="map" style="height: 400px"></div>
         </div>
         <div class="col-12 col-md-6">
+
+          <h4>Stops</h4>
+          <div class="timeline">
+            <% if (bus.routeStops && bus.routeStops.length > 0) { %>
+              <% bus.routeStops.forEach((stop, index) => { %>
+                <div class="d-flex">
+                  <div class="d-flex flex-column align-items-center me-3">
+                    <% if (index !== 0) { %>
+                      <div class="border-start border-2 h-100" style="width: 2px;"></div>
+                    <% } %>
+              
+                    
+                    <% if (index !== bus.routeStops.length - 1) { %>
+                      <div class="border-start border-2 h-100" style="width: 2px;"></div>
+                    <% } %>
+                  </div>
+                  <div class="mb-3">
+                    <p class="mb-0 fw-bold text-capitalize">
+                      ➤ <%= stop.stopName %>
+                      <span class="text-muted">(Morning: <%= stop.morningTime %>, Evening: <%= stop.eveningTime %>)</span>
+                    </p>
+                  </div>
+                </div>
+              <% }); %>
+            <% } else { %>
+              <p>No stops available for this bus.</p>
+            <% } %>
+          </div>
+
           <p>
-            Lorem ipsum dolor sit, amet consectetur adipisicing elit. Aut
-            commodi nam illum nulla harum. Aliquam obcaecati quaerat aperiam
-            voluptatibus saepe adipisci eveniet, hic architecto, animi illo
-            praesentium distinctio, earum vel?
+            You can view a demo of the bus movements and the daily route it follows in the neighboring section.
           </p>
+          
         </div>
+        
+      </div>
+    </div>
+
+    
+    <section class="map_section">
+      <!-- map section -->
+      <div class="map_container">
+        <div class="map-responsive">
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d677604.3574392692!2d77.77941983904826!3d29.431890227220197!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390afdf565c6bc21%3A0xefb0ce367e3f2602!2sTeerthanker%20Mahaveer%20University!5e1!3m2!1sen!2sin!4v1749635467601!5m2!1sen!2sin"
+            width="600"
+            height="300"
+            frameborder="0"
+            style="border: 0; width: 100%; height: 100%"
+            allowfullscreen
+          ></iframe>
+        </div>
+      </div>
+      <!-- end map section -->
+    </section>
+
+    <!-- end map section -->
+
+    <!-- footer section -->
+    <footer class="container-fluid footer_section">
+      <p>
+        Copyright &copy; 2025 All Rights Reserved. Developed by
+        <a href="https://assocom.onrender.com/home"> Mohit Saini </a>
+      </p>
+    </footer>
+    <!-- footer section -->
+    <div class="loader-overlay" id="loader">
+      <div class="loader-container">
+        <img src="/public/bus.gif" alt="Loading..." class="bus-icon-img" />
+        <div class="loader-text" id="loader-text">Loading, please wait...</div>
       </div>
     </div>
 
@@ -219,66 +323,80 @@
     <script>
 
 
-                      const bus = <%- JSON.stringify(bus) %>;
+                            const bus = <%- JSON.stringify(bus) %>;
 
-                      // Ensure 'bus' is passed correctly from the server
-
-
-                          var map = L.map("map").setView([51.505, -0.09], 30);
-                                 let googleStreets = L.tileLayer(
-                                                                                              "http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
-                                                                                              {
-                                                                                                maxZoom: 20,
-                                                                                                subdomains: ["mt0", "mt1", "mt2", "mt3"],
-                                                                                              }
-                                                                                            );
+                            // Ensure 'bus' is passed correctly from the server
 
 
-                                                                                            googleStreets.addTo(map)
-
-           // Create fixed markers at start and end
-      const startLatLng = L.latLng(bus.routeStops[0].latitude,bus.routeStops[0].longitude);
-      const endLatLng = L.latLng(28.82347, 78.66076);
-
-      L.marker(startLatLng, { title: "Start Point" ,}).addTo(map).bindPopup("Start").openPopup();
-      L.marker(endLatLng, { title: "End Point" }).addTo(map).bindPopup("End");
-
-let animatedMarker = L.marker(startLatLng, {
-  icon: L.icon({
-    iconUrl: "/public/newBusIcon.png", // Corrected icon URL
-    iconSize: [32, 32], // Adjust icon size if necessary
-    iconAnchor: [16, 16], // Adjust anchor point if needed
-    popupAnchor: [0, -16] // Optional: adjust popup position
-  })
-}).addTo(map);
-
-      // Routing control to get the path
-      L.Routing.control({
-        waypoints: [startLatLng, endLatLng],
-        // addWaypoints: false,
-        routeWhileDragging: false,
-        draggableWaypoints: false,
-        createMarker: () => null, // Prevent Routing plugin from auto-adding markers
-        show: false
-      }).addTo(map).on("routesfound", function (e) {
-        const route = e.routes[0].coordinates;
+                                var map = L.map("map").setView([51.505, -0.09], 30);
+                                       let googleStreets = L.tileLayer(
+                                                                                                    "http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+                                                                                                    {
+                                                                                                      maxZoom: 20,
+                                                                                                      subdomains: ["mt0", "mt1", "mt2", "mt3"],
+                                                                                                    }
+                                                                                                  );
 
 
+                                                                                                  googleStreets.addTo(map)
 
-        route.forEach((coord, index) => {
-          setTimeout(() => {
-            animatedMarker.slideTo([coord.lat, coord.lng], {
-              duration: 1000,
-              keepAtCenter: false
+                 // Create fixed markers at start and end
+            const startLatLng = L.latLng(bus.routeStops[0].latitude,bus.routeStops[0].longitude);
+            const endLatLng = L.latLng(28.82347, 78.66076);
+
+            L.marker(startLatLng, { title: "Start Point" ,}).addTo(map).bindPopup("Start").openPopup();
+            L.marker(endLatLng, { title: "End Point" }).addTo(map).bindPopup("End");
+
+      let animatedMarker = L.marker(startLatLng, {
+        icon: L.icon({
+          iconUrl: "/public/newBusIcon.png", // Corrected icon URL
+          iconSize: [32, 32], // Adjust icon size if necessary
+          iconAnchor: [16, 16], // Adjust anchor point if needed
+          popupAnchor: [0, -16] // Optional: adjust popup position
+        })
+      }).addTo(map);
+
+            // Routing control to get the path
+            L.Routing.control({
+              waypoints: [startLatLng, endLatLng],
+              // addWaypoints: false,
+              routeWhileDragging: false,
+              draggableWaypoints: false,
+              createMarker: () => null, // Prevent Routing plugin from auto-adding markers
+              show: false
+            }).addTo(map).on("routesfound", function (e) {
+              const route = e.routes[0].coordinates;
+
+
+
+              route.forEach((coord, index) => {
+                setTimeout(() => {
+                  animatedMarker.slideTo([coord.lat, coord.lng], {
+                    duration: 1000,
+                    keepAtCenter: false
+                  });
+
+
+
+                }, 100 * index);
+              });
+
+
             });
+            
+      window.onload = function () {
+        document.getElementById("loader-text").textContent = "loaded";
+        document.getElementById("loader").style.display = "none";
+      };
 
-
-
-          }, 100 * index);
-        });
-
-
-      });
+      function Redirect() {
+        const fcmToken = localStorage.getItem("fcmToken");
+        if (fcmToken) {
+          window.location.href = `/track/${fcmToken}`;
+        } else {
+          alert("You have not Tracked Any Bus Yet");
+        }
+      }
     </script>
   </body>
 </html>

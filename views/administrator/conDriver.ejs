@@ -60,7 +60,7 @@
                       class="forms-sample"
                       id="row"
                       method="POST"
-                      action="<%= locals.worker.driverId ? `/tmu/admin/settings/driverRow/${locals.worker._id}` : `/tmu/admin/settings/conductorRow/${locals.worker._id}` %>"
+                      action="<%= locals.worker.driverId ? `/tmu/administrator/settings/driverRow/${locals.worker._id}` : `/tmu/admin/settings/conductorRow/${locals.worker._id}` %>"
                     >
                       <div class="form-group">
                         <label for="exampleInputName1">Name</label>
@@ -279,7 +279,7 @@
                     <form
                       class="forms-sample"
                       id="multipleFiles"
-                      action="<%= locals.worker.driverId ? `/tmu/admin/settings/driverDocuments/${locals.worker._id}` : `/tmu/admin/settings/conductorDocuments/${locals.worker._id}` %>"
+                      action="<%= locals.worker.driverId ? `/tmu/administrator/settings/driverDocuments/${locals.worker._id}` : `/tmu/administrator/settings/conductorDocuments/${locals.worker._id}` %>"
                       enctype="multipart/form-data"
                       method="POST"
                     >
@@ -453,9 +453,12 @@
                            <div class="media-body">
                         <p class="card-text">${doc.name}</p>
                       </div>
+<a href="${doc.url}" title="View">
   <i class="mdi mdi-eye icon-sm" style="margin-right: 8px;"></i>
-                 
- <i class="mdi mdi-close icon-sm"></i> 
+</a>
+<a href="/tmu/administrator/settings/${worker.role=="driver" ? "deleteDriverDocument" : "deleteConductorDocument"}/${doc._id}/${worker._id}" title="Delete">
+  <i class="mdi mdi-close icon-sm"></i>
+</a>
                  
                     </div>
                   </div>

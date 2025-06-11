@@ -2,6 +2,7 @@ import { parentPort } from "worker_threads";
 import { getDistance } from "geolib";
 import moment from "moment-timezone";
 import { checkEntryExit } from "./utils/polygon.js";
+import { sendNotification } from "./utils/stops.js";
 
 parentPort.on("message", ({ task, busObject }) => {
   try {
@@ -69,6 +70,7 @@ parentPort.on("message", ({ task, busObject }) => {
       );
 
       if (distance <= RADIUS_METERS) {
+        sendNotification(stopId, stop.stopName, bus.busNumber);
         if (!busObject.reachedStops[stopId]) {
           busObject.reachedStops[stopId] = {};
         }
@@ -81,14 +83,14 @@ parentPort.on("message", ({ task, busObject }) => {
             "Asia/Kolkata"
           );
           busObject.reachedStops[stopId].eMorningTime = expectedTime.toDate();
-          busObject.reachedStops[stopId].morningTime = currentTime.toDate();
+          busObject.reachedStops[stopId].morningTime = timestamp;
         } else {
           const expectedTime = moment.tz(
             `1970-01-01T${stop.eveningTime}`,
             "Asia/Kolkata"
           );
           busObject.reachedStops[stopId].eEveningTime = expectedTime.toDate();
-          busObject.reachedStops[stopId].eveningTime = currentTime.toDate();
+          busObject.reachedStops[stopId].eveningTime = timestamp;
         }
 
         console.log(

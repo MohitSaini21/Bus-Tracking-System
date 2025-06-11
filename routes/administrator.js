@@ -222,7 +222,7 @@ router.post("/conductorDocuments/:id", upload.any(), async (req, res) => {
     // Creating an array of document objects
     const documents = files.map((file, index) => ({
       name: documentNames[index] || "Unknown Document", // Default if name is missing
-      url: file.path, // File path
+      url: file.path.split("public")[1], /// File path
     }));
 
     conductor.conductorDocuments.push(...documents);
@@ -310,7 +310,7 @@ router.post("/driverDocuments/:id", upload.any(), async (req, res) => {
     // Creating an array of document objects
     const documents = files.map((file, index) => ({
       name: documentNames[index] || "Unknown Document", // Default if name is missing
-      url: file.path, // File path
+      url: file.path.split("public")[1], /// File path
     }));
 
     // Find the conductor and update its documents
@@ -646,6 +646,97 @@ router.get("/deleteImage/:index/:busId", async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 });
+
+//  Shared  path
+
+router.get("/deleteDriverDocument/:docId/:userId", async (req, res) => {
+  try {
+    const { docId, userId } = req.params;
+
+    // Find the bus
+    const user = await Driver.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Find the specific document
+    const targetDoc = user.driverDocuments.find(
+      (doc) => doc._id.toString() === docId
+    );
+
+    if (!targetDoc) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+
+    // Build absolute path from relative path
+    const absolutePath = path.join(process.cwd(), "public", targetDoc.url);
+
+    // Delete the file if it exists
+    if (fs.existsSync(absolutePath)) {
+      fs.unlinkSync(absolutePath);
+    }
+
+    // Remove the document from the array
+    user.driverDocuments = user.driverDocuments.filter(
+      (doc) => doc._id.toString() !== docId
+    );
+
+    await user.save(); // Save updated bus
+
+    // Redirect back
+    return res.redirect(
+      `/tmu/administrator/settings/conductorDriver?driverId=${user._id}`
+    );
+  } catch (error) {
+    console.error("Error deleting document:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+router.get("/deleteConductorDocument/:docId/:userId", async (req, res) => {
+  try {
+    const { docId, userId } = req.params;
+
+    // Find the bus
+    const user = await Conductor.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Find the specific document
+    const targetDoc = user.conductorDocuments.find(
+      (doc) => doc._id.toString() === docId
+    );
+
+    if (!targetDoc) {
+      return res.status(404).json({ message: "Document not found" });
+    }
+
+    // Build absolute path from relative path
+    const absolutePath = path.join(process.cwd(), "public", targetDoc.url);
+
+    // Delete the file if it exists
+    if (fs.existsSync(absolutePath)) {
+      fs.unlinkSync(absolutePath);
+    }
+
+    // Remove the document from the array
+    user.conductorDocuments = user.conductorDocuments.filter(
+      (doc) => doc._id.toString() !== docId
+    );
+
+    await user.save(); // Save updated bus
+
+    // Redirect back
+    return res.redirect(
+      `/tmu/administrator/settings/conductorDriver?conductorId=${user._id}`
+    );
+  } catch (error) {
+    console.error("Error deleting document:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+
 
 // Track Route
 
