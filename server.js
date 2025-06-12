@@ -42,6 +42,9 @@ const app = express();
 // Initialize Passport
 
 app.use(cookieParser());
+// Enable trust proxy
+app.set('trust proxy', true);
+
 
 // Middleware and Settings
 // Set EJS as the view engine (Corrected 'view engine' typo)
