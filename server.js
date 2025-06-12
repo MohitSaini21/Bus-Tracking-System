@@ -457,6 +457,7 @@ io.on("connection", (socket) => {
 
     if (data.bus && busConnections[data.bus._id]) {
       for (let i = 0; i < busConnections[data.bus._id].length; i++) {
+        console.log(data.bus)
         io.to(busConnections[data.bus._id][i]).emit("receivelocation", data);
       }
     }
