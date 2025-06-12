@@ -1,8 +1,23 @@
 import FCM from "../model/FCM.js";
 import { sendNotificationToClient } from "./notify.js";
 
+import mongoose from "mongoose";
+
+const connectToDatabase = async () => {
+  try {
+    await mongoose.connect(
+      "mongodb+srv://mohitsainisaini2680:misbaansari20@cluster0.wjx3j.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+    );
+    console.log("✅ Worker: MongoDB connected");
+  } catch (err) {
+    console.error("❌ Worker: MongoDB connection error", err);
+  }
+};
+
 export const sendNotification = async (stopId, stopName, busNumber) => {
   if (!stopId) return;
+
+  await connectToDatabase(); // 👈 ensure this runs before calling `FCM.find(...)`
 
   try {
     const fcms = await FCM.find({ stopId: stopId });

@@ -51,7 +51,7 @@ parentPort.on("message", ({ task, busObject }) => {
     const isMorning = currentTime.hour() < 12;
 
     if (!busObject.reachedStops) busObject.reachedStops = {};
-
+x
     for (const stop of task.bus.routeStops || []) {
       if (!stop || !stop._id || !stop.latitude || !stop.longitude) continue;
 
