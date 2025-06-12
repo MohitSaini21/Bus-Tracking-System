@@ -43,8 +43,7 @@ const app = express();
 
 app.use(cookieParser());
 // Enable trust proxy
-app.set('trust proxy', true);
-
+app.set("trust proxy", true);
 
 // Middleware and Settings
 // Set EJS as the view engine (Corrected 'view engine' typo)
@@ -127,7 +126,6 @@ cron.schedule("0 0 * * *", () => {
 
   console.log("🧹 Cleared all entries from lastEvaluated");
 });
-
 
 // Cron Jobs
 
@@ -457,7 +455,6 @@ io.on("connection", (socket) => {
 
     if (data.bus && busConnections[data.bus._id]) {
       for (let i = 0; i < busConnections[data.bus._id].length; i++) {
-        console.log(data.bus)
         io.to(busConnections[data.bus._id][i]).emit("receivelocation", data);
       }
     }
