@@ -1,15 +1,6 @@
 <nav class="sidebar sidebar-offcanvas" id="sidebar">
-  <div
-    class="sidebar-brand-wrapper d-none d-lg-flex align-items-center justify-content-center fixed-top"
-  >
-    <a class="sidebar-brand brand-logo" href="index.html"
-      ><img src="/assets/images/logo.svg" alt="logo"
-    /></a>
-    <a class="sidebar-brand brand-logo-mini" href="index.html"
-      ><img src="/assets/images/logo-mini.svg" alt="logo"
-    /></a>
-  </div>
   <ul class="nav">
+    <!-- प्रोफाइल सेक्शन -->
     <li class="nav-item profile">
       <div class="profile-desc">
         <div class="profile-pic">
@@ -19,7 +10,6 @@
               src="<%=user.profilePhoto  %>"
               alt=""
             />
-
             <span class="count bg-success"></span>
           </div>
           <div class="profile-name">
@@ -27,27 +17,17 @@
             <span><%=user.role %></span>
           </div>
         </div>
-        <a href="#" id="profile-dropdown" data-toggle="dropdown"
-          ><i class="mdi mdi-dots-vertical"></i
-        ></a>
+
+        <!-- प्रोफाइल सेटिंग -->
+        <a href="#" id="profile-dropdown" data-toggle="dropdown">
+          <i class="mdi mdi-dots-vertical"></i>
+        </a>
         <div
           class="dropdown-menu dropdown-menu-right sidebar-dropdown preview-list"
           aria-labelledby="profile-dropdown"
         >
-          <a href="#" class="dropdown-item preview-item">
-            <div class="preview-thumbnail">
-              <div class="preview-icon bg-dark rounded-circle">
-                <i class="mdi mdi-settings text-primary"></i>
-              </div>
-            </div>
-            <div class="preview-item-content">
-              <p class="preview-subject ellipsis mb-1 text-small">
-                Account settings
-              </p>
-            </div>
-          </a>
           <div class="dropdown-divider"></div>
-          <a href="#" class="dropdown-item preview-item">
+          <a href="/DC/changePass" class="dropdown-item preview-item">
             <div class="preview-thumbnail">
               <div class="preview-icon bg-dark rounded-circle">
                 <i class="mdi mdi-onepassword text-info"></i>
@@ -55,71 +35,86 @@
             </div>
             <div class="preview-item-content">
               <p class="preview-subject ellipsis mb-1 text-small">
-                Change Password
+                पासवर्ड बदलें
               </p>
             </div>
           </a>
         </div>
       </div>
     </li>
+
+    <!-- नेविगेशन टाइटल -->
     <li class="nav-item nav-category">
-      <span class="nav-link">Navigation</span>
+      <span class="nav-link">नेविगेशन</span>
     </li>
+
+    <!-- डैशबोर्ड -->
     <li class="nav-item menu-items">
       <a class="nav-link" href="/DC">
         <span class="menu-icon">
           <i class="mdi mdi-speedometer"></i>
         </span>
-        <span class="menu-title">Dashboard</span>
+        <span class="menu-title">मुख्य पेज</span>
       </a>
     </li>
 
+    <!-- प्रोफ़ाइल -->
     <li class="nav-item menu-items">
-      <a class="nav-link" href="#">
+      <a class="nav-link" href="/DC/profile">
         <span class="menu-icon">
           <i class="mdi mdi-playlist-play"></i>
         </span>
-        <span class="menu-title">Profile</span>
+        <span class="menu-title">प्रोफ़ाइल</span>
       </a>
     </li>
+
+    <!-- शिकायत दर्ज करें -->
     <li class="nav-item menu-items">
-      <a class="nav-link" href="/DC/registerComplain ">
+      <a class="nav-link" href="/DC/registerComplain">
         <span class="menu-icon">
           <i class="mdi mdi-playlist-play"></i>
         </span>
-        <span class="menu-title">registerComplain</span>
+        <span class="menu-title">शिकायत दर्ज करें</span>
       </a>
     </li>
+
+    <!-- आपकी शिकायतें -->
     <li class="nav-item menu-items">
-      <a class="nav-link" href="/DC ">
+      <a class="nav-link" href="/DC/yourComplaints">
         <span class="menu-icon">
           <i class="mdi mdi-playlist-play"></i>
         </span>
-        <span class="menu-title">yourComplain</span>
+        <span class="menu-title">आपकी शिकायतें</span>
       </a>
     </li>
+
+    <!-- मीटर रीडिंग अपलोड करें -->
     <li class="nav-item menu-items">
-      <a class="nav-link" href="/DC ">
+      <a class="nav-link" href="/DC/meterReading">
         <span class="menu-icon">
           <i class="mdi mdi-speedometer"></i>
         </span>
-        <span class="menu-title">upload Meter Reading</span>
+        <span class="menu-title">मीटर रीडिंग अपलोड करें</span>
       </a>
     </li>
+
+    <!-- डेली रिपोर्ट / डायरी -->
     <li class="nav-item menu-items">
-      <a class="nav-link" href="/DC ">
+      <a class="nav-link" href="/DC/dairy">
         <span class="menu-icon">
           <i class="mdi mdi-speedometer"></i>
         </span>
-        <span class="menu-title">Dairy</span>
+        <span class="menu-title">डायरी</span>
       </a>
     </li>
+
+    <!-- पुरानी रीडिंग्स -->
     <li class="nav-item menu-items">
-      <a class="nav-link" href="/DC ">
+      <a class="nav-link" href="/DC/history">
         <span class="menu-icon">
           <i class="mdi mdi-speedometer"></i>
         </span>
-        <span class="menu-title">Reading History</span>
+        <span class="menu-title">रीडिंग इतिहास</span>
       </a>
     </li>
   </ul>

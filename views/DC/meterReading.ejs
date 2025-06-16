@@ -1,0 +1,296 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <title>Corona Admin</title>
+    <!-- plugins:css -->
+    <link
+      rel="stylesheet"
+      href="/assets/vendors/mdi/css/materialdesignicons.min.css"
+    />
+    
+    <link rel="stylesheet" href="/assets/vendors/css/vendor.bundle.base.css" />
+    <!-- endinject -->
+    <!-- Plugin css for this page -->
+    <!-- End Plugin css for this page -->
+    <!-- inject:css -->
+    <!-- endinject -->
+    <!-- Layout styles -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+    <link rel="stylesheet" href="/assets/loader.css" />
+    <!-- End layout styles -->
+    <link rel="shortcut icon" href="/assets/images/favicon.png" />
+
+
+    
+  </head>
+  <body>
+    <div class="container-scroller">
+      <!-- partial:../../partials/_sidebar.html -->
+
+      <%- include('./partials/sidebar.ejs') %>
+      <%- include('./partials/loader.ejs') %>
+      <!-- partial -->
+      <div class="container-fluid page-body-wrapper">
+        <!-- partial:../../partials/_navbar.html -->
+
+        <%- include('./partials/nav.ejs') %>
+        <!-- partial -->
+        <div class="main-panel">
+            <div class="content-wrapper">
+
+                <% if (isMorning) { %> 
+                    <!-- अगर अभी सुबह है -->
+            
+                    <% if ( activity && activity.morningSnap && activity.morningSnap.reading && activity.morningSnap.image) { %>
+                        <p>शाम की रीडिंग अपलोड करने में बचा समय:
+                            <%= remainingTime.hours %> घंटे
+                            <%= remainingTime.minutes %> मिनट
+                            <%= remainingTime.seconds %> सेकंड
+                        </p>
+                    <% } else { %>
+                        <!-- सुबह की रीडिंग नहीं है, इसलिए फॉर्म दिखाओ -->
+            
+                        <div class="row justify-content-center mb-4">
+                            <!-- छवि प्रीव्यू एरिया -->
+                            <div class="col-md-6 text-center grid-margin stretch-card">
+                                <img id="preview"
+                                     src=""
+                                     alt="यहाँ मीटर की छवि दिखाई देगी"
+                                     style="
+                                        margin-top: 10px;
+                                        width: 100%;
+                                        max-width: 600px;
+                                        height: 220px;
+                                        object-fit: cover;
+                                        border: 1px solid #ccc;
+                                        border-radius: 6px;
+                                        display: none;
+                                     " />
+                            </div>
+                        </div>
+            
+                        <div class="row justify-content-center">
+                            <!-- फॉर्म कार्ड -->
+                            <div class="col-md-6 grid-margin stretch-card">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h4 class="card-title">सुबह की रीडिंग</h4>
+                                        <p class="card-description"> कृपया नीचे दी गई जानकारी भरें </p>
+            
+                                        <form id="meterForm" class="forms-sample" enctype="multipart/form-data">
+                                            <div class="form-group row">
+                                                <label for="meterPhoto" class="col-sm-3 col-form-label">मीटर की फोटो</label>
+                                                <div class="col-sm-9">
+                                                    <input type="file" accept="image/*" class="form-control" id="meterPhoto" name="meterPhoto" required />
+                                                </div>
+                                            </div>
+            
+                                            <div class="form-group row">
+                                                <label for="odometer" class="col-sm-3 col-form-label">ओडोमीटर रीडिंग</label>
+                                                <div class="col-sm-9">
+                                                    <input type="number" class="form-control" id="odometer" name="odometer" placeholder="यहाँ रीडिंग दर्ज करें" required />
+                                                </div>
+                                            </div>
+            
+                                            <div class="text-center mt-4">
+                                                <button type="submit" class="btn btn-primary mr-2">सबमिट करें</button>
+                                                <button type="reset" class="btn btn-dark">रद्द करें</button>
+                                            </div>
+                                        </form>
+            
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <% } %>
+            
+                <% } else { %>
+                    <!-- अगर अभी शाम है -->
+            
+                    <% if (activity && activity.eveningSnap && activity.eveningSnap.reading && activity.eveningSnap.image) { %>
+          <p>आपने आज शाम की रीडिंग पहले ही भेज दी है। अब कल के लिए तैयार रहें।</p>
+                    <% } else { %>
+                        <!-- शाम की रीडिंग नहीं है, इसलिए फॉर्म दिखाओ -->
+            
+                        <div class="row justify-content-center mb-4">
+                            <!-- छवि प्रीव्यू एरिया -->
+                            <div class="col-md-6 text-center grid-margin stretch-card">
+                                <img id="preview"
+                                     src=""
+                                     alt="यहाँ मीटर की छवि दिखाई देगी"
+                                     style="
+                                        margin-top: 10px;
+                                        width: 100%;
+                                        max-width: 600px;
+                                        height: 220px;
+                                        object-fit: cover;
+                                        border: 1px solid #ccc;
+                                        border-radius: 6px;
+                                        display: none;
+                                     " />
+                            </div>
+                        </div>
+            
+                        <div class="row justify-content-center">
+                            <!-- फॉर्म कार्ड -->
+                            <div class="col-md-6 grid-margin stretch-card">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h4 class="card-title">शाम की रीडिंग</h4>
+                                        <p class="card-description"> कृपया नीचे दी गई जानकारी भरें </p>
+            
+                                        <form id="meterForm" class="forms-sample" enctype="multipart/form-data">
+                                            <div class="form-group row">
+                                                <label for="meterPhoto" class="col-sm-3 col-form-label">मीटर की फोटो</label>
+                                                <div class="col-sm-9">
+                                                    <input type="file" accept="image/*" class="form-control" id="meterPhoto" name="meterPhoto" required />
+                                                </div>
+                                            </div>
+            
+                                            <div class="form-group row">
+                                                <label for="odometer" class="col-sm-3 col-form-label">ओडोमीटर रीडिंग</label>
+                                                <div class="col-sm-9">
+                                                    <input type="number" class="form-control" id="odometer" name="odometer" placeholder="यहाँ रीडिंग दर्ज करें" required />
+                                                </div>
+                                            </div>
+            
+                                            <div class="text-center mt-4">
+                                                <button type="submit" class="btn btn-primary mr-2">सबमिट करें</button>
+                                                <button type="reset" class="btn btn-dark">रद्द करें</button>
+                                            </div>
+                                        </form>
+            
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <% } %>
+                <% } %>
+            </div>
+            
+        <!-- main-panel ends -->
+      </div>
+      <!-- page-body-wrapper ends -->
+    </div>
+    <!-- container-scroller -->
+    <!-- plugins:js -->
+    <script src="/assets/vendors/js/vendor.bundle.base.js"></script>
+    <!-- endinject -->
+    <!-- Plugin js for this page -->
+    <!-- End plugin js for this page -->
+    <!-- inject:js -->
+    <script src="/assets/js/off-canvas.js"></script>
+    <script src="/assets/js/hoverable-collapse.js"></script>
+    <script src="/assets/js/misc.js"></script>
+    <script src="/assets/js/settings.js"></script>
+    <script src="/assets/js/todolist.js"></script>
+    <script src="/custom/speak.js"></script>
+
+
+    
+
+    <script>
+
+        
+        const meterPhotoInput = document.getElementById("meterPhoto");
+        const previewImage = document.getElementById("preview");
+        if(meterPhotoInput && previewImage){
+
+            meterPhotoInput.addEventListener("change", function () {
+          const file = this.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+              previewImage.src = e.target.result;
+              previewImage.style.display = "block";
+            };
+            reader.readAsDataURL(file);
+          } else {
+            previewImage.src = "";
+            previewImage.style.display = "none";
+          }
+        });
+      
+        meterForm.addEventListener("reset", function () {
+          previewImage.src = "";
+          previewImage.style.display = "none";
+        });
+        }
+        
+        
+      
+        
+      </script>
+      <script>
+
+
+
+const user = <%- JSON.stringify(user) %>;
+const meterForm = document.getElementById("meterForm");
+if(meterForm){
+
+    meterForm.addEventListener("submit", async function (e) {
+  e.preventDefault();
+
+  const meterPhotoInput = document.getElementById("meterPhoto");
+  const odometerInput = document.getElementById("odometer");
+
+  const formData = new FormData();
+  formData.append("meterPhoto", meterPhotoInput.files[0]); // 👈 फ़ाइल जोड़ें
+  formData.append("odometer", odometerInput.value);        // 👈 ओडोमीटर रीडिंग जोड़ें
+  formData.append("busId", user.assignedBus._id);              // 👈 बस की आईडी जोड़ें
+
+  try {
+    const response = await fetch("/DC/meterReading", {
+      method: "POST",
+      body: formData, // ✅ Content-Type को खुद ब्राउज़र सेट करेगा
+    });
+
+    const result = await response.json();
+    if (response.ok) {
+
+        alert("✅ मीटर रीडिंग सफलतापूर्वक सबमिट कर दी गई है!");
+        safeSpeakHindi("मीटर रीडिंग सफलतापूर्वक सबमिट कर दी गई है!")
+        setInterval(() => {
+            window.location.reload();
+        }, 2000);
+    } else {
+        alert("❌ सबमिशन विफल हुआ: " + (result.message || "अज्ञात त्रुटि"));
+        
+        safeSpeakHindi(`सबमिशन विफल हुआ अज्ञात त्रुटि`)
+        
+    }
+} catch (error) {
+    console.error("Error:", error);
+    alert("❌ नेटवर्क त्रुटि: कृपया विवरण के लिए कंसोल देखें।");
+    safeSpeakHindi(`नेटवर्क त्रुटि: कृपया विवरण के लिए कंसोल देखें।`)
+  }
+});
+
+
+
+}
+
+
+window.onload = function () {
+          document.getElementById("loader").style.display = "none";
+        };
+
+
+      </script>
+      
+      
+      
+    
+ 
+ 
+
+  </body>
+</html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Routing Machine</title>
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+        overflow: hidden; /* Optional: to prevent scrollbars */
+      }
+
+      #map {
+        height: 100vh;
+        width: 100vw;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+
+    <script>
+           const bus = <%- JSON.stringify(bus) %>;
+
+// Ensure 'bus' is passed correctly from the server
+
+
+    var map = L.map("map").setView([51.505, -0.09], 30);
+           let googleStreets = L.tileLayer(
+                                                                        "http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+                                                                        {
+                                                                          maxZoom: 20,
+                                                                          subdomains: ["mt0", "mt1", "mt2", "mt3"],
+                                                                        }
+                                                                      );
+
+
+                                                                      googleStreets.addTo(map)
+
+// Create fixed markers at start and end
+const startLatLng = L.latLng(bus.routeStops[0].latitude,bus.routeStops[0].longitude);
+const endLatLng = L.latLng(28.82347, 78.66076);
+
+L.marker(startLatLng, { title: "Start Point" ,}).addTo(map).bindPopup("Start").openPopup();
+L.marker(endLatLng, { title: "End Point" }).addTo(map).bindPopup("End");
+
+let animatedMarker = L.marker(startLatLng, {
+icon: L.icon({
+iconUrl: "/public/newBusIcon.png", // Corrected icon URL
+iconSize: [32, 32], // Adjust icon size if necessary
+iconAnchor: [16, 16], // Adjust anchor point if needed
+popupAnchor: [0, -16] // Optional: adjust popup position
+})
+}).addTo(map);
+
+// Routing control to get the path
+L.Routing.control({
+waypoints: [startLatLng, endLatLng],
+// addWaypoints: false,
+routeWhileDragging: false,
+draggableWaypoints: false,
+createMarker: () => null, // Prevent Routing plugin from auto-adding markers
+show: false
+}).addTo(map).on("routesfound", function (e) {
+const route = e.routes[0].coordinates;
+
+
+
+route.forEach((coord, index) => {
+setTimeout(() => {
+animatedMarker.slideTo([coord.lat, coord.lng], {
+duration: 1000,
+keepAtCenter: false
+});
+
+
+
+}, 100 * index);
+});
+
+
+});
+    </script>
+  </body>
+</html>

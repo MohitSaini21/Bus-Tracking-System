@@ -450,6 +450,8 @@ io.on("connection", (socket) => {
   });
 
   socket.on("busLocationUpdate", (data) => {
+
+    console.log(data)
     addTask(data);
     lastLocation.set(data.bus._id, data);
 

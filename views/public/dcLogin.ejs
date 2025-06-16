@@ -1,14 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
   <head>
-    <!-- Required meta tags -->
     <meta charset="utf-8" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, shrink-to-fit=no"
     />
-    <title>Corona Admin</title>
-    <!-- plugins:css -->
+    <title>चालक और परिचालक लॉगिन पृष्ठ</title>
+
     <link
       rel="stylesheet"
       href="../../assets/vendors/mdi/css/materialdesignicons.min.css"
@@ -17,22 +16,59 @@
       rel="stylesheet"
       href="../../assets/vendors/css/vendor.bundle.base.css"
     />
-    <!-- endinject -->
-    <!-- Plugin css for this page -->
-    <!-- End plugin css for this page -->
-    <!-- inject:css -->
-    <!-- endinject -->
-    <!-- Layout styles -->
     <link rel="stylesheet" href="../../assets/css/style.css" />
-    <!-- End layout styles -->
     <link rel="shortcut icon" href="../../assets/images/favicon.png" />
 
     <style>
       #auth {
-        background-image: url("/public/images/buses.jpg") !important; /* Ensure the background image is applied */
-        background-size: cover !important; /* Ensure the background covers the entire body */
-        background-position: center !important; /* Center the background image */
-        background-repeat: no-repeat !important; /* Prevent the background from repeating */
+        background-image: url("/public/images/buses.jpg") !important;
+        background-size: cover !important;
+        background-position: center !important;
+        background-repeat: no-repeat !important;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f5f7fa;
+        color: #333;
+      }
+
+      .card {
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .form-label {
+        font-size: 1rem;
+      }
+
+      .p_input {
+        font-size: 1rem;
+        padding: 10px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        transition: border-color 0.3s ease;
+      }
+
+      .p_input:focus {
+        border-color: #4a90e2;
+        outline: none;
+        box-shadow: 0 0 6px rgba(74, 144, 226, 0.5);
+      }
+
+      .btn-primary {
+        background-color: #004085;
+        border-color: #004085;
+        font-size: 1rem;
+      }
+
+      .btn-primary:hover {
+        background-color: #003366;
+        border-color: #003366;
+      }
+
+      .text-muted {
+        color: #6c757d;
       }
     </style>
   </head>
@@ -44,112 +80,228 @@
             class="content-wrapper full-page-wrapper d-flex align-items-center auth login-bg"
             id="auth"
           >
-            <div class="card col-lg-4 mx-auto">
+            <div class="card col-lg-4 mx-auto shadow-sm">
               <div class="card-body">
-                <h3 class="card-title text-left">Driver And Conductor</h3>
-                <form id="loginForm">
-                  <div class="form-group">
-                    <label>Enter Your Given Id</label>
+                <h3
+                  class="card-title text-center mb-4"
+                  style="
+                    font-weight: 600;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                  "
+                >
+                  चालक / परिचालक पहचान
+                </h3>
+                <form id="loginForm" novalidate>
+                  <div class="form-group mb-3">
+                    <label
+                      for="userId"
+                      class="form-label"
+                      style="font-weight: 500"
+                    >
+                      चालक / परिचालक आईडी
+                    </label>
                     <input
                       type="text"
                       class="form-control p_input"
                       id="userId"
+                      placeholder="अपनी आईडी दर्ज करें"
+                      required
                     />
                   </div>
-                  <div class="form-group">
-                    <label>Password</label>
+                  <div class="form-group mb-4">
+                    <label
+                      for="password"
+                      class="form-label"
+                      style="font-weight: 500"
+                    >
+                      पासवर्ड
+                    </label>
                     <input
-                      type="text"
+                      type="password"
                       class="form-control p_input"
                       id="password"
+                      autocomplete="current-password"
+                      placeholder="अपना पासवर्ड दर्ज करें"
+                      required
                     />
                   </div>
-                  <div
-                    class="form-group d-flex align-items-center justify-content-between"
-                  ></div>
+
                   <div class="text-center">
                     <button
                       type="submit"
+                      id="submit"
                       class="btn btn-primary btn-block enter-btn"
+                      style="font-weight: 600"
                     >
-                      Login
+                      लॉगिन करें
                     </button>
                   </div>
 
-                  <p class="sign-up">
-                    Forgot Password<a href="#"> Contact Admin</a>
+                  <p
+                    class="text-muted text-center mt-3"
+                    style="font-size: 0.9rem"
+                  >
+                    <em id="mesg"
+                      >यह प्रवेश केवल अधिकृत चालक/परिचालक के लिए ही मान्य
+                      है।</em
+                    >
                   </p>
                 </form>
               </div>
             </div>
           </div>
-          <!-- content-wrapper ends -->
         </div>
-        <!-- row ends -->
       </div>
-      <!-- page-body-wrapper ends -->
     </div>
-    <!-- container-scroller -->
-    <!-- plugins:js -->
+
     <script src="../../assets/vendors/js/vendor.bundle.base.js"></script>
-    <!-- endinject -->
-    <!-- Plugin js for this page -->
-    <!-- End plugin js for this page -->
-    <!-- inject:js -->
     <script src="../../assets/js/off-canvas.js"></script>
     <script src="../../assets/js/hoverable-collapse.js"></script>
     <script src="../../assets/js/misc.js"></script>
     <script src="../../assets/js/settings.js"></script>
     <script src="../../assets/js/todolist.js"></script>
-    <!-- endinject -->
+
+    <script>
+      let voicesReady = false;
+
+      function setupSpeechSynthesis() {
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+          speechSynthesis.onvoiceschanged = () => {
+            voicesReady = true;
+          };
+        } else {
+          voicesReady = true;
+        }
+      }
+
+      setupSpeechSynthesis(); // ✅ Call this ONCE at startup
+
+      function speakHindi(text) {
+        if (!voicesReady) {
+          console.warn("Voices not ready yet!");
+          return;
+        }
+        const synth = window.speechSynthesis;
+        const voices = synth.getVoices();
+
+        const hindiVoice =
+          voices.find((v) => v.name === "Google हिन्दी") ||
+          voices.find((v) => v.lang === "hi-IN"); // fallback
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        if (hindiVoice) {
+          utterance.voice = hindiVoice;
+          console.log("🎤 Using Hindi Voice:", hindiVoice.name);
+        } else {
+          console.warn("⚠️ Hindi voice not found. Using default voice.");
+        }
+
+        utterance.pitch = 1;
+        utterance.rate = 1;
+        utterance.volume = 1;
+
+        synth.cancel(); // Cancel any ongoing speech first
+        synth.speak(utterance);
+      }
+
+      function safeSpeakHindi(text, retries = 10) {
+        if (voicesReady) {
+          speakHindi(text);
+        } else if (retries > 0) {
+          setTimeout(() => safeSpeakHindi(text, retries - 1), 300); // retry after 300ms
+        } else {
+          console.warn("Voices never got ready.");
+        }
+      }
+    </script>
+
     <script>
       document
         .getElementById("loginForm")
         .addEventListener("submit", function (event) {
-          event.preventDefault(); // Prevent form submission (page reload)
+          event.preventDefault();
 
-          // Collect data from form fields
-          const userId = document.getElementById("userId").value;
-          const password = document.getElementById("password").value;
+          const msgElem = document.getElementById("mesg");
+          const userId = document.getElementById("userId").value.trim();
+          const password = document.getElementById("password").value.trim();
 
-          // Prepare data to be sent in the POST request
-          const data = {
-            userId: userId,
-            password: password,
-          };
+          if (userId.length === 0 || password.length === 0) {
+            const errorText = "कृपया सभी आवश्यक फ़ील्ड भरें।";
+            msgElem.style.color = "red";
+            msgElem.innerText = errorText;
+            safeSpeakHindi(errorText);
+            return;
+          }
 
-          console.table(data);
+          const data = { userId, password };
 
-          // Specify the API endpoint
-          const apiEndpoint = "/driverConductorLogin"; // Replace with your actual API URL
+          const verifyingText = "सत्यापन किया जा रहा है...";
+          msgElem.style.color = "green";
+          msgElem.innerText = verifyingText;
+          safeSpeakHindi(verifyingText);
 
-          // Make the POST request
-          fetch(apiEndpoint, {
+          fetch("/driverConductorLogin", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
             },
             body: JSON.stringify(data),
           })
-            .then((response) => response.json())
-            .then((data) => {
+            .then(async (response) => {
+              const data = await response.json();
 
-              
-              if (data.success) {
-                window.location.reload();
-              } else {
-                alert(data.message);
+              if (!response.ok) {
+                const submitBtn = document.getElementById("submit");
+
+                if (response.status === 429) {
+                  submitBtn.setAttribute("disabled", "disabled");
+
+                  let countdown = data.retryAfter;
+                  msgElem.style.color = "red";
+                  let waitMessage = `बहुत अधिक अनुरोध किए गए हैं। कृपया ${countdown} सेकंड प्रतीक्षा करें।`;
+                  msgElem.innerText = waitMessage;
+
+                  const timer = setInterval(() => {
+                    countdown--;
+                    if (countdown > 0) {
+                      waitMessage = `बहुत अधिक अनुरोध किए गए हैं। कृपया ${countdown} सेकंड प्रतीक्षा करें।`;
+                      msgElem.innerText = waitMessage;
+                      if (countdown == data.retryAfter - 1) {
+                        safeSpeakHindi(waitMessage);
+                      }
+                    } else {
+                      clearInterval(timer);
+                      msgElem.innerText = "";
+                      submitBtn.removeAttribute("disabled");
+                    }
+                  }, 1000);
+                } else {
+                  const errorMsg =
+                    data.message || "कोई अनपेक्षित त्रुटि हुई है।";
+                  msgElem.style.color = "red";
+                  msgElem.innerText = errorMsg;
+                  safeSpeakHindi(errorMsg);
+                }
+                return;
               }
+
+              const successMsg =
+                data.message || "लॉगिन सफल। पुनः निर्देशित किया जा रहा है...";
+              msgElem.style.color = "green";
+              msgElem.innerText = successMsg;
+              safeSpeakHindi(successMsg);
+
+              setTimeout(() => {
+                window.location.href = "/DC";
+              }, 2000);
             })
             .catch((error) => {
-              // If it's a network issue or any other error
-              if (error.name === "TypeError") {
-                alert(
-                  "Network issue: Unable to make the request. Please check your connection and try again."
-                );
-              } else {
-                alert("An error occurred: " + error.message);
-              }
+              const errText =
+                "सर्वर से कनेक्ट नहीं हो सका। कृपया बाद में पुनः प्रयास करें।";
+              msgElem.style.color = "red";
+              msgElem.innerText = errText;
+              safeSpeakHindi(errText);
+              console.error("🔴 Login Error:", error);
             });
         });
     </script>

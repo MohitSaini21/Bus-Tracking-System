@@ -1,0 +1,319 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <title>Corona Admin</title>
+    <!-- plugins:css -->
+    <link
+      rel="stylesheet"
+      href="/assets/vendors/mdi/css/materialdesignicons.min.css"
+    />
+    
+    <link rel="stylesheet" href="/assets/loader.css" />
+    <link rel="stylesheet" href="/assets/vendors/css/vendor.bundle.base.css" />
+    <!-- endinject -->
+    <!-- Plugin css for this page -->
+    <!-- End Plugin css for this page -->
+    <!-- inject:css -->
+    <!-- endinject -->
+    <!-- Layout styles -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+    <!-- End layout styles -->
+    <link rel="shortcut icon" href="/assets/images/favicon.png" />
+
+
+    
+  </head>
+  <body>
+    <div class="container-scroller">
+      <!-- partial:../../partials/_sidebar.html -->
+
+      <%- include('./partials/sidebar.ejs') %>
+      <%- include('./partials/loader.ejs') %>
+      <!-- partial -->
+      <div class="container-fluid page-body-wrapper">
+        <!-- partial:../../partials/_navbar.html -->
+
+        <%- include('./partials/nav.ejs') %>
+        <!-- partial -->
+        <div class="main-panel">
+          <div class="content-wrapper">
+
+            <div class="page-header">
+    
+                
+                <nav aria-label="breadcrumb">
+                  <ol class="breadcrumb flex-wrap">
+              
+                    <li class="breadcrumb-item active" aria-current="page">
+                        <a href="/DC/profile">आपकी जानकारी (Your Info)</a>
+                      </li>
+                      <li class="breadcrumb-item">
+                        <a href="/DC/helper">   <span>सहायक की जानकारी (Helper Info)</span></a>
+                         </li>
+                    <li class="breadcrumb-item">
+                      बस की जानकारी (Bus Info)
+                    </li>
+              
+                  </ol>
+                </nav>
+              </div>
+            <div class="row">
+    
+                <div class="col-12 grid-margin">
+                    <div class="card">
+                      <div class="card-body">
+                        <h4 class="card-title">बस की जानकारी फॉर्म (Bus Information Form)</h4>
+                  
+                        <form class="form-sample" id="eventForm">
+                          <p class="card-description">बस विवरण (Bus Details)</p>
+                  
+                          <!-- Bus Number & Route -->
+                          <div class="row">
+                            <div class="col-md-6">
+                              <div class="form-group row">
+                                <label class="col-sm-3 col-form-label">बस नंबर (Bus Number)</label>
+                                <div class="col-sm-9">
+                                  <input
+                                    type="text"
+                                    disabled
+                                    style="color: black !important"
+                                    value="<%= bus.busNumber %>"
+                                    class="form-control text-white"
+                                    name="busNumber"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                  
+                            <div class="col-md-6">
+                              <div class="form-group row">
+                                <label class="col-sm-3 col-form-label">रूट (Route)</label>
+                                <div class="col-sm-9">
+                                  <input
+                                    type="text"
+                                    disabled
+                                    style="color: black !important"
+                                    class="form-control text-white"
+                                    value="<%= bus.route %>"
+                                    name="route"
+                                    placeholder="जैसे: TMU से Dhampur"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                  
+                          <!-- Capacity & Status -->
+                          <div class="row">
+                            <div class="col-md-6">
+                              <div class="form-group row">
+                                <label class="col-sm-3 col-form-label">क्षमता (Capacity)</label>
+                                <div class="col-sm-9">
+                                  <input
+                                    type="number"
+                                    disabled
+                                    style="color: black !important"
+                                    class="form-control text-white"
+                                    value="<%= bus.capacity %>"
+                                    name="capacity"
+                                    placeholder="बस की क्षमता दर्ज करें"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                  
+                            <div class="col-md-6">
+                              <div class="form-group row">
+                                <label class="col-sm-3 col-form-label">स्थिति (Status)</label>
+                                <div class="col-sm-9">
+                                  <select class="form-control text-white" name="status" disabled style="color: black  !important">
+                                    <option value="" disabled>स्थिति चुनें (Select Status)</option>
+                                    <option value="Operational" <%= bus.status === "Operational" ? "selected" : "" %>>Operational (चालू)</option>
+                                    <option value="Out of Service" <%= bus.status === "Out of Service" ? "selected" : "" %>>Out of Service (सेवा में नहीं)</option>
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                  
+                          <!-- Fuel Type & Last Serviced -->
+                          <div class="row">
+                            <div class="col-md-6">
+                              <div class="form-group row">
+                                <label class="col-sm-3 col-form-label">ईंधन प्रकार (Fuel Type)</label>
+                                <div class="col-sm-9">
+                                  <select class="form-control text-white" name="fuelType" disabled style="color: black !important">
+                                    <option value="" disabled selected>ईंधन चुनें (Select Fuel Type)</option>
+                                    <option value="Diesel" <%= bus.fuelType === "Diesel" ? "selected" : "" %>>Diesel (डीज़ल)</option>
+                                    <option value="CNG" <%= bus.fuelType === "CNG" ? "selected" : "" %>>CNG (सीएनजी)</option>
+                                  </select>
+                                </div>
+                              </div>
+                            </div>
+                  
+                            <div class="col-md-6">
+                              <div class="form-group row">
+                                <label class="col-sm-3 col-form-label">अंतिम सेवा (Last Serviced)</label>
+                                <div class="col-sm-9">
+                                  <input
+                                    type="date"
+                                    disabled
+                                    style="color: black !important"
+                                    value="<%= new Date(bus.lastServiced).toISOString().split('T')[0] %>"
+                                    class="form-control text-white"
+                                    name="lastServiced"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                  
+                          <!-- Distance & Speed -->
+                          <div class="row">
+                            <div class="col-md-6">
+                              <div class="form-group row">
+                                <label class="col-sm-3 col-form-label">कुल दूरी (Distance Travelled in meters)</label>
+                                <div class="col-sm-9">
+                                  <input
+                                    type="number"
+                                    disabled
+                                    style="color: black !important"
+                                    value="<%= bus.distanceTravelled %>"
+                                    name="distanceTravelled"
+                                    id="distanceTravelled"
+                                    class="form-control text-white"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                  
+                            <div class="col-md-6">
+                              <div class="form-group row">
+                                <label class="col-sm-3 col-form-label">औसत गति (Average Speed in km/h)</label>
+                                <div class="col-sm-9">
+                                  <input
+                                    type="number"
+                                    disabled
+                                    style="color: black !important"
+                                    value="<%= bus.averageSpeed %>"
+                                    class="form-control text-white"
+                                    name="averageSpeed"
+                                    placeholder="उदाहरण: 45"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                  
+                          <!-- Route Stops -->
+                          <p class="card-description">रूट स्टॉप्स (Route Stops)</p>
+                  
+                          <% if (bus.routeStops && bus.routeStops.length > 0) { %>
+                            <% bus.routeStops.forEach((stop, index) => { %>
+                              <div class="row">
+                                <div class="col-md-3">
+                                  <div class="form-group row">
+                                    <label class="col-sm-12 col-form-label">स्टॉप नाम (Stop Name)</label>
+                                    <div class="col-sm-12">
+                                      <input
+                                        type="text"
+                                        disabled
+                                        style="color: black !important"
+                                        class="form-control text-white"
+                                        name="stopName[]"
+                                        value="<%= stop.stopName %>"
+                                        placeholder="स्टॉप का नाम दर्ज करें"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                  
+                                <div class="col-md-2">
+                                  <div class="form-group row">
+                                    <label class="col-sm-12 col-form-label">सुबह का समय (MT)</label>
+                                    <div class="col-sm-12">
+                                      <input
+                                        type="time"
+                                        disabled
+                                        style="color: black !important"
+                                        value="<%= stop.morningTime %>"
+                                        class="form-control text-white"
+                                        name="morningTime[]"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                  
+                                <div class="col-md-2">
+                                  <div class="form-group row">
+                                    <label class="col-sm-12 col-form-label">शाम का समय (ET)</label>
+                                    <div class="col-sm-12">
+                                      <input
+                                        type="time"
+                                        disabled
+                                        style="color: black !important"
+                                        value="<%= stop.eveningTime %>"
+                                        class="form-control text-white"
+                                        name="eveningTime[]"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            <% }); %>
+                          <% } %>
+                        </form>
+                  
+                        <br /><br />
+                      </div>
+                    </div>
+                  </div>
+                  
+            </div>
+   
+      
+            
+     
+              
+       
+
+            
+          <!-- content-wrapper ends -->
+          <!-- partial:../../partials/_footer.html -->
+
+          
+          <!-- partial -->
+        </div>
+        <!-- main-panel ends -->
+      </div>
+      <!-- page-body-wrapper ends -->
+    </div>
+    <!-- container-scroller -->
+    <!-- plugins:js -->
+    <script src="/assets/vendors/js/vendor.bundle.base.js"></script>
+    <!-- endinject -->
+    <!-- Plugin js for this page -->
+    <!-- End plugin js for this page -->
+    <!-- inject:js -->
+    <script src="/assets/js/off-canvas.js"></script>
+    <script src="/assets/js/hoverable-collapse.js"></script>
+    <script src="/assets/js/misc.js"></script>
+    <script src="/assets/js/settings.js"></script>
+    <script src="/assets/js/todolist.js"></script>
+    <script>
+              window.onload = function () {
+          document.getElementById("loader").style.display = "none";
+        };
+    </script>
+
+    
+
+  </body>
+</html>

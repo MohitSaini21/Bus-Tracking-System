@@ -1,0 +1,161 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <title>Corona Admin</title>
+    <!-- plugins:css -->
+    <link
+      rel="stylesheet"
+      href="/assets/vendors/mdi/css/materialdesignicons.min.css"
+    />
+    
+    <link rel="stylesheet" href="/assets/vendors/css/vendor.bundle.base.css" />
+    <!-- endinject -->
+    <!-- Plugin css for this page -->
+    <!-- End Plugin css for this page -->
+    <!-- inject:css -->
+    <!-- endinject -->
+    <!-- Layout styles -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+    <link rel="stylesheet" href="/assets/loader.css" />
+    <!-- End layout styles -->
+    <link rel="shortcut icon" href="/assets/images/favicon.png" />
+
+
+    
+  </head>
+  <body>
+    <div class="container-scroller">
+      <!-- partial:../../partials/_sidebar.html -->
+
+      <%- include('./partials/sidebar.ejs') %>
+      <%- include('./partials/loader.ejs') %>
+      <!-- partial -->
+      <div class="container-fluid page-body-wrapper">
+        <!-- partial:../../partials/_navbar.html -->
+
+        <%- include('./partials/nav.ejs') %>
+        <!-- partial -->
+        <div class="main-panel">
+            <div class="content-wrapper">
+          
+              <p class="mb-4 font-weight-bold">
+                आप और आपके साथी चालक या परिचालक द्वारा दर्ज की गई शिकायतें:
+              </p>
+          
+              <div class="row">
+                <% if (complaints.length == 0) { %>
+                    <p class="text-muted font-weight-bold">
+                      आपने अभी तक कोई शिकायत दर्ज नहीं की है।  
+                      <a href="/DC/registerComplain" class="text-primary font-weight-bold ml-1">
+                        यहाँ क्लिक करें शिकायत दर्ज करने के लिए →
+                      </a>
+                    </p>
+                  <% } %>
+                  
+                <% complaints.forEach(function(complaint) { %>
+                  <div class="col-xl-4 col-md-6 grid-margin stretch-card" id="<%= complaint._id   %>">
+                    <div class="card shadow-sm border border-warning">
+                      <div class="card-body">
+                        <h5 class="text-light font-weight-bold mb-3">
+                          📝 शिकायत: <%= complaint.complaintType %>
+                        </h5>
+          
+                        <p class="mb-2">
+                          📅 <strong>दर्ज की गई:</strong><br>
+                          <%= new Date(complaint.createdAt).toLocaleString("hi-IN", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit"
+                          }) %>
+                        </p>
+          
+                        <p class="mb-2">
+                          🔖 <strong>स्थिति:</strong>
+                          <% if (complaint.status === "pending") { %>
+                            <span class="badge badge-warning">पेंडिंग</span>
+                          <% } else if (complaint.status === "reviewed") { %>
+                            <span class="badge badge-success">समीक्षित</span>
+                          <% } else if (complaint.status === "rejected") { %>
+                            <span class="badge badge-danger">अस्वीकृत</span>
+                          <% } %>
+                        </p>
+          
+                        <button onclick="deleteComplaint('<%= complaint._id %>')" class="btn btn-sm btn-danger mt-3">
+                          🗑️ शिकायत हटाएं
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                <% }) %>
+              </div>
+          
+            </div>
+          </div>
+          
+    <!-- container-scroller -->
+    <!-- plugins:js -->
+    <script src="/assets/vendors/js/vendor.bundle.base.js"></script>
+    <!-- endinject -->
+    <!-- Plugin js for this page -->
+    <!-- End plugin js for this page -->
+    <!-- inject:js -->
+    <script src="/assets/js/off-canvas.js"></script>
+    <script src="/assets/js/hoverable-collapse.js"></script>
+    <script src="/assets/js/misc.js"></script>
+    <script src="/assets/js/settings.js"></script>
+    <script src="/assets/js/todolist.js"></script>
+    <script src="/custom/speak.js"></script>
+
+
+
+    <script>
+        async function deleteComplaint(id) {
+          
+          safeSpeakHindi("क्या आप वाकई इस शिकायत को हटाना चाहते हैं?")
+          if (!confirm("क्या आप वाकई इस शिकायत को हटाना चाहते हैं?")) return;
+      
+          try {
+            const res = await fetch(`/DC/deleteComplaint/${id}`, {
+        method: "DELETE",
+      });
+      
+        
+      
+                
+            const result= await response.json()
+        let  message = result.message.slice(2); // pehle ke 2 character (🔇) hata do
+            safeSpeakHindi(message)
+            document.getElementById(id).remove()
+      
+            alert(result.message);
+            
+      
+    
+       
+            
+          } catch (error) {
+            console.error("❌ डिलीट करने में त्रुटि:", error);
+            alert("❌ डिलीट करने में त्रुटि हुई");
+            safeSpeakHindi("डिलीट करने में त्रुटि हुई");
+          }
+        }
+        window.onload = function () {
+          document.getElementById("loader").style.display = "none";
+        };
+      </script>
+      
+    
+    
+ 
+
+  </body>
+</html>

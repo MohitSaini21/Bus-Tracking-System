@@ -17,14 +17,11 @@ setTimeout(() => {
       return;
     } else if (reason == "ping timeout" || reason == "transport close") {
       const col = `
-          <div class="container">
-
-            <p>
-Connecting... Please wait.
-
-            </p>
-
-          </div>
+<div class="container">
+  <p>
+    कनेक्ट किया जा रहा है... कृपया प्रतीक्षा करें।
+  </p>
+</div>
 `;
 
       const tempDiv = document.createElement("div");
@@ -45,26 +42,24 @@ Connecting... Please wait.
 
   function connectionDenied() {
     const col = `
-     <div class="col-12 grid-margin stretch-card" id="goBack">
-   <div class="card">
-      <div class="card-body" id="cardBody">
-        <h4 class="card-title">
-          ${user.name} (${user.role})
-        </h4>
-        <p class="card-description">
-         
-         Either you are not authorized to provide location again, or another mate is currently tracking this bus;
-           
-              
-        </p>
-        <div class="template-demo">
-          <button type="button" class="btn btn-secondary btn-fw">
-            <a href="/DC" style="text-decoration: none; color: inherit;">Go Back</a>
-          </button>
-        </div>
+<div class="col-12 grid-margin stretch-card" id="goBack">
+  <div class="card">
+    <div class="card-body" id="cardBody">
+      <h4 class="card-title">
+        ${user.name} (${user.role})
+      </h4>
+<p class="card-description">
+  या तो आपको अनुमति नहीं है, या फिर आपका हेल्पर पहले से ही इस बस की लोकेशन शेयर कर रहा है।
+</p>
+      <div class="template-demo">
+        <button type="button" class="btn btn-secondary btn-fw">
+          <a href="/DC" style="text-decoration: none; color: inherit;">वापस जाएँ</a>
+        </button>
       </div>
     </div>
-    </div>
+  </div>
+</div>
+
 
   `;
 
@@ -77,35 +72,31 @@ Connecting... Please wait.
 
   socket.on("connectionApproved", (message) => {
     const col = `
-        <div class="col-12 grid-margin stretch-card" id="goAhead">
-                <div class="card">
-                  <div class="card-body" id="cardBody">
-       <h4 class="card-title">
-        ${user.name}(${user.role})
-    </h4>
-    <p class="card-description">
-        To Stop providing  your bus location, please click the <code>Checked Out</code> button.
-    </p>
-                    <div class="template-demo">
-                                   <button type="button" class="btn btn-secondary btn-fw"><a href="/DC">Checked Out</a></button>
-              <button type="button" class="btn btn-secondary btn-fw"><a href="  /DC/startStream">Start Streaming </a></button>
-                      
-             
-                      
-                    </div>
-                  </div>
-     
-                  
-     
-                  
-         
-                  
-                </div>
-              </div>
+ <div class="col-12 grid-margin stretch-card" id="goAhead">
+  <div class="card">
+    <div class="card-body" id="cardBody">
+      <h4 class="card-title">
+        ${user.name} (${user.role})
+      </h4>
+      <p class="card-description">
+        बस की लोकेशन साझा करना बंद करने के लिए कृपया <code>चेक्ड आउट (Checked Out)</code> बटन पर क्लिक करें।
+      </p>
+      <div class="template-demo">
+        <button type="button" class="btn btn-secondary btn-fw">
+          <a href="/DC" style="text-decoration: none; color: black;">चेक्ड आउट</a>
+        </button>
+        <button type="button" class="btn btn-secondary btn-fw">
+          <a href="/DC/startStream" style="text-decoration: none; color: black;">स्ट्रीमिंग शुरू करें</a>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
   `;
     let thirdCloumn = `<div class="col-md-6 grid-margin stretch-card" id="videoTag">
   <div class="card">
-    <div class="card-body p-0  vector-map"   id="audience-map"> <!-- Remove padding for full container usage -->
+    <div class="card-body p-0"> <!-- Remove padding for full container usage -->
       <iframe
         id="videoIframe"
         src="/locationBus/${bus._id}"  <!-- Replace with actual source -->
@@ -127,6 +118,8 @@ Connecting... Please wait.
     const newIframeCol = tempDiv.firstChild;
     document.getElementById("mainRow").appendChild(newIframeCol);
   });
+
+
 
   let lastSavedTime = 0;
   let previousPoint = null;
@@ -183,8 +176,13 @@ Connecting... Please wait.
       socket.emit("busLocationUpdate", locationData);
     },
     (error) => {
-      console.error("GPS Error:", error.message);
-      console.log("Sending Nothing");
+      console.error("📡 GPS त्रुटि:", error.message);
+
+      const errorMessage = `📡 GPS त्रुटि: कृपया सुनिश्चित करें कि आपने लोकेशन सेवा चालू की है और इस वेबसाइट को अनुमति दी है।`;
+      safeSpeakHindi("कृपया लोकेशन ऑन करें और वेबसाइट को अनुमति दें।");
+      alert(errorMessage);
+
+      window.location.href = "/DC";
     },
     {
       enableHighAccuracy: true,

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <title>Corona Admin</title>
+    <!-- plugins:css -->
+    <link
+      rel="stylesheet"
+      href="/assets/vendors/mdi/css/materialdesignicons.min.css"
+    />
+    <link rel="stylesheet" href="/assets/vendors/css/vendor.bundle.base.css" />
+    <!-- endinject -->
+    <!-- Plugin css for this page -->
+    <!-- End Plugin css for this page -->
+    <!-- inject:css -->
+    <!-- endinject -->
+    <!-- Layout styles -->
+    <link rel="stylesheet" href="/assets/css/style.css" />
+    <link rel="stylesheet" href="/assets/loader.css" />
+    <!-- End layout styles -->
+    <link rel="shortcut icon" href="/assets/images/favicon.png" />
+    <style>
+      .preview {
+        width: 150px; /* Set a fixed width */
+        height: 150px; /* Set a fixed height */
+        object-fit: cover; /* Ensures the image covers the container without distortion */
+        border-radius: 50%; /* Keeps the image rounded */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container-scroller">
+      <!-- partial:../.../corePartials/_sidebar.html -->
+
+
+      <%- include('./partials/sidebar.ejs') %>
+      <%- include('./partials/loader.ejs') %>
+      <!-- partial -->
+      <div class="container-fluid page-body-wrapper">
+        <!-- partial:../.../corePartials/_navbar.html -->
+        <%- include('./partials/nav.ejs') %>
+        <!-- part x`ial -->
+        <div class="main-panel">
+          <div class="content-wrapper">
+            <div class="page-header">
+    
+                
+                <nav aria-label="breadcrumb">
+                  <ol class="breadcrumb flex-wrap">
+                    <% if (user.role=="driver" && worker.role=="driver"  ||   user.role=="conductor" && worker.role=="conductor" ) { %>
+
+                        <li class="breadcrumb-item" aria-current="page">
+                            <span>             आपकी जानकारी (Your Info)</span>
+               
+                    </li>
+                          <li class="breadcrumb-item">
+                            <a href="/DC/helper">सहायक की जानकारी (Helper Info)</a>
+                          </li>
+                          <% } else { %>
+
+                            <li class="breadcrumb-item">
+                                <a href="/DC/profile"> आपकी जानकारी (Your Info)</a>
+                              </li>
+                              <li class="breadcrumb-item">
+                                <span>सहायक की जानकारी (Helper Info)</span>
+                              </li>
+                            <!-- Code to render if condition is false -->
+                          <% } %>
+                 
+    
+                 
+                          
+                    <li class="breadcrumb-item">
+                        <a href="/DC/aboutBus">बस की जानकारी (Bus Info)</a>
+                      </li>
+                  </ol>
+                </nav>
+              </div>
+              
+              
+            <div class="row" id="mainRow">
+                <div class="col-12 grid-margin stretch-card">
+                  <div class="card">
+                    <div class="card-body">
+                      <h4 class="card-title">पंक्ति जानकारी (Row Information)</h4>
+                      <p class="card-description">आपके बारे में (About You)</p>
+              
+                      <form class="forms-sample" id="row">
+                        <!-- Name -->
+                        <div class="form-group">
+                          <label for="exampleInputName1">नाम (Name)</label>
+                          <input
+                            type="text"
+                            class="form-control text-black"
+                            value="<%= worker.name  %>"
+                            id="exampleInputName1"
+                            name="name"
+                            style="color: black;"
+                            placeholder="नाम"
+                            disabled
+                          />
+                        </div>
+              
+                        <!-- Phone -->
+                        <div class="form-group row">
+                          <label for="phone" class="col-sm-3 col-form-label">फ़ोन नंबर (Phone)</label>
+                          <div class="col-sm-9">
+                            <input
+                              type="text"
+                              class="form-control text-black"
+                              id="phone"
+                              name="phone"
+                              style="color: black;"
+                              value="<%= worker.phone  %>"
+                              placeholder="फ़ोन नंबर"
+                              disabled
+                            />
+                          </div>
+                        </div>
+              
+                        <!-- Password -->
+                  
+                        
+              
+                        <!-- Conductor ID -->
+                        <% if (locals.worker.conductorId) { %>
+                        <div class="form-group row">
+                          <label for="driverId" class="col-sm-3 col-form-label">कंडक्टर आईडी (Conductor ID)</label>
+                          <div class="col-sm-9">
+                            <input
+                              type="text"
+                              class="form-control text-black"
+                              id="driverId"
+                              name="driverId"
+                              value="<%= worker.conductorId  %>"
+                              placeholder="कंडक्टर आईडी"
+                              style="color: black;"
+                              disabled
+                            />
+                          </div>
+                        </div>
+                        <% } %>
+              
+                        <!-- Driver ID and License -->
+                        <% if (locals.worker.driverId) { %>
+                        <div class="form-group row">
+                          <label for="driverId" class="col-sm-3 col-form-label">ड्राइवर आईडी (Driver ID)</label>
+                          <div class="col-sm-9">
+                            <input
+                              type="text"
+                              class="form-control text-black"
+                              id="driverId"
+                              name="driverId"
+                              value="<%= worker.driverId  %>"
+                              placeholder="ड्राइवर आईडी"
+                              style="color: black;"
+                              disabled
+                            />
+                          </div>
+                        </div>
+              
+                        <div class="form-group row">
+                          <label for="licenseNumber" class="col-sm-3 col-form-label">लाइसेंस नंबर (License Number)</label>
+                          <div class="col-sm-9">
+                            <input
+                              type="text"
+                              class="form-control text-black"
+                              id="driverLicenseNumber"
+                              value="<%= worker.licenseNumber  %>"
+                              name="licenseNumber"
+                              placeholder="लाइसेंस नंबर"
+                              style="color: black;"
+                              disabled
+                            />
+                          </div>
+                        </div>
+                        <% } %>
+              
+                        <!-- Address -->
+                        <div class="form-group">
+                          <label for="exampleTextarea1">पता (Address)</label>
+                          <textarea
+                            class="form-control custom-textarea"
+                            name="address"
+                            id="exampleTextarea1"
+                            style="color: black;"
+                            rows="4"
+                            disabled
+                          ><%= worker.address %></textarea>
+                        </div>
+              
+                        <!-- Status -->
+                        <div class="form-group">
+                          <label for="exampleFormControlSelect2">स्थिति चुनें (Select Status)</label>
+                          <select
+                            class="form-control text-black"
+                            style="color: black"
+                            name="status"
+                            id="exampleFormControlSelect2"
+                            disabled
+                          >
+                            <option
+                              value="Active"
+                              class="text-black"
+                              style="color: black"
+                              <%= worker.status === "Active" ? "selected" : "" %>
+                            >
+                              सक्रिय (Active)
+                            </option>
+                            <option
+                              value="Inactive"
+                              class="text-black"
+                              style="color: black"
+                              <%= worker.status === "Inactive" ? "selected" : "" %>
+                            >
+                              निष्क्रिय (Inactive)
+                            </option>
+                          </select>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-12 grid-margin stretch-card">
+                    <div class="card">
+                      <div class="card-body">
+                        <!-- कार्ड का शीर्षक: अब सिर्फ फोटो की बात -->
+                        <h4 class="card-title">प्रोफ़ाइल फ़ोटो (Profile Image)</h4>
+                  
+              
+                        
+                  
+                        <!-- प्रोफाइल फोटो को सेंटर में दिखाना -->
+                        <div class="container d-flex justify-content-center">
+                          <img
+                            src="<%= worker.profilePhoto %>"
+                            id="Preview"
+                            class="img-thumbnail rounded-circle preview"
+                            alt="प्रोफ़ाइल फ़ोटो"
+                            style="width: 150px; height: 150px; object-fit: cover;"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+              </div>
+              
+          </div>
+          <!-- content-wrapper ends -->
+          <!-- partial:../.../corePartials/_footer.html -->
+          <footer class="footer">
+            <div
+              class="d-sm-flex justify-content-center justify-content-sm-between"
+            >
+              <span
+                class="text-muted d-block text-center text-sm-left d-sm-inline-block"
+                >Copyright © bootstrapdash.com 2020</span
+              >
+              <span
+                class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center"
+              >
+                Free
+                <a
+                  href="https://www.bootstrapdash.com/bootstrap-admin-template/"
+                  target="_blank"
+                  >Bootstrap admin templates</a
+                >
+                from Bootstrapdash.com</span
+              >
+            </div>
+          </footer>
+          <!-- partial -->
+        </div>
+        <!-- main-panel ends -->
+      </div>
+      <!-- page-body-wrapper ends -->
+    </div>
+    <!-- container-scroller -->
+    <!-- plugins:js -->
+    <script src="/assets/vendors/js/vendor.bundle.base.js"></script>
+    <!-- endinject -->
+    <!-- Plugin js for this page -->
+    <!-- End plugin js for this page -->
+    <!-- inject:js -->
+    <script src="/assets/js/off-canvas.js"></script>
+    <script src="/assets/js/hoverable-collapse.js"></script>
+    <script src="/assets/js/misc.js"></script>
+    <script src="/assets/js/settings.js"></script>
+    <script src="/assets/js/todolist.js"></script>
+ 
+ 
+    <script>
+        const worker = <%- JSON.stringify(worker) %>;
+        if(worker.driverId){
+        
+          append(worker.driverDocuments)
+          
+        }else{
+          append(worker.conductorDocuments)
+       
+          
+      
+          
+        }
+
+        function append(workerDocuments){
+ workerDocuments.forEach((doc, index) => {
+  console.log(doc.name)
+
+           const mainRow = document.querySelector(".row");
+           console.log(mainRow)
+   const col = `
+    <div class="col-md-4 grid-margin stretch-card">
+                <div class="card "  style="padding: 0;">
+                  <div class="card-body"  style="padding: 0.8rem;">
+                  
+                    
+                    <div class="media" >
+                           <div class="media-body">
+                        <p class="card-text">${doc.name}</p>
+                      </div>
+<a href="${doc.url}" title="View">
+  <i class="mdi mdi-eye icon-sm" style="margin-right: 8px;"></i>
+</a>
+
+
+                 
+                    </div>
+                  </div>
+                </div>
+              </div>
+    `;
+    const tempDiv = document.createElement('div');
+     tempDiv.innerHTML = col.trim();
+       const newCol = tempDiv.firstChild;
+
+    mainRow.insertBefore(newCol, mainRow.children[2]);
+  });
+        }
+
+        window.onload = function () {
+          document.getElementById("loader").style.display = "none";
+        };
+    </script> 
+    <!-- endinject -->
+    <!-- Custom js for this page -->
+    <!-- End custom js for this page -->
+  </body>
+</html>

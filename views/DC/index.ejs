@@ -16,6 +16,7 @@
     />
     
     <link rel="stylesheet" href="/assets/vendors/css/vendor.bundle.base.css" />
+    <link rel="stylesheet" href="/assets/loader.css" />
     <!-- endinject -->
     <!-- Plugin css for this page -->
     <!-- End Plugin css for this page -->
@@ -25,6 +26,7 @@
     <link rel="stylesheet" href="/assets/css/style.css" />
     <!-- End layout styles -->
     <link rel="shortcut icon" href="/assets/images/favicon.png" />
+     
 
 
     
@@ -34,6 +36,7 @@
       <!-- partial:../../partials/_sidebar.html -->
 
       <%- include('./partials/sidebar.ejs') %>
+      <%- include('./partials/loader.ejs') %>
       <!-- partial -->
       <div class="container-fluid page-body-wrapper">
         <!-- partial:../../partials/_navbar.html -->
@@ -43,38 +46,98 @@
         <div class="main-panel">
           <div class="content-wrapper">
             <div class="row">
-                <div class="col-12 grid-margin stretch-card">
+              <div class="col-12 grid-margin stretch-card">
                 <div class="card">
-           <div class="card-body">
-    <h4 class="card-title">
-        <%= user.name %> (<%= user.role %>)
-    </h4>
-    <p class="card-description">
-        To provide your bus location, please click the <code>Checked In</code> button.
-    </p>
-    <div class="template-demo">
-        <button type="button" class="btn btn-secondary btn-fw">
-            <a href="/DC/goLive" style="text-decoration: none; color: black;">Checked In</a>
-        </button>
-        <button type="button" class="btn btn-secondary btn-fw">
-            Profile
-        </button>
-        <button type="button" class="btn btn-danger btn-fw">
-            Logout
-        </button>
-    </div>
-</div>
-
-     
-                  
-     
-                  
+                  <div class="card-body">
+                    <h4 class="card-title">
+                      <%= user.name %> (<%= user.role %>)
+                    </h4>
+                    <p class="card-description">
+                      अपनी बस की लाइव लोकेशन भेजने के लिए नीचे दिए गए <code>चेक इन</code> बटन पर क्लिक करें।
+                    </p>
+                    <div class="template-demo">
+                      <button type="button" class="btn btn-secondary btn-fw">
+                        <a href="/DC/goLive" style="text-decoration: none; color: black;">चेक इन</a>
+                      </button>
+                      <button type="button" class="btn btn-secondary btn-fw">
+                        <a href="/DC/profile" style="text-decoration: none; color: black;">               प्रोफ़ाइल देखें</a>
          
-                  
+                      </button>
+                      <button type="button" class="btn btn-danger btn-fw" onclick="Redirect()">
+                        लॉगआउट
+                      </button>
+                                    
+
+ <!-- 🔴 Emergency Button in Hindi -->
+<button type="button" class="btn btn-danger btn-fw" onclick="handleEmergencyClick()">
+  आपातकालीन बटन
+</button>
+
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-   
+              
+
+              <div class="col-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body text-center">
+                    <h4 class="card-title">🚌 ओडोमीटर अपडेट (Odometer Update)</h4>
+                    <p class="card-description">
+                      कृपया नीचे वर्तमान बस मीटर रीडिंग दर्ज करें <br>
+                      <span class="text-muted">(Please enter the current bus meter reading below)</span>
+                    </p>
+              
+                    <form id="odometerForm" class="form-inline justify-content-center flex-wrap">
+                      <input
+                        type="number"
+                        class="form-control mb-2 mr-sm-2"
+                        id="odometerReading"
+                        value="<%= user.assignedBus.distanceTravelled %>"
+                        name="odometerReading"
+                        placeholder="🔢 रीडिंग दर्ज करें / Enter Reading"
+                        required
+                        style="color: white !important"
+                      />
+              
+                      <button type="submit" class="btn btn-success mb-2">
+                        🔄 अपडेट करें (Update)
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+              <div class="col-12 grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body">
+                    <h4 class="card-title text-center">📌 सूचना पट्ट (Notice Board)</h4>
+                    <p class="card-description text-center">
+                      विश्वविद्यालय द्वारा जारी सभी सूचनाएँ नीचे दी गई हैं।<br>
+                      <span class="text-muted">(All university-issued notices are listed below)</span>
+                    </p>
+              
+                    <!-- Notice List -->
+                    <div class="mt-4">
+                      <h5 class="text-danger font-weight-bold mb-3">📝 सभी ड्राइवर और परिचालकों के लिए आवश्यक निर्देश:</h5>
+                      <ul style="line-height: 1.8;">
+                        <li>🚍 यात्रा प्रारंभ करने से पहले <strong>“चेक इन”</strong> करके <strong>लाइव लोकेशन</strong> अवश्य शुरू करें।</li>
+                        <li>📱 ट्रैकिंग ऐप को हमेशा मोबाइल में <strong>चालू (Active)</strong> रखें।</li>
+                        <li>📅 प्रत्येक दिन की शुरुआत में <strong>ओडोमीटर रीडिंग</strong> अवश्य अपडेट करें।</li>
+                        <li>📝 यदि किसी भी प्रकार की समस्या या शिकायत हो, तो <strong>“शिकायत दर्ज करें”</strong> विकल्प का उपयोग करें।</li>
+                        <li>📞 तकनीकी समस्या या आपातकालीन स्थिति में <strong>तत्काल प्रशासन से संपर्क करें।</strong></li>
+                        <li>🪪 यात्रा पर जाने से पहले अपना <strong>ID कार्ड और यूनिफॉर्म</strong> अनिवार्य रूप से पहनें।</li>
+                        <li>🛑 निर्धारित <strong>स्पीड लिमिट (50 किमी/घंटा)</strong> का पालन करें, तेज गति से वाहन चलाना वर्जित है।</li>
+                        <li>🙏 यात्रियों से सद्भावपूर्ण व्यवहार करें और <strong>उनकी सुरक्षा</strong> को सर्वोच्च प्राथमिकता दें।</li>
+                      </ul>
+                    </div>
+                    
+                  </div>
+                </div>
+              </div>
+
+
+
+                
       
             
      
@@ -106,6 +169,9 @@
     <script src="/assets/js/todolist.js"></script>
 
     <script type="module" src="/wfirebase.js"></script>
+    <script type="module" src="/foreground.js"></script>
+    <script src="/custom/speak.js"></script>
+
 
     <!-- End custom js for this page -->
     <!-- custom Script -->
@@ -149,11 +215,95 @@
 
       
     </script>
-    <!-- endinject -->
-    <!-- Custom js for this page -->
-    <!-- End custom js for this page -->
+
+<script>
+
+const user = <%- JSON.stringify(user) %>;
+  document.addEventListener("DOMContentLoaded", () => {
+    const form = document.getElementById("odometerForm");
+    const input = document.getElementById("odometerReading");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault(); // ✅ prevents page refresh
+
+      const reading = input.value;
+
+      try {
+        const response = await fetch("/DC/odometer", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ odometerReading: reading , busId : user.assignedBus._id }),
+        });
+
+        const result= await response.json()
+        let  message = result.message.slice(2); // pehle ke 2 character (🔇) hata do
+        safeSpeakHindi(message)
+        alert(result.message)
+     
+      
+      } catch (err) {
+        console.error(err);
+        alert("❌ Server or network error.");
+        safeSpeakHindi("Server or network error.");
+      }
+    });
+  });
+</script>
+ 
+<script>
+    function handleEmergencyClick() {
+
+      safeSpeakHindi("क्या आप वाकई आपातकालीन सूचना भेजना चाहते हैं ");
+    const confirmEmergency = confirm("⚠️ क्या आप वाकई आपातकालीन सूचना भेजना चाहते हैं?");
+
+    if (!confirmEmergency) {
+      safeSpeakHindi("आपातकालीन कार्रवाई रद्द कर दी गई है।");
+      alert("❌ आपातकालीन कार्रवाई रद्द कर दी गई है।");
+      return;
+    }
+
+    // 📦 Optional: आप चाहें तो ड्राइवर/बस की जानकारी यहाँ जोड़ सकते हैं
+    const emergencyData = {
+      timestamp: new Date().toISOString(),
+
+      busId:user.assignedBus._id
+    };
+
+    // 🚀 Server को सूचना भेजना
+    fetch('/DC/emergencyAlert', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(emergencyData)
+    })
+    .then(response => {
+      if (response.ok) {
+        safeSpeakHindi("सूचना भेज दी गई है। प्रशासन जल्द ही संपर्क करेगा।");
+        alert("✅ सूचना भेज दी गई है। प्रशासन जल्द ही संपर्क करेगा।");
+     
+        
+      } else {
+
+        
+        throw new Error("सर्वर त्रुटि");
+      }
+    })
+    .catch(error => {
+      console.error("❌ नेटवर्क त्रुटि:", error);
+      safeSpeakHindi("सूचना भेजने में समस्या आई। कृपया पुनः प्रयास करें।")
+      alert("❌ सूचना भेजने में समस्या आई। कृपया पुनः प्रयास करें।");
+    });
+  }
 
 
+  
+        window.onload = function () {
+          document.getElementById("loader").style.display = "none";
+        };
+</script>
 
   </body>
 </html>

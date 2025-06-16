@@ -3,6 +3,7 @@ import Driver from "../model/driver.js";
 import CORE from "../model/admin.js";
 import rateLimit from "express-rate-limit";
 
+import Complaint from "../model/complain.js";
 import Conductor from "../model/conductor.js";
 
 import Bus from "../model/bus.js";
@@ -258,68 +259,68 @@ router.get("/locationBus/:id", async (req, res) => {
 router.get("/driverConductorLogin", checkAuthHome, async (req, res) => {
   return res.render("public/dcLogin.ejs");
 });
-router.post("/driverConductorLogin", checkAuthHome, async (req, res) => {
-  try {
-    // Trim user input to remove unnecessary spaces
-    const { userId, password } = req.body;
+router.post(
+  "/driverConductorLogin",
+  checkAuthHome,
+  limiter,
+  async (req, res) => {
+    try {
+      const { userId, password } = req.body;
 
-    // Check if userId or password is missing
-    if (!userId || !password) {
-      return res.status(400).json({
-        message:
-          "Please fill out the form properly. Otherwise, you might get permanently blocked.",
-      });
-    }
-
-    // Trim any leading or trailing spaces
-    const trimmedUserId = userId.trim();
-    const trimmedPassword = password.trim();
-
-    // Look for the driver first
-    let driver = await Driver.findOne({ driverId: trimmedUserId });
-    if (driver) {
-      if (trimmedPassword === driver.password) {
-        const token = generateTokenAndSetCookie(res, driver._id, driver.role);
-        if (token) {
-          return res.status(200).json({ success: true });
-        }
-      } else {
-        return res
-          .status(401)
-          .json({ message: "Incorrect password for driver" });
+      if (!userId || !password) {
+        return res.status(400).json({
+          message:
+            "कृपया फ़ॉर्म को सही ढंग से भरें। अन्यथा, आपकी पहुँच स्थायी रूप से प्रतिबंधित की जा सकती है।",
+        });
       }
-    } else {
-      // If driver not found, check for the conductor
-      let conductor = await Conductor.findOne({ conductorId: trimmedUserId });
-      if (conductor) {
-        if (trimmedPassword === conductor.password) {
-          const token = generateTokenAndSetCookie(
-            res,
-            conductor._id,
-            conductor.role
-          );
+
+      const trimmedUserId = userId.trim();
+      const trimmedPassword = password.trim();
+
+      let driver = await Driver.findOne({ driverId: trimmedUserId });
+      if (driver) {
+        if (trimmedPassword === driver.password) {
+          const token = generateTokenAndSetCookie(res, driver._id, driver.role);
           if (token) {
             return res.status(200).json({ success: true });
           }
         } else {
-          return res
-            .status(401)
-            .json({ message: "Incorrect password for conductor" });
+          return res.status(401).json({
+            message: "चालक के लिए पासवर्ड गलत है। कृपया पुनः प्रयास करें।",
+          });
         }
       } else {
-        return res.status(404).json({
-          message:
-            "Warning: This account is not registered as a driver or conductor. Unauthorized access attempt detected. Please contact support if this is a mistake.",
-        });
+        let conductor = await Conductor.findOne({ conductorId: trimmedUserId });
+        if (conductor) {
+          if (trimmedPassword === conductor.password) {
+            const token = generateTokenAndSetCookie(
+              res,
+              conductor._id,
+              conductor.role
+            );
+            if (token) {
+              return res.status(200).json({ success: true });
+            }
+          } else {
+            return res.status(401).json({
+              message: "परिचालक के लिए पासवर्ड गलत है। कृपया पुनः प्रयास करें।",
+            });
+          }
+        } else {
+          return res.status(404).json({
+            message:
+              "चेतावनी: यह खाता चालक या परिचालक के रूप में पंजीकृत नहीं है। अनधिकृत पहुँच प्रयास का पता चला है। यदि यह गलती है, तो कृपया सहायता से संपर्क करें।",
+          });
+        }
       }
+    } catch (error) {
+      console.error("लॉगिन के दौरान त्रुटि:", error);
+      return res.status(500).json({
+        message: "कुछ त्रुटि हो गई है। कृपया थोड़ी देर बाद पुनः प्रयास करें।",
+      });
     }
-  } catch (error) {
-    console.error("Error during login:", error);
-    return res
-      .status(500)
-      .json({ message: "Something went wrong, please try again later" });
   }
-});
+);
 
 router.get("/coreLogin", checkAuthHome, async (req, res) => {
   return res.render("public/coreLogin.ejs");
@@ -376,5 +377,48 @@ router.post("/adminLogin", checkAuthHome, limiter, async (req, res) => {
     });
   }
 });
+
+router.post("/complaints", async (req, res) => {
+  try {
+    const { complaintType, incidentTime, busNumber, description } = req.body;
+
+    // Validate required fields
+    if (!complaintType || !incidentTime || !busNumber) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    // Check if the bus exists
+    const busExists = await Bus.findOne({ busNumber: busNumber.trim() });
+    if (!busExists) {
+      return res.status(404).json({ message: "Bus number not found" });
+    }
+
+    // Limit description to 500 characters (or whatever limit you prefer)
+    if (description && description.length > 500) {
+      return res
+        .status(400)
+        .json({ message: "Description is too long (max 500 characters)." });
+    }
+
+    // Save complaint
+    const complaint = new Complaint({
+      complaintType,
+      incidentTime,
+      busNumber: busNumber.trim(),
+      submittedBy: "parent",
+      description: description?.trim(),
+    });
+
+    await complaint.save();
+
+    return res
+      .status(201)
+      .json({ message: "Complaint submitted successfully" });
+  } catch (err) {
+    console.error("Complaint Error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
 
 export { router as publicRouter };

@@ -28,14 +28,11 @@ setTimeout(() => {
       return;
     } else if (reason == "ping timeout" || reason == "transport close") {
       const col = `
-          <div class="container">
-
-            <p>
-Connecting... Please wait.
-
-            </p>
-
-          </div>
+<div class="container">
+  <p>
+    कनेक्ट किया जा रहा है... कृपया प्रतीक्षा करें।
+  </p>
+</div>
 `;
 
       const tempDiv = document.createElement("div");
@@ -52,26 +49,23 @@ Connecting... Please wait.
   });
   function connectionDenied() {
     const col = `
-     <div class="col-12 grid-margin stretch-card" id="goBack">
-   <div class="card">
-      <div class="card-body" id="cardBody">
-        <h4 class="card-title">
-          ${user.name} (${user.role})
-        </h4>
-        <p class="card-description">
-         
-        This bus is already . <code>live</code>  and providing the bus location. You may go back.
-           
-              
-        </p>
-        <div class="template-demo">
-          <button type="button" class="btn btn-secondary btn-fw">
-            <a href="/DC" style="text-decoration: none; color: inherit;">Go Back</a>
-          </button>
-        </div>
+<div class="col-12 grid-margin stretch-card" id="goBack">
+  <div class="card">
+    <div class="card-body" id="cardBody">
+      <h4 class="card-title">
+        ${user.name} (${user.role})
+      </h4>
+<p class="card-description">
+  या तो आपको अनुमति नहीं है, या फिर आपका हेल्पर पहले से ही इस बस की लोकेशन शेयर कर रहा है।
+</p>
+      <div class="template-demo">
+        <button type="button" class="btn btn-secondary btn-fw">
+          <a href="/DC" style="text-decoration: none; color: inherit;">वापस जाएँ</a>
+        </button>
       </div>
     </div>
-    </div>
+  </div>
+</div>
 
   `;
 
@@ -84,41 +78,29 @@ Connecting... Please wait.
 
   socket.on("connectionApproved", (message) => {
     const col = `
-        <div class="col-12 grid-margin stretch-card" id="goAhead">
-                <div class="card">
-                  <div class="card-body" id="cardBody">
-       <h4 class="card-title">
-        ${user.name}(${user.role})
-    </h4>
-    <p class="card-description">
-        To Stop providing  your bus location, please click the <code>Checked Out</code> button.
-    </p>
-                    <div class="template-demo">
-<button type="button" class="btn btn-secondary btn-fw">
-  <a href="/DC">Checked Out</a>
-</button>
-<button type="button" class="btn btn-secondary btn-fw">
-  <a href="/DC/goLive">Stop Streaming</a>
-</button>
-<button type="button" class="btn btn-secondary btn-fw" id="saveStream" onclick="saveStream()">
-  Save Stream
-</button>
+<div class="col-12 grid-margin stretch-card" id="goAhead">
+  <div class="card">
+    <div class="card-body" id="cardBody">
+      <h4 class="card-title">
+        ${user.name} (${user.role})
+      </h4>
+      <p class="card-description">
+        बस की लोकेशन शेयरिंग बंद करने के लिए कृपया <code>चेक्ड आउट</code> बटन पर क्लिक करें।
+      </p>
+      <div class="template-demo">
+        <button type="button" class="btn btn-secondary btn-fw">
+          <a href="/DC" style="text-decoration: none; color: inherit;">चेक्ड आउट</a>
+        </button>
+        <button type="button" class="btn btn-secondary btn-fw">
+          <a href="/DC/goLive" style="text-decoration: none; color: inherit;">स्ट्रीमिंग बंद करें</a>
+        </button>
 
+        
+      </div>
+    </div>
+  </div>
+</div>
 
-              
-                      
-             
-                      
-                    </div>
-                  </div>
-     
-                  
-     
-                  
-         
-                  
-                </div>
-              </div>
   `;
 
     let newColumn = `
@@ -132,7 +114,7 @@ Connecting... Please wait.
 
     let thirdCloumn = `<div class="col-md-6 grid-margin stretch-card" id="videoTag">
   <div class="card">
-    <div class="card-body p-0  vector-map"   id="audience-map"> <!-- Remove padding for full container usage -->
+    <div class="card-body p-0"> <!-- Remove padding for full container usage -->
       <iframe
         id="videoIframe"
         src="/locationBus/${bus._id}"  <!-- Replace with actual source -->
@@ -162,24 +144,50 @@ Connecting... Please wait.
     collectionIceCandidateInfo();
   });
 
+  let lastSavedTime = 0;
+  let previousPoint = null;
+
   const saveLocation = (position) => {
-    const locationData = {
-      latitude: position.coords.latitude,
-      longitude: position.coords.longitude,
+    const currentTime = Date.now();
 
-      accuracy: position.coords.accuracy,
-      timestamp: Date.now(),
-    };
-    localStorage.setItem("lastLocation", JSON.stringify(locationData));
-    return locationData;
-  };
+    if (currentTime - lastSavedTime > 5000 && previousPoint !== null) {
+      // 5 second ho gaye, aur previousPoint available hai
+      const locationData = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+        timestamp: currentTime,
+        previousPoint,
+      };
 
-  const getLastKnownLocation = () => {
-    const data = localStorage.getItem("lastLocation");
-    if (data) {
-      return JSON.parse(data);
+      // Update previousPoint for next call
+      previousPoint = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      };
+
+      lastSavedTime = currentTime;
+      return locationData;
+    } else {
+      // Pehli baar ya 5 second se kam, bina previousPoint ke
+      const locationData = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+        timestamp: currentTime,
+      };
+
+      // Pehli baar yahan pe previousPoint ko set kar rahe hain
+      if (previousPoint === null) {
+        previousPoint = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+        lastSavedTime = currentTime; // also set lastSavedTime first time
+      }
+
+      return locationData;
     }
-    return null;
   };
 
   navigator.geolocation.watchPosition(
@@ -191,17 +199,12 @@ Connecting... Please wait.
       socket.emit("busLocationUpdate", locationData);
     },
     (error) => {
-      console.error("GPS Error:", error.message);
+      console.error("📡 GPS त्रुटि:", error.message);
 
-      let lastLocation = getLastKnownLocation();
-
-      if (lastLocation && Date.now() - lastLocation.timestamp < 5 * 60 * 1000) {
-        locationData[bus] = bus;
-
-        console.log("Emitting Cached Location:", lastLocation);
-        socket.emit("busLocationUpdate", lastLocation);
-      } else {
-      }
+      const errorMessage = `📡 GPS त्रुटि: कृपया सुनिश्चित करें कि आपने लोकेशन सेवा चालू की है और इस वेबसाइट को अनुमति दी है।`;
+      safeSpeakHindi("कृपया लोकेशन ऑन करें और वेबसाइट को अनुमति दें।");
+      alert(errorMessage);
+      window.location.href = "/DC";
     },
     {
       enableHighAccuracy: true,
@@ -209,37 +212,6 @@ Connecting... Please wait.
       timeout: 10000, // 10 sec tak fresh location ka wait karega
     }
   );
-
-  let previousPoint = null;
-  let currentPoint = null;
-
-  // Function to get location
-  const getCurrentLocation = () => {
-    return new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          const point = {
-            latitude,
-            longitude,
-            timestamp: Date.now(),
-          };
-          resolve(point);
-        },
-        (error) => {
-          console.error("Error getting position:", error.message);
-          reject(error);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-
-          maximumAge: 5 * 60 * 1000, // Max 5 min purani location accept karega
-        }
-      );
-    });
-  };
-
   // it will get get deleted soon
   // Poll every 5 seconds
 
@@ -300,8 +272,27 @@ Connecting... Please wait.
     recorder.start();
     recorder.onstop = () => {
       const completeBlob = new Blob(chunks, { type: "video/webm" });
-      sendBlobToServer(completeBlob);
+
+      // 🔽 एक random filename (timestamp-based)
+      const fileName = `busStream(${
+        user.assignedBus.busNumber
+      })_${Date.now()}.webm`;
+
+      // 🔗 Blob को डाउनलोड लिंक में बदलो
+      const url = URL.createObjectURL(completeBlob);
+
+      // ⬇️ Auto-download के लिए anchor टैग बनाओ
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName; // फाइल का नाम सेट करो
+      document.body.appendChild(a);
+      a.click();
+
+      // 🧹 साफ-सफाई
+      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     };
+
     // Add video tracks to the peer connection
     stream
       .getTracks()
@@ -358,42 +349,3 @@ Connecting... Please wait.
 
   // Caputuring the media in chunks and sending  to ther server go tit
 }, 1000);
-
-function saveStream() {
-  recorder.stop();
-}
-
-async function sendBlobToServer(blob) {
-  console.log(blob);
-  const url = "/DC/saveStreamChunks";
-  if (!blob) {
-    console.error("No Blob provided!");
-    alert("No video data available to upload.");
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append("busStreamVideo", blob, "busStreamVideo.webm");
-
-  try {
-    const response = await fetch(url, {
-      method: "POST",
-      body: formData,
-    });
-
-    const data = await response.json();
-    if (data.sucess) {
-      document.getElementById("saveStream").textContent = "Saved";
-      alert("🎉 Video Saved Successfully! ✅");
-      document.getElementById("saveStream").disabled = true; // Disable the button
-    } else {
-      alert(data.message);
-    }
-  } catch (error) {
-    console.error("Error during the request:", error);
-    alert(error.message);
-  }
-}
-
-
-

@@ -690,7 +690,92 @@
         <div class="loader-text" id="loader-text">Loading, please wait...</div>
       </div>
     </div>
+    <!-- complaint Fom -->
+    <div class="container p-3">
+      <div class="card">
+        <div class="card-body">
+          <h4 class="card-title text-center">📝 Register Complaint</h4>
+          <p class="text-muted text-center">
+            Please fill in all required details accurately.
+          </p>
 
+          <form id="complaintForm">
+            <!-- Complaint Type -->
+            <div class="form-group">
+              <label for="type">Complaint Type</label>
+              <select class="form-control" id="type" name="type" required>
+                <option value="">-- Select Complaint Type --</option>
+                <option value="misbehavior">
+                  Misbehavior by Driver/Conductor
+                </option>
+                <option value="delay">Bus Delay</option>
+                <option value="route_change">Unexpected Route Change</option>
+                <option value="overcrowding">Overcrowding</option>
+                <option value="safety_issue">Safety Concern</option>
+                <option value="accident">Accident / Incident</option>
+                <option value="unauthorized_people">
+                  Unauthorized Person in Vehicle
+                </option>
+                <option value="not_stopping">
+                  Bus Didn’t Stop at Designated Stop
+                </option>
+                <option value="driver_speeding">
+                  Driver Over-speeding / Rash Driving
+                </option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <!-- Incident Date & Time -->
+            <div class="form-group">
+              <label for="incidentTime">Date & Time of Incident</label>
+              <input
+                type="datetime-local"
+                class="form-control"
+                id="incidentTime"
+                name="incidentTime"
+                required
+              />
+            </div>
+
+            <!-- Bus Number -->
+            <div class="form-group">
+              <label for="busNumber">Bus Number</label>
+              <input
+                type="text"
+                class="form-control"
+                id="numberBus"
+                name="numberBus"
+                placeholder="e.g. UP25 XX 1234"
+                required
+              />
+            </div>
+
+            <!-- Description -->
+            <div class="form-group">
+              <label for="description">Description (optional)</label>
+              <textarea
+                class="form-control"
+                id="description"
+                name="description"
+                rows="4"
+                placeholder="Explain the issue in brief..."
+              ></textarea>
+            </div>
+
+            <!-- Submit + Cancel -->
+            <div class="text-center mt-4">
+              <button type="submit" class="btn btn-primary">
+                Submit Complaint
+              </button>
+              <button type="reset" class="btn btn-secondary ml-2">Reset</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <br /><br />
     <!-- map section -->
 
     <section class="map_section">
@@ -1005,7 +1090,8 @@
             expireDate: localStorage.getItem("fcmTokenExpiryDate"),
           };
 
-          document.getElementById("loader-text").textContent = "saving..........";
+          document.getElementById("loader-text").textContent =
+            "saving..........";
           document.getElementById("loader").style.display = "flex";
 
           // Send the POST request
@@ -1043,6 +1129,55 @@
         document.getElementById("loader-text").textContent = "loading...";
         document.getElementById("loader").style.display = "none";
       };
+    </script>
+
+    <script>
+      document
+        .getElementById("complaintForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const complaintType = document.getElementById("type").value;
+          const incidentTime = document.getElementById("incidentTime").value;
+          const busNumber = document.getElementById("numberBus").value.trim();
+          const description = document
+            .getElementById("description")
+            .value.trim();
+          console.log(complaintType, incidentTime, busNumber);
+
+          if (!complaintType || !incidentTime || !busNumber) {
+            alert("Please fill all required fields.");
+            return;
+          }
+
+          const data = {
+            complaintType,
+            incidentTime,
+            busNumber,
+            description,
+          };
+
+          try {
+            const res = await fetch("/complaints", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(data),
+            });
+
+            const result = await res.json();
+            if (res.ok) {
+              alert("✅ Complaint submitted successfully.");
+              this.reset();
+            } else {
+              alert("❌ Error: " + (result.message || "Failed to submit."));
+            }
+          } catch (error) {
+            console.error("Error:", error);
+            alert("❌ Network or server error.");
+          }
+        });
     </script>
   </body>
 </html>

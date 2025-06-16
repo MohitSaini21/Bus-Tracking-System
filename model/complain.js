@@ -1,31 +1,35 @@
 import mongoose from "mongoose";
 
-const complaintSchema = new mongoose.Schema({
-  media: {
-    type: String, // Path or filename of incident image/video
-    required: false,
+const complaintSchema = new mongoose.Schema(
+  {
+    complaintType: {
+      type: String, // e.g., mechanical, route_issue, etc.
+    },
+    incidentTime: {
+      type: Date,
+    },
+    media: {
+      type: String,
+    },
+    busNumber: {
+      type: String,
+      index: true,
+    },
+    submittedBy: {
+      type: String,
+      enum: ["parent", "operator"], // ✅ Only these roles allowed
+    },
+    status: {
+      type: String,
+      enum: ["reviewed", "rejected", "pending"], // ✅ Only these roles allowed
+      default: "pending",
+    },
+    description: {
+      type: String,
+    },
   },
-  explanationAudio: {
-    type: String, // Path or filename of explanation audio
-    required: false,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  BusId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Bus", // Reference to the related bus
-  },
-  driverId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Driver", // Reference to the driver
-  },
-  conductorId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Conductor", // Reference to the conductor
-  },
-});
+  { timestamps: true }
+);
 
 const Complaint = mongoose.model("Complaint", complaintSchema);
 

@@ -21,9 +21,15 @@ const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
 onMessage(messaging, (payload) => {
   console.log("Foreground message received:", payload);
+
   if (payload && payload.notification) {
     const { title, body } = payload.notification;
-    console.log(title.concat(body));
+
+    // ✅ Formal message creation
+    const formattedMessage = `🔔 ${title}\n\n${body}\n\nकृपया तुरंत ध्यान दें।`;
+
+    // ✅ Show using alert
+    alert(formattedMessage);
   } else {
     console.log("Message received, but no notification data found.");
   }

@@ -16,6 +16,7 @@
     />
     
     <link rel="stylesheet" href="/assets/vendors/css/vendor.bundle.base.css" />
+    <link rel="stylesheet" href="/assets/loader.css" />
     <!-- endinject -->
     <!-- Plugin css for this page -->
     <!-- End Plugin css for this page -->
@@ -47,6 +48,7 @@
       <!-- partial:../../partials/_sidebar.html -->
 
       <%- include('./partials/sidebar.ejs') %>
+      <%- include('./partials/loader.ejs') %>
       <!-- partial -->
       <div class="container-fluid page-body-wrapper">
         <!-- partial:../../partials/_navbar.html -->
@@ -57,12 +59,9 @@
           <div class="content-wrapper">
          <div class="row" id="mainRow">
           <div class="container">
-
             <p>
-Connecting... Please wait.
-
+              कनेक्ट किया जा रहा है... कृपया प्रतीक्षा करें।
             </p>
-
           </div>
 
 
@@ -120,7 +119,9 @@ Connecting... Please wait.
    </script>
 <script src="/custom/stream.js"></script>
    <script>
-
+        window.onload = function () {
+          document.getElementById("loader").style.display = "none";
+        };
 
 
 

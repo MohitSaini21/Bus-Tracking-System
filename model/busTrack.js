@@ -29,10 +29,31 @@ const busActivityLogSchema = new Schema({
       coordinates: { type: [Number], required: true }, // [longitude, latitude]
     },
   ],
+  morningSnap: {
+    reading: {
+      type: Number,
+    },
+    image: {
+      type: String, // URL or path to uploaded image
+      required: false,
+    },
+    takenAt: {
+      type: Date,
+    },
+  },
+  eveningSnap: {
+    reading: {
+      type: Number,
+    },
+    image: {
+      type: String, // URL or path to uploaded image
+      required: false,
+    },
+    takenAt: {
+      type: Date,
+    },
+  },
 });
 
 const BusActivityLog = model("BusActivityLog", busActivityLogSchema);
 export default BusActivityLog;
-
-
-

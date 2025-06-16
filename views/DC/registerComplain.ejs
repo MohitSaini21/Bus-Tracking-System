@@ -25,6 +25,7 @@
     <link rel="stylesheet" href="/assets/css/style.css" />
     <!-- End layout styles -->
     <link rel="shortcut icon" href="/assets/images/favicon.png" />
+    <link rel="stylesheet" href="/assets/loader.css" />
 
 
     
@@ -34,6 +35,7 @@
       <!-- partial:../../partials/_sidebar.html -->
 
       <%- include('./partials/sidebar.ejs') %>
+      <%- include('./partials/loader.ejs') %>
       <!-- partial -->
       <div class="container-fluid page-body-wrapper">
         <!-- partial:../../partials/_navbar.html -->
@@ -43,34 +45,80 @@
         <div class="main-panel">
           <div class="content-wrapper">
             <div class="row">
-<div class="col-md-6 grid-margin stretch-card">
-  <div class="card">
-    <div class="card-body">
-      <h4 class="card-title">Register Complaint</h4>
-      <p class="card-description">Use this form to register a complaint by uploading relevant files (image/video and audio explanation).</p>
-      <form class="forms-sample" action="/DC/registerComplain" method="POST" enctype="multipart/form-data">
-        
-        <!-- Incident Image or Video Upload -->
-        <div class="form-group">
-          <label for="incidentMedia">Incident Image or Video</label>
-          <input type="file" class="form-control" id="incidentMedia" name="media" accept="image/*, video/*" required>
-        </div>
-
-        <!-- Incident Audio Explanation Upload -->
-        <div class="form-group">
-          <label for="incidentAudio">Incident Audio Explanation</label>
-          <input type="file" class="form-control" id="incidentAudio" name="audio" accept="audio/*" required>
-        </div>
-
-        <!-- Submit Button -->
-        <button type="submit" class="btn btn-primary mr-2">Submit</button>
-        <!-- Cancel Button -->
-        <button type="button" class="btn btn-dark" onclick="window.location.href='/DC/registerComplain';">Cancel</button>
-        
-      </form>
-    </div>
-  </div>
-</div>
+              <div class="col-md-8 mx-auto grid-margin stretch-card">
+                <div class="card">
+                  <div class="card-body">
+                    <h4 class="card-title">शिकायत दर्ज करें (Register Complaint)</h4>
+                    <p class="card-description text-muted">
+                      कृपया सभी आवश्यक जानकारी भरें और यदि संभव हो तो संबंधित फ़ाइलें अपलोड करें। <br>
+                      Please fill in all required details and upload relevant media if possible.
+                    </p>
+              
+                    <form class="forms-sample" >
+                      
+            
+                      
+              
+                      <!-- Complaint Type -->
+                      <div class="form-group">
+                        <label for="type">शिकायत का प्रकार (Complaint Type)</label>
+                        <select class="form-control" id="type" name="type">
+                          <option value="">-- प्रकार चुनें / Select Type --</option>
+                          
+                          <option value="mechanical (वाहन समस्या)">वाहन समस्या (Mechanical Issue)</option>
+                          <option value="route_issue (रूट संबंधित समस्या)">रूट संबंधित समस्या (Route Issue)</option>
+                          <option value="misbehavior (विद्यार्थी/स्टाफ का गलत व्यवहार)">विद्यार्थी/स्टाफ का गलत व्यवहार (Misbehavior)</option>
+                          <option value="accident (दुर्घटना / घटना)">दुर्घटना / घटना (Accident/Incident)</option>
+                          <option value="safety (सुरक्षा संबंधित)">सुरक्षा संबंधित (Safety Concern)</option>
+                        
+                          <!-- ड्राइवर/ऑपरेशन टीम विकल्प -->
+                          <option value="fuel_issue (ईंधन समस्या)">ईंधन समस्या (Fuel Issue)</option>
+                          <option value="maintenance_delay (अनुरक्षण में देरी)">अनुरक्षण में देरी (Maintenance Delay)</option>
+                          <option value="vehicle_document (वाहन दस्तावेज़ संबंधित समस्या)">वाहन दस्तावेज़ संबंधित समस्या (Vehicle Document Issue)</option>
+                          <option value="gps_issue (GPS या ट्रैकिंग समस्या)">GPS या ट्रैकिंग समस्या (GPS/Tracking Issue)</option>
+                          <option value="traffic_delay (ट्रैफिक के कारण देरी)">ट्रैफिक के कारण देरी (Traffic Delay)</option>
+                          <option value="schedule_conflict (समय-सारणी में टकराव)">समय-सारणी में टकराव (Schedule Conflict)</option>
+                          <option value="poor_road_condition (खराब सड़क स्थिति)">खराब सड़क स्थिति (Poor Road Condition)</option>
+                          <option value="authority_delay (प्राधिकरण से देरी)">प्राधिकरण से देरी (Authority/Management Delay)</option>
+                          <option value="technical_glitch (तकनीकी समस्या)">तकनीकी समस्या (Technical Glitch)</option>
+                          <option value="weather_related (मौसम से जुड़ी समस्या)">मौसम से जुड़ी समस्या (Weather Related)</option>
+                          <option value="other (अन्य)">अन्य (Other)</option>
+                        </select>
+                        
+                        
+                      </div>
+              
+           
+                      
+              
+                      <!-- Date and Time -->
+                      <div class="form-group">
+                        <label for="incidentTime">घटना का समय और दिनांक (Incident Date & Time)</label>
+                        <input type="datetime-local" class="form-control" id="incidentTime" name="incidentTime">
+                      </div>
+              
+                      <!-- Upload Media -->
+                      <div class="form-group">
+                        <label for="media">मीडिया फ़ाइल अपलोड करें (Upload Media File)</label>
+                        <input type="file" class="form-control" id="media" name="media" accept="image/*,video/*,audio/*">
+                        <small class="form-text text-muted">
+                          📷 यदि संभव हो तो फ़ोटो / वीडियो / ऑडियो अपलोड करें। <br>
+                          🎤 आप सिर्फ ऑडियो रिकॉर्ड कर सकते हैं या वीडियो बना सकते हैं – जिससे घटना समझाने में मदद मिले।
+                        </small>
+                      </div>
+              
+                      <!-- Submit + Cancel Buttons -->
+                      <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-primary mr-2">📝 शिकायत सबमिट करें</button>
+                        <button type="reset" class="btn btn-dark">रद्द करें</button>
+                      </div>
+              
+                    </form>
+                  </div>
+                </div>
+              </div>
+              
+              
 
             </div>
    
@@ -103,15 +151,85 @@
     <script src="/assets/js/misc.js"></script>
     <script src="/assets/js/settings.js"></script>
     <script src="/assets/js/todolist.js"></script>
+    <script src="/custom/speak.js"></script>
     <!-- endinject -->
 
     <script>
+      
+const user = <%- JSON.stringify(user) %>;
+
+
+      document.addEventListener("DOMContentLoaded", () => {
+        const complaintForm = document.querySelector("form.forms-sample");
+    
+        complaintForm.addEventListener("submit", async function (e) {
+          e.preventDefault(); // 🚫 Stop default submit
+ 
+          
+          const type = document.getElementById("type").value;
+
+          
+          const incidentTime = document.getElementById("incidentTime").value;
+          const mediaFile = document.getElementById("media").files[0];
+    
+          // ✅ Form validation (basic)
+          if ( !type ||  !incidentTime) {
+            alert("❌ कृपया सभी आवश्यक फ़ील्ड भरें (Please fill all required fields)");
+            safeSpeakHindi("कृपया सभी आवश्यक फ़ील्ड भरें ")
+            return;
+          }
+    
+          // 🧾 Create FormData
+          const formData = new FormData();
+
+          
+          formData.append("type", type);
+ 
+          
+          formData.append("incidentTime", incidentTime);
+          formData.append("busNumber", user.assignedBus.busNumber);
+    
+          if (mediaFile) {
+            formData.append("media", mediaFile);
+          }
+    
+ 
+          
+          for (const [key, value] of formData.entries()) {
+            console.log(key, value);
+          }
+    
+          // 🚀 OPTIONAL: If you want to send manually via fetch (uncomment below)
         
-                 const message= <%- JSON.stringify(message) %>;
-                 if(message){
-                    alert(message)
-                 }
+          try {
+            const response = await fetch("/DC/registerComplain", {
+              method: "POST",
+              body: formData,
+            });
+    
+            const result= await response.json()
+        let  message = result.message.slice(2); // pehle ke 2 character (🔇) hata do
+        safeSpeakHindi(message)
+   // ✅ Reset the form after successful submission
+complaintForm.reset();
+            
+            alert(result.message);
+  
+            
+          } catch (error) {
+            console.error("❌ नेटवर्क त्रुटि:", error);
+            alert("❌ नेटवर्क त्रुटि: सर्वर से संपर्क नहीं हो सका");
+            safeSpeakHindi("नेटवर्क त्रुटि: सर्वर से संपर्क नहीं हो सका")
+          }
+        
+        });
+      });
+
+      window.onload = function () {
+          document.getElementById("loader").style.display = "none";
+        };
     </script>
+    
     <!-- Custom js for this page -->
     <!-- End custom js for this page -->
   </body>
