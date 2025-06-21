@@ -28,6 +28,9 @@
       rel="stylesheet"
       href="/assets/vendors/owl-carousel-2/owl.carousel.min.css"
     />
+
+    <link rel="stylesheet" href="/assets/loader.css" />
+
     <link
       rel="stylesheet"
       href="/assets/vendors/owl-carousel-2/owl.theme.default.min.css"
@@ -75,7 +78,12 @@
         <div class="main-panel">
           <div class="content-wrapper">
             <h3 class="h4 border-bottom pb-2 mb-3">
-              Bus No: <span class="text-white">UP670890</span>
+              Bus No:
+              <span class="text-white"
+                ><a href="/admin/CDB/<%=bus._id  %>"
+                  ><%=bus.busNumber %></a
+                ></span
+              >
             </h3>
 
             <p class="mb-2">
@@ -97,7 +105,7 @@
                     <div class="row">
                       <div class="col-md-5">
                         <iframe
-                        src="/locationBus/<%=bus._id  %>"
+                          src="/locationBus/<%=bus._id  %>"
                           style="
                             height: 300px;
                             width: 100%;
@@ -109,7 +117,7 @@
                       <div class="col-md-7">
                         <% if (user.role === "administrator") { %>
                         <iframe
-                          src="/tmu/administrator/settings/liveStream/<%=bus._id  %>"
+                          src="/administrator/settings/liveStream/<%=bus._id  %>"
                           style="
                             height: 300px;
                             width: 100%;
@@ -226,12 +234,8 @@
                               >
                             </td> -->
                           </tr>
-                          <% }) %> <% } else { %>
-                    
-        
-                            
-                          <% } %>
-                        </tbody>  
+                          <% }) %> <% } else { %> <% } %>
+                        </tbody>
                       </table>
                     </div>
                   </div>
@@ -254,40 +258,44 @@
                           </tr>
                         </thead>
                         <tbody>
-                          <% if (busLog && busLog.events && busLog.events.length > 0) { %>
-                            <% busLog.events.forEach((ev, index) => { %>
-                              <tr>
-                                <td><%= index + 1 %></td>
-                                <td>
-                                  <span class="badge <%= ev.event === 'Entered' ? 'bg-success' : 'bg-danger' %>">
-                                    <%= ev.event %>
-                                  </span>
-                                </td>
-                                <td><%= new Date(ev.timestamp).toLocaleString() %></td>
-                                <td>
-                                  Lat: <%= ev.coordinates[1] %>, Long: <%= ev.coordinates[0] %>
-                                </td>
-                              </tr>
-                            <% }) %>
-                          <% } else { %>
-                            <tr>
-                              <td colspan="4">No events recorded</td>
-                            </tr>
+                          <% if (busLog && busLog.events && busLog.events.length
+                          > 0) { %> <% busLog.events.forEach((ev, index) => { %>
+                          <tr>
+                            <td><%= index + 1 %></td>
+                            <td>
+                              <span
+                                class="badge <%= ev.event === 'Entered' ? 'bg-success' : 'bg-danger' %>"
+                              >
+                                <%= ev.event %>
+                              </span>
+                            </td>
+                            <td>
+                              <%= new Date(ev.timestamp).toLocaleString() %>
+                            </td>
+                            <td>
+                              Lat: <%= ev.coordinates[1] %>, Long: <%=
+                              ev.coordinates[0] %>
+                            </td>
+                          </tr>
+                          <% }) %> <% } else { %>
+                          <tr>
+                            <td colspan="4">No events recorded</td>
+                          </tr>
                           <% } %>
                         </tbody>
                       </table>
                     </div>
-                    
                   </div>
                 </div>
               </div>
-
             </div>
 
             <br />
           </div>
           <!-- content-wrapper ends -->
           <!-- partial:partials/_footer.html -->
+          <%- include('../corePartials/loader.ejs') %> <%-
+          include('../corePartials/footer.ejs') %>
 
           <!-- partial -->
         </div>
@@ -313,6 +321,7 @@
     <script src="/assets/js/settings.js"></script>
     <script src="/assets/js/todolist.js"></script>
     <script src="/socket.io/socket.io.js"></script>
+
     <!-- endinject -->
     <!-- Custom js for this page -->
 
@@ -327,7 +336,7 @@
                                   bus: bus._id
                                 }
                               });
-                              
+
       // fucntiom to update the row
 
       function updateStopsCoveredTable(reachedStops) {
@@ -433,10 +442,15 @@
           updateStopsCoveredTable(data.busObject.reachedStops);
         }
       });
+
+      window.onload = function () {
+        document.getElementById("loader").style.display = "none";
+      };
     </script>
 
     <!-- custom Script  -->
     <script src="/assets/js/dashboard.js"></script>
+    <script type="module" src="/foreground.js"></script>
     <!-- End custom js for this page -->
   </body>
 </html>

@@ -222,9 +222,13 @@
 <br>
 <!-- 
         <h6 class="text-dark font-weight-bold "></h6> -->
-         <p class="text-white mb-0 small  busNumber">Bus Number : <strong><%=bus.busNumber %></strong></p>
-         <p class="text-white mb-0 small">Route : <b><%= bus.route  %></b></p>
+        <div class="text-white small">
+          <p class="mb-1"><strong>Bus:</strong> <%= bus.busNumber %>  (<%=bus.distanceTravelled  %>)</p>
+          <p class="mb-0"><strong>Route:</strong> <a href="/admin/particularBusLive/<%=bus._id  %>" style="color: white;"><%= bus.route %></a></p>
 
+          
+        </div>
+        
 
 
       </div>
@@ -350,7 +354,7 @@
 
   // Convert HTMLCollection to array to use forEach
   Array.from(cols).forEach((col) => {
-    col.addEventListener("click", function () {
+    col.addEventListener("dblclick", function () {
       const colId = this.id;
 
       // Toggle selection
@@ -470,6 +474,7 @@ window.onload = function () {
 
 
  </script>
+     <script type="module" src="/foreground.js"></script>
     
 
     <!-- custom Script -->

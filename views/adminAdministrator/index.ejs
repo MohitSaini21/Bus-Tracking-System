@@ -100,6 +100,7 @@
         }
       }
     </style>
+    
   </head>
   <body>
     <div class="container-scroller">
@@ -274,7 +275,7 @@
                 <div class="card">
                   <div class="card-body">
                     <h5>
-                      <a href="/tmu/administrator/settings/addAdmin"
+                      <a href="/administrator/settings/addAdmin"
                         >Total Admins</a
                       >
                     </h5>
@@ -311,9 +312,10 @@
           </div>
           <!-- content-wrapper ends -->
           <!-- partial:partials/_footer.html -->
-          <!-- <%- include('../corePartials/footer.ejs') %> --
+          <%- include('../corePartials/footer.ejs') %>
          
-        partial -->
+
+          
 
           <%-include('../corePartials/loader.ejs') %>
         </div>
@@ -509,6 +511,7 @@
         }
       });
     </script>
+        <script type="module" src="/foreground.js"></script>
     <!-- custom Script -->
   </body>
 </html>

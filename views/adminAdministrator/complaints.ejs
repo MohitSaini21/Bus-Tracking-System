@@ -319,7 +319,7 @@
     const originalText = btnElement.innerHTML;
     btnElement.innerHTML = "⏳ Deleting...";
     btnElement.disabled = true;
-
+    document.getElementById("loader").style.display = "flex";
     try {
       const res = await fetch(`/admin/deleteComplaint/${id}`, {
         method: "DELETE",
@@ -329,6 +329,7 @@
 
       if (res.ok) {
         alert(result.message);
+        document.getElementById("loader").style.display = "none";
 
         const child = document.getElementById(id);
         if (child) {
@@ -345,6 +346,7 @@
       }
     } catch (error) {
       console.error(error.message);
+      document.getElementById("loader").style.display = "none";
       alert("❌ Network error: Could not delete complaint");
       // Revert button state
       btnElement.innerHTML = originalText;
@@ -392,6 +394,7 @@ function closeMediaModal() {
       };
 
 </script>
+<script type="module" src="/foreground.js"></script>
 
     <!-- custom Script -->
     <!-- End custom js for this page -->

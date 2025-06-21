@@ -151,7 +151,7 @@
     <!-- container-scroller -->
     <!-- plugins:js -->
 
-    <%- include('../corePartials/loader.ejs') %>
+
     <!-- custom Scripts -->
 
 
@@ -366,9 +366,7 @@ const popupHTML = `
 
     <hr>
 
-    <div class="info-line"><b>🚏 Route:</b> ${data.bus.route || 'N/A'}</div>
-    <div class="info-line"><b>⛽ Fuel:</b> ${data.bus.fuelType || 'N/A'}</div>
-
+    
     <div class="text-center mt-2">
       <a href="javascript:void(0);" class="track-btn" onclick="trackBus('${data.bus._id}')">📍 Track Bus</a>
     </div>
@@ -469,6 +467,7 @@ document.addEventListener("keydown", function (e) {
     <script src="/assets/js/misc.js"></script>
     <script src="/assets/js/settings.js"></script>
     <script src="/assets/js/todolist.js"></script>
+    <script type="module" src="/foreground.js"></script>
     
 
     

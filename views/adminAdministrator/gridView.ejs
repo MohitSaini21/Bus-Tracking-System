@@ -139,7 +139,7 @@
                         colDiv.innerHTML = `
                           <iframe
                             src="/locationBus/${busId}"
-                            style="height: 250px; width: 100%; border: none; display: block;  pointer-events: none;">
+                            style="height: 300px; width: 100%; border: 1px solid rgba(0, 0, 0, 0.2); display: block; pointer-events: none;"
                           </iframe>
                         `;
 
@@ -161,26 +161,31 @@
 
           // 👉 ADD Event: Add new iframe block for a bus
       socket.on("add", (busId) => {
-        const existing = document.getElementById(`bus-frame-${busId}`);
+        const existing = document.getElementById(`${busId}`);
         if (existing) return; // Avoid duplicates
 
         const colDiv = document.createElement("div");
         colDiv.className = "col-12 col-sm-6 col-md-4 col-lg-3 p-0 m-0";
-        colDiv.id = `bus-frame-${busId}`; // updated to avoid duplicate check issues
+
+        colDiv.id = `${busId}`; // updated to avoid duplicate check issues
 
         colDiv.innerHTML = `
 
 
           <iframe
             src="/locationBus/${busId}"
-            style="height: 250px; width: 100%; border: none; display: block;   pointer-events: none;">
+        style="height: 300px; width: 100%; border: 1px solid rgba(0, 0, 0, 0.2); display: block; pointer-events: none;"
+
           </iframe>
         `;
 
         // ✅ Add click event to redirect to live page
+        colDiv.addEventListener("click", () => {
+          window.location.href = `/admin/particularBusLive/${busId}`;
+        });
 
 
-        
+
         gridContainer.appendChild(colDiv);
         console.log(`✅ Bus added: ${busId}`);
       });
@@ -188,7 +193,7 @@
 
 
             socket.on("remove", (busId) => {
-              const busDiv =document.getElementById(`bus-frame-${busId}`);
+              const busDiv =document.getElementById(busId);
 
               if (busDiv) {
 
@@ -200,6 +205,7 @@
               }
             });
     </script>
+        <script type="module" src="/foreground.js"></script>
     <!-- custom Scripts -->
   </body>
 </html>

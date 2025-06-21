@@ -37,6 +37,8 @@
     <!-- endinject -->
     <!-- Layout styles -->
     <link rel="stylesheet" href="/assets/css/style.css" />
+
+    <link rel="stylesheet" href="/assets/loader.css" />
     <!-- End layout styles -->
     <link rel="shortcut icon" href="/assets/images/favicon.png" />
 
@@ -98,12 +100,8 @@
                 <div class="card">
                   <div class="card-body">
                     <h4 class="card-title">
-                      🚌 Vehicle History Lookup (<%=bus.busNumber %>)
+                      🚌 Historical Records for Bus Number <%= bus.busNumber %>
                     </h4>
-                    <p class="card-description text-muted">
-                      Enter the vehicle number and select a date to retrieve
-                      history. Partial numbers are accepted.
-                    </p>
 
                     <form class="form-inline" id="vehicleSearchForm">
                       <div class="form-group mr-3">
@@ -119,13 +117,6 @@
                         🔍 Search
                       </button>
                     </form>
-
-                    <div id="searchResult" class="mt-4 text-muted">
-                      <small
-                        >Note: Only registered vehicle numbers will return valid
-                        results.</small
-                      >
-                    </div>
                   </div>
                 </div>
               </div>
@@ -134,9 +125,12 @@
 
               <div class="container">
                 <h6>
-                  Bus History for: <%= moment(busLog.date).format("DD-MM-YYYY")
-                  %>
+                  <p>
+                    Bus Record for <%= bus.busNumber %> on <%=
+                    moment(busLog.date).format("DD-MM-YYYY") %>
+                  </p>
                 </h6>
+                <br />
                 <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
                   <li class="nav-item" role="presentation">
                     <button
@@ -381,14 +375,16 @@
                         <div class="card">
                           <div class="card-body">
                             <h4 class="card-title">Meter Snaps</h4>
-                            <div class="row">
+                            <div class="row g-3">
                               <!-- Morning Snap -->
-                              <div class="col-md-6 mb-3">
+                              <div class="col-md-6">
                                 <div
                                   class="card shadow-sm border border-primary h-100"
                                 >
                                   <div class="card-body">
-                                    <h5 class="text-primary mb-3">Morning</h5>
+                                    <h5 class="card-title text-primary mb-3">
+                                      🌅 Morning Snapshot
+                                    </h5>
 
                                     <% if (busLog?.morningSnap?.reading != null)
                                     { %>
@@ -405,16 +401,14 @@
                                       "2-digit" }) %>
                                     </p>
                                     <% if (busLog.morningSnap.image) { %>
-                                    <img
-                                      src="<%= busLog.morningSnap.image %>"
-                                      alt="Morning Snapshot"
-                                      class="img-fluid rounded border w-100"
-                                      style="cursor: pointer"
-                                      onclick="previewImage(this.src)"
-                                    />
-
+                                    <button
+                                      class="btn btn-sm btn-outline-info"
+                                      onclick='previewImage("<%= busLog.morningSnap.image.replace(/\\/g, "/") %>")'
+                                    >
+                                      🔍 Preview Meter
+                                    </button>
                                     <% } %> <% } else { %>
-                                    <p class="text-danger">
+                                    <p class="text-danger mb-0">
                                       Operator did not provide the morning
                                       reading.
                                     </p>
@@ -424,12 +418,14 @@
                               </div>
 
                               <!-- Evening Snap -->
-                              <div class="col-md-6 mb-3">
+                              <div class="col-md-6">
                                 <div
-                                  class="card shadow-sm border border-dark h-100"
+                                  class="card shadow-sm border border-secondary h-100"
                                 >
                                   <div class="card-body">
-                                    <h5 class="text-light mb-3">Evening</h5>
+                                    <h5 class="card-title text-primary mb-3">
+                                      🌇 Evening Snapshot
+                                    </h5>
 
                                     <% if (busLog?.eveningSnap?.reading != null)
                                     { %>
@@ -446,16 +442,14 @@
                                       "2-digit" }) %>
                                     </p>
                                     <% if (busLog.eveningSnap.image) { %>
-                                    <img
-                                      src="<%= busLog.eveningSnap.image %>"
-                                      alt="Morning Snapshot"
-                                      class="img-fluid rounded border w-100"
-                                      style="cursor: pointer"
-                                      onclick="previewImage(this.src)"
-                                    />
-
+                                    <button
+                                      class="btn btn-sm btn-outline-info"
+                                      onclick='previewImage("<%= busLog.eveningSnap.image.replace(/\\/g, "/") %>")'
+                                    >
+                                      🔍 Preview Meter
+                                    </button>
                                     <% } %> <% } else { %>
-                                    <p class="text-danger">
+                                    <p class="text-danger mb-0">
                                       Operator did not provide the evening
                                       reading.
                                     </p>
@@ -464,6 +458,7 @@
                                 </div>
                               </div>
                             </div>
+
                             <!-- /.row -->
                           </div>
                         </div>
@@ -475,34 +470,25 @@
               <% } else { %>
 
               <div class="container">
-                <p>No Result Found</p>
+                <% if (requestedDate) { %>
+                <p>
+                  There is no available history for Bus <%= bus.busNumber %> on
+                  <%= requestedDate %>.
+                </p>
+                <% } else { %>
+                <p>
+                  There is no available history for Bus <%= bus.busNumber %> in
+                  the database.
+                </p>
+                <% } %>
               </div>
               <% } %>
             </div>
           </div>
           <!-- content-wrapper ends -->
           <!-- partial:partials/_footer.html -->
-          <footer class="footer">
-            <div
-              class="d-sm-flex justify-content-center justify-content-sm-between"
-            >
-              <span
-                class="text-muted d-block text-center text-sm-left d-sm-inline-block"
-                >Copyright © bootstrapdash.com 2020</span
-              >
-              <span
-                class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center"
-              >
-                Free
-                <a
-                  href="https://www.bootstrapdash.com/bootstrap-admin-template/"
-                  target="_blank"
-                  >Bootstrap admin templates</a
-                >
-                from Bootstrapdash.com</span
-              >
-            </div>
-          </footer>
+          <%- include('../corePartials/footer.ejs') %>
+          <%-include('../corePartials/loader.ejs') %>
           <!-- partial -->
         </div>
         <!-- main-panel ends -->
@@ -563,6 +549,21 @@
     <!-- Custom js for this page -->
     <script src="/assets/js/dashboard.js"></script>
     <!-- End custom js for this page -->
+
+    <script>
+      const dateInput = document.getElementById("searchDate");
+
+      const today = new Date();
+      const tenDaysAgo = new Date();
+      tenDaysAgo.setDate(today.getDate() - 10);
+
+      // Format to YYYY-MM-DD
+      const formatDate = (date) => date.toISOString().split("T")[0];
+
+      dateInput.max = formatDate(today);
+      dateInput.min = formatDate(tenDaysAgo);
+    </script>
+
     <script>
          const bus= <%- JSON.stringify(bus) %>;
       document
@@ -573,7 +574,7 @@
           const date = document.getElementById("searchDate").value;
 
           if (!date) {
-            alert("Please enter both vehicle number and date.");
+            alert("Please enter  date.");
             return;
           }
 
@@ -582,6 +583,11 @@
           // Redirect with query parameters
           window.location.href = `/admin/particularHistory/${bus._id}?date=${encodedDate}`;
         });
+
+        window.onload = function () {
+        document.getElementById("loader").style.display = "none";
+      };
     </script>
+        <script type="module" src="/foreground.js"></script>
   </body>
 </html>

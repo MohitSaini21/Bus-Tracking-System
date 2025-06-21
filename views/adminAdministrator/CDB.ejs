@@ -121,7 +121,7 @@
                     <% if (user.role=="administrator") { %>
                     <button type="button" class="btn btn-link btn-fw">
                       <a
-                        href="/tmu/administrator/settings/conductorDriver?driverId=<%=bus.driver._id  %>"
+                        href="/administrator/settings/conductorDriver?driverId=<%=bus.driver._id  %>"
                         >update</a
                       >
                     </button>
@@ -177,7 +177,7 @@
                     <% if (user.role=="administrator") { %>
                     <button type="button" class="btn btn-link btn-fw">
                       <a
-                        href="/tmu/administrator/settings/conductorDriver?conductorId=<%=bus.conductor._id  %>"
+                        href="/administrator/settings/conductorDriver?conductorId=<%=bus.conductor._id  %>"
                         >update</a
                       >
                     </button>
@@ -291,7 +291,7 @@
                         class="btn btn-inverse-success btn-fw"
                       >
                         <a
-                          href="/tmu/administrator/settings/busEntire/<%=bus._id  %>"
+                          href="/administrator/settings/busEntire/<%=bus._id  %>"
                           >update</a
                         >
                       </button>
@@ -430,7 +430,7 @@
 
           // Send POST request
           document.getElementById("loader").style.display = "flex";
-          fetch("/tmu/administrator/settings/delete-bus", {
+          fetch("/administrator/settings/delete-bus", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -458,6 +458,7 @@
         document.getElementById("loader").style.display = "none";
       };
     </script>
+        <script type="module" src="/foreground.js"></script>
 
     <!-- endinject -->
     <!-- Custom js for this page -->

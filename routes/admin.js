@@ -97,6 +97,8 @@ router.get("/garrage", async (req, res) => {
         conductor: 1,
         route: 1,
         busNumber: 1,
+        distanceTravelled: 1,
+        _id: 1,
       }
     );
 
@@ -172,7 +174,7 @@ router.get("/CDB/:busId", async (req, res) => {
     .populate("conductor")
     .lean();
 
-  const user = await CORE.findById(req.user.id);  
+  const user = await CORE.findById(req.user.id);
 
   if (user) {
     return res.render("adminAdministrator/CDB.ejs", { user, bus });
@@ -209,8 +211,15 @@ router.get("/gridView", async (req, res) => {
 });
 
 router.get("/particularBusLive/:id", async (req, res) => {
-  let bus = await Bus.findById(req.params.id).populate("driver", "name phone"); // only fetch name and phone of driver
+  let bus = await Bus.findById(req.params.id)
+    .populate("driver", "name phone")
+    .populate("conductor", "name phone");
+  // only fetch name and phone of driver
   // only fetch name and phone of conductor
+
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(400).json({ message: "❌ Invalid complaint ID" });
+  }
 
   const user = await CORE.findById(req.user.id);
 
@@ -309,13 +318,19 @@ router.delete("/deleteComplaint/:id", async (req, res) => {
 
 router.get("/particularHistory/:id", async (req, res) => {
   try {
+    const id = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "❌ Invalid complaint ID" });
+    }
+
     const user = await CORE.findById(req.user.id);
     if (!user) {
       res.clearCookie("authToken");
       return res.redirect("/coreLogin");
     }
 
-    const bus = await Bus.findById(req.params.id);
+    const bus = await Bus.findById(id);
     if (!bus) return res.status(404).send("Bus not found");
 
     const requestedDate = req.query.date;
@@ -335,6 +350,7 @@ router.get("/particularHistory/:id", async (req, res) => {
         date: -1,
       });
     }
+    console.log(busLog);
 
     return res.render("adminAdministrator/history.ejs", {
       user,

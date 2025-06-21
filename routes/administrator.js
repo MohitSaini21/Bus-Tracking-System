@@ -1178,23 +1178,40 @@ router.post("/deleteAdmin", async (req, res) => {
   try {
     const { id } = req.body;
 
+    // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         message: "❌ Invalid admin ID. Please do not tamper with the URL.",
         code: "INVALID_ID",
       });
     }
-    const result = await CORE.findByIdAndDelete(id);
 
-    if (!result) {
-      return res.status(404).json({ done: false, message: "Admin not found" });
+    // Delete admin
+    const deletedAdmin = await CORE.findByIdAndDelete(id);
+
+    if (!deletedAdmin) {
+      return res.status(404).json({ done: false, message: "Admin not found." });
     }
 
-    return res.status(200).json({ done: true });
+    // Disconnect socket if connected
+    const io = req.app.get("io");
+    const deletedAdminIdStr = String(deletedAdmin._id);
+
+    io.sockets.sockets.forEach((socket, socketId) => {
+      const connectedAdminId = socket.handshake?.query?.adminId;
+      if (connectedAdminId === deletedAdminIdStr) {
+        socket.disconnect(true);
+      }
+    });
+
+    return res
+      .status(200)
+      .json({ done: true, message: "Admin deleted successfully." });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ done: false, message: "Server error" });
+    console.error("Error deleting admin:", error);
+    return res
+      .status(500)
+      .json({ done: false, message: "Internal server error." });
   }
 });
-
 export { router as administratorRouter };
