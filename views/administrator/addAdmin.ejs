@@ -111,7 +111,7 @@
                       <i class="mdi mdi-arrange-send-backward"></i>
                     </button>
 
-                    <div class="d-flex py-4">
+                    <div class="d-flex py-4" id="<%=admin._id  %>">
                       <div class="preview-list w-100">
                         <div class="preview-item p-0">
                           <div class="preview-thumbnail">
@@ -201,22 +201,20 @@
         document.getElementById("loader").style.display = "flex";
 
         try {
-          const response = await fetch(
-            `/tmu/administrator/settings/deleteAdmin`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ id }), // pass id in body if needed on server
-            }
-          );
+          const response = await fetch(`/administrator/settings/deleteAdmin`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ id }), // pass id in body if needed on server
+          });
 
           const result = await response.json();
 
           if (response.ok && result.done) {
             document.getElementById("loader").style.display = "none";
             alert("Admin deleted successfully!");
+            document.getElementById(id).style.display = "none";
           } else {
             document.getElementById("loader").style.display = "none";
             alert(
@@ -251,16 +249,13 @@
 
           // Optional: Send data to your backend
           try {
-            const response = await fetch(
-              "/tmu/administrator/settings/addAdmin",
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify(data),
-              }
-            );
+            const response = await fetch("/administrator/settings/addAdmin", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(data),
+            });
 
             const result = await response.json();
             if (result.done) {

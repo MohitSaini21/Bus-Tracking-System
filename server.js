@@ -63,7 +63,7 @@ const server = http.createServer(app);
 
 // Routers
 app.use(
-  "/tmu/administrator/settings",
+  "/administrator/settings",
   checkAuth,
   (req, res, next) => {
     if (req.user?.role === "administrator") {
@@ -509,7 +509,8 @@ io.on("connection", (socket) => {
   });
 
   socket.on("busLocationUpdate", (data) => {
-    console.log(data);
+
+    
     addTask(data);
     lastLocation.set(data.bus._id, data);
 

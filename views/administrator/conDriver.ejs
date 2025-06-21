@@ -23,6 +23,7 @@
     <link rel="stylesheet" href="/assets/css/style.css" />
     <!-- End layout styles -->
     <link rel="shortcut icon" href="/assets/images/favicon.png" />
+    <link rel="stylesheet" href="/assets/loader.css" />
     <style>
       .preview {
         width: 150px; /* Set a fixed width */
@@ -60,7 +61,7 @@
                       class="forms-sample"
                       id="row"
                       method="POST"
-                      action="<%= locals.worker.driverId ? `/tmu/administrator/settings/driverRow/${locals.worker._id}` : `/tmu/administrator/settings/conductorRow/${locals.worker._id}` %>"
+                      action="<%= locals.worker.driverId ? `/administrator/settings/driverRow/${locals.worker._id}` : `/administrator/settings/conductorRow/${locals.worker._id}` %>"
                     >
                       <div class="form-group">
                         <label for="exampleInputName1">Name</label>
@@ -245,7 +246,7 @@
                       />
                     </div>
                     <form
-                      action="<%= locals.worker.conductorId ? `/tmu/admin/settings/conductor/profileImage/${locals.worker._id}` : `/tmu/admin/settings/driver/profileImage/${locals.worker._id}` %>"
+                      action="<%= locals.worker.conductorId ? `/administrator/settings/conductor/profileImage/${locals.worker._id}` : `/administrator/settings/driver/profileImage/${locals.worker._id}` %>"
                       class="forms-sample"
                       id="row"
                       method="POST"
@@ -300,7 +301,7 @@
                     <form
                       class="forms-sample"
                       id="multipleFiles"
-                      action="<%= locals.worker.driverId ? `/tmu/administrator/settings/driverDocuments/${locals.worker._id}` : `/tmu/administrator/settings/conductorDocuments/${locals.worker._id}` %>"
+                      action="<%= locals.worker.driverId ? `/administrator/settings/driverDocuments/${locals.worker._id}` : `/administrator/settings/conductorDocuments/${locals.worker._id}` %>"
                       enctype="multipart/form-data"
                       method="POST"
                     >
@@ -353,27 +354,8 @@
           </div>
           <!-- content-wrapper ends -->
           <!-- partial:../.../corePartials/_footer.html -->
-          <footer class="footer">
-            <div
-              class="d-sm-flex justify-content-center justify-content-sm-between"
-            >
-              <span
-                class="text-muted d-block text-center text-sm-left d-sm-inline-block"
-                >Copyright © bootstrapdash.com 2020</span
-              >
-              <span
-                class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center"
-              >
-                Free
-                <a
-                  href="https://www.bootstrapdash.com/bootstrap-admin-template/"
-                  target="_blank"
-                  >Bootstrap admin templates</a
-                >
-                from Bootstrapdash.com</span
-              >
-            </div>
-          </footer>
+          <%- include('../corePartials/footer.ejs') %>
+          <%- include('../corePartials/loader.ejs') %>
           <!-- partial -->
         </div>
         <!-- main-panel ends -->
@@ -477,7 +459,7 @@
 <a href="${doc.url}" title="View">
   <i class="mdi mdi-eye icon-sm" style="margin-right: 8px;"></i>
 </a>
-<a href="/tmu/administrator/settings/${worker.role=="driver" ? "deleteDriverDocument" : "deleteConductorDocument"}/${doc._id}/${worker._id}" title="Delete">
+<a href="/administrator/settings/${worker.role=="driver" ? "deleteDriverDocument" : "deleteConductorDocument"}/${doc._id}/${worker._id}" title="Delete">
   <i class="mdi mdi-close icon-sm"></i>
 </a>
                  
@@ -507,6 +489,11 @@ function generateNewId(role) {
   
   document.getElementById(role).value = newId;
 }
+
+    // 3. Hide loader once window is loaded
+    window.onload = function () {
+        document.getElementById("loader").style.display = "none";
+      };
     </script> 
 
 

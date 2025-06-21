@@ -257,7 +257,7 @@ setTimeout(() => {
 
   var peerConnection;
 
-  async function collectionIceCandidateInfo() {
+  async function  collectionIceCandidateInfo() {
     peerConnection = new RTCPeerConnection(iceConfig);
 
     // Get media stream (video)

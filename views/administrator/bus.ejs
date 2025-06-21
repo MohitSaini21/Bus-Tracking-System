@@ -313,7 +313,7 @@
                     <form
                       class="forms-sample"
                       id="multipleFiles"
-         action="/tmu/administrator/settings/busDocuments/<%=bus._id  %>"
+         action="/administrator/settings/busDocuments/<%=bus._id  %>"
                       enctype="multipart/form-data"
                       method="POST"
                     >
@@ -386,7 +386,7 @@
                     </div>
                     <form
                       
-                      action="/tmu/administrator/settings/busIcon/<%=bus._id  %>"
+                      action="/administrator/settings/busIcon/<%=bus._id  %>"
                       class="forms-sample"
                       id="row"
                       method="POST"
@@ -430,7 +430,7 @@
       <p class="card-description">Make sure you upload quality image as they are uploaded on public platform</p>
 
       <form
-        action="/tmu/administrator/settings/busImages/<%= bus._id %>"
+        action="/administrator/settings/busImages/<%= bus._id %>"
         class="forms-sample"
         id="row"
         method="POST"
@@ -632,7 +632,7 @@
   <i class="mdi mdi-eye icon-sm" style="margin-right: 8px;"></i>
 </a>
 
-<a href="/tmu/administrator/settings/${doc._id ? "deleteBusDocument" : "deleteImage"}/${doc._id? doc._id : index}/${bus._id}" title="Delete">
+<a href="/administrator/settings/${doc._id ? "deleteBusDocument" : "deleteImage"}/${doc._id? doc._id : index}/${bus._id}" title="Delete">
   <i class="mdi mdi-close icon-sm"></i>
 </a>
 
@@ -785,7 +785,7 @@ function validateBusData(busData) {
 
            
         
-        fetch(`/tmu/administrator/settings/busEntire/${bus._id}`, {
+        fetch(`/administrator/settings/busEntire/${bus._id}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -826,7 +826,7 @@ function validateBusData(busData) {
 
     btn.innerText = "⏳ Deleting...";
 
-    fetch(`/tmu/administrator/settings/deleteStop/${busId}/${stopId}`, {
+    fetch(`/administrator/settings/deleteStop/${busId}/${stopId}`, {
       method: "DELETE"
     })
     .then(res => res.json())

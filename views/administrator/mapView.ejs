@@ -172,7 +172,7 @@ function append(id) {
   
           
           <iframe
-            src="/tmu/administrator/settings/liveStream/${id}"
+            src="/administrator/settings/liveStream/${id}"
             width="100%"
             height="200"
             allow="camera; microphone"
@@ -422,8 +422,7 @@ const popupHTML = `
 
     <hr>
 
-    <div class="info-line"><b>🚏 Route:</b> ${data.bus.route || 'N/A'}</div>
-    <div class="info-line"><b>⛽ Fuel:</b> ${data.bus.fuelType || 'N/A'}</div>
+    
 
     <div class="text-center mt-2">
       <a href="javascript:void(0);" class="track-btn" onclick="trackBus('${data.bus._id}')">📍 Track Bus</a>

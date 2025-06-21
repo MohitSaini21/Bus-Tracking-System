@@ -1,4 +1,4 @@
-import express, { query } from "express";
+import express from "express";
 import CORE from "../model/admin.js";
 
 import Bus from "../model/bus.js";
@@ -8,12 +8,10 @@ import multer from "multer";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { v4 as uuidv4 } from "uuid";
+
 import generatePassword from "../utils/password.js";
 import mongoose from "mongoose";
 import FCM from "../model/FCM.js";
-
-import { create } from "domain";
 
 let router = express.Router();
 
@@ -133,7 +131,6 @@ router.post("/addBus", async (req, res) => {
         profilePhoto: "/assets/images/faces/conductor.jpg",
       });
       conductorDocId = newConductor._id;
-      console.log("✅ Conductor created:", newConductor.name);
     }
 
     // 🚌 Create Bus
@@ -166,7 +163,6 @@ router.post("/addBus", async (req, res) => {
       });
 
       busDocId = newBus._id;
-      console.log("✅ Bus created:", newBus.busNumber);
 
       // 🔄 Link Bus ID to Driver & Conductor
       if (driverDocId) {
@@ -203,10 +199,7 @@ router.post("/addBus", async (req, res) => {
 
 router.get("/conductorDriver", async (req, res) => {
   const user = await CORE.findById(req.user.id);
-  if (!user) {
-    res.clearCookie("authToken"); // clear the correct cookie
-    return res.redirect("/coreLogin");
-  }
+
   let { driverId = "N/A", conductorId = "N/A" } = req.query;
 
   // ✅ Driver ID valid hai → Process karo
@@ -267,7 +260,7 @@ router.post("/conductorDocuments/:id", upload.any(), async (req, res) => {
     }
     if (files.length == 0) {
       return res.redirect(
-        `/tmu/administrator/settings/conductorDriver?conductorId=${conductor._id}`
+        `/administrator/settings/conductorDriver?conductorId=${conductor._id}`
       );
     }
 
@@ -284,7 +277,7 @@ router.post("/conductorDocuments/:id", upload.any(), async (req, res) => {
     await conductor.save();
 
     res.redirect(
-      `/tmu/administrator/settings/conductorDriver?conductorId=${conductor._id}`
+      `/administrator/settings/conductorDriver?conductorId=${conductor._id}`
     );
   } catch (error) {
     console.error("Error uploading documents:", error);
@@ -345,7 +338,7 @@ router.post(
 
       // Redirect user after successful upload
       res.redirect(
-        `/tmu/administrator/settings/conductorDriver?conductorId=${conductor._id}`
+        `/administrator/settings/conductorDriver?conductorId=${conductor._id}`
       );
     } catch (error) {
       console.error("Error uploading file:", error);
@@ -392,7 +385,7 @@ router.post("/conductorRow/:id", async (req, res) => {
     }
 
     res.redirect(
-      `/tmu/administrator/settings/conductorDriver?conductorId=${conductor._id}`
+      `/administrator/settings/conductorDriver?conductorId=${conductor._id}`
     );
   } catch (error) {
     console.error("Error updating conductor:", error);
@@ -430,7 +423,7 @@ router.post("/driverDocuments/:id", upload.any(), async (req, res) => {
     await conductor.save();
 
     res.redirect(
-      `/tmu/administrator/settings/conductorDriver?driverId=${conductor._id}`
+      `/administrator/settings/conductorDriver?driverId=${conductor._id}`
     );
   } catch (error) {
     console.error("Error uploading documents:", error);
@@ -488,7 +481,7 @@ router.post(
 
       // Redirect user after successful upload
       res.redirect(
-        `/tmu/administrator/settings/conductorDriver?driverId=${conductor._id}`
+        `/administrator/settings/conductorDriver?driverId=${conductor._id}`
       );
     } catch (error) {
       console.error("Error uploading file:", error);
@@ -542,7 +535,7 @@ router.post("/driverRow/:id", async (req, res) => {
 
     // Redirect after disconnect
     return res.redirect(
-      `/tmu/administrator/settings/conductorDriver?driverId=${driver._id}`
+      `/administrator/settings/conductorDriver?driverId=${driver._id}`
     );
   } catch (error) {
     console.error("🔥 Error in driver update and socket logic:", error);
@@ -754,7 +747,7 @@ router.post("/busDocuments/:id", upload.any(), async (req, res) => {
     bus.busDocuments.push(...documents);
     await bus.save();
 
-    return res.redirect(`/tmu/administrator/settings/busEntire/${bus._id}`);
+    return res.redirect(`/administrator/settings/busEntire/${bus._id}`);
   } catch (error) {
     console.error("Error uploading documents:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -853,7 +846,7 @@ router.get("/deleteBusDocument/:docId/:busId", async (req, res) => {
     await bus.save(); // Save updated bus
 
     // Redirect back
-    return res.redirect(`/tmu/administrator/settings/busEntire/${bus._id}`);
+    return res.redirect(`/administrator/settings/busEntire/${bus._id}`);
   } catch (error) {
     console.error("Error deleting document:", error);
     return res.status(500).json({ message: "Internal server error" });
@@ -889,7 +882,7 @@ router.post("/busIcon/:id", upload.single("iconPhoto"), async (req, res) => {
     console.log("File uploaded:", req.file);
     disConnect(req, bus._id);
     // Redirect user after successful upload
-    res.redirect(`/tmu/administrator/settings/busEntire/${bus._id}`);
+    res.redirect(`/administrator/settings/busEntire/${bus._id}`);
   } catch (error) {
     console.error("Error uploading file:", error);
     res.status(500).json({ message: "Internal server error" });
@@ -932,7 +925,7 @@ router.post("/busImages/:id", upload.any(), async (req, res) => {
     await bus.save();
 
     // Redirect user after successful upload
-    res.redirect(`/tmu/administrator/settings/busEntire/${bus._id}`);
+    res.redirect(`/administrator/settings/busEntire/${bus._id}`);
   } catch (error) {
     console.error(error);
     res.status(500).send("Error uploading images");
@@ -982,7 +975,7 @@ router.get("/deleteImage/:index/:busId", async (req, res) => {
     await bus.save();
 
     // Redirect to settings page
-    return res.redirect(`/tmu/administrator/settings/busEntire/${bus._id}`);
+    return res.redirect(`/administrator/settings/busEntire/${bus._id}`);
   } catch (error) {
     console.error("Error deleting image:", error);
     return res.status(500).json({ message: "Internal server error" });
@@ -1036,7 +1029,7 @@ router.get("/deleteDriverDocument/:docId/:userId", async (req, res) => {
 
     // Redirect back
     return res.redirect(
-      `/tmu/administrator/settings/conductorDriver?driverId=${user._id}`
+      `/administrator/settings/conductorDriver?driverId=${user._id}`
     );
   } catch (error) {
     console.error("Error deleting document:", error);
@@ -1088,7 +1081,7 @@ router.get("/deleteConductorDocument/:docId/:userId", async (req, res) => {
 
     // Redirect back
     return res.redirect(
-      `/tmu/administrator/settings/conductorDriver?conductorId=${user._id}`
+      `/administrator/settings/conductorDriver?conductorId=${user._id}`
     );
   } catch (error) {
     console.error("Error deleting document:", error);
@@ -1108,10 +1101,6 @@ router.get("/liveStream/:id", async (req, res) => {
 
     // Step 2: Validate user (administrator)
     const user = await CORE.findById(req.user.id);
-    if (!user) {
-      res.clearCookie("authToken");
-      return res.redirect("/coreLogin");
-    }
 
     // Step 3: Fetch bus
     const bus = await Bus.findById(busId);
