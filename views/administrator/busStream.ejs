@@ -101,7 +101,8 @@
         newVideo.setAttribute("muted", "");
         newVideo.setAttribute("playsinline", "");
         newVideo.setAttribute("controls", ""); // optional if you want control bar
-        newVideo.className = "w-100 h-100 object-fit-cover"; // Bootstrap classes
+
+
 
         // Step 4: Assign the media stream
         newVideo.srcObject = stream;
@@ -195,42 +196,49 @@
 
 
                                                         function setupDisconnectHandlers() {
-                        // ICE connection monitoring – detects low network or link failure
-                        window.addEventListener("beforeunload", function (e) {
-                          socket.emit("admin-disconnected", { busId: bus._id });
+            // Catch abrupt close
+            window.addEventListener("beforeunload", () => {
+              socket.emit("admin-disconnected", { busId: bus._id });
+           });
 
-      });
-                        adminPeer.oniceconnectionstatechange = () => {
-                          console.log("ICE state changed:", adminPeer.iceConnectionState);
+            // ICE connection monitoring
+            adminPeer.oniceconnectionstatechange = () => {
+              console.log("ICE state changed:", adminPeer.iceConnectionState);
+              if (
+                adminPeer.iceConnectionState === "disconnected" ||
+                adminPeer.iceConnectionState === "failed"
+              ) {
+                console.warn("Admin ICE disconnected.");
+                socket.emit("admin-disconnected", { busId: bus._id });
+              }
 
-                          if (
-                            adminPeer.iceConnectionState === "disconnected" ||
-                            adminPeer.iceConnectionState === "failed"
-                          ) {
-                            console.warn("⚠️ Admin ICE connection lost due to network issues.");
-                            socket.emit("admin-disconnected", { busId: bus._id });
 
-                            // Replace video as visual fallback
-                            replaceVideo();
-                          }
-                        };
-                      }
+            };
 
-                      // Call it once
-                      setupDisconnectHandlers();
+            // WebRTC connection monitoring
+            adminPeer.onconnectionstatechange = () => {
+              console.log("Connection state:", adminPeer.connectionState);
+              if (
+                adminPeer.connectionState === "disconnected" ||
+                adminPeer.connectionState === "closed" ||
+                adminPeer.connectionState === "failed"
+              ) {
+                console.warn("Admin connection closed.");
+                socket.emit("admin-disconnected", { busId: bus._id });
+              }
 
+
+            };
+          }
+
+          setupDisconnectHandlers()
 
                                             socket.on("newStream",(busid)=>{
                                               socket.emit("admin-wants-to-connect", { busId:bus._id });
                                     })
+                                            socket.on("deleteStream",(busid)=>{
+                                             replaceVideo()
 
-                                    socket.on("deleteStream",(busId)=>{
-
-
-
-
-
-                              replaceVideo();
                                     })
     </script>
   </body>
