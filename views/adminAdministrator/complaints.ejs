@@ -78,14 +78,31 @@
                 
               </ul>
 
-              <h4>Complaints (<%=submitterType%>)</h4>
+              <h3>Complaints (<%=submitterType%>)</h3>
               <br>
 
 
     
-            
+            <!-- Modal  -->
    
+            <div class="modal fade" id="mediaModal" tabindex="-1" aria-hidden="true">
+              <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content bg-dark text-white">
+                  <div class="modal-header">
+                    <h5 class="modal-title">📁 Media Preview</h5>
+                    <button class="btn btn-outline-light mt-3" onclick="closeMediaModal()">
+                      ❌ Close Preview
+                    </button>
+                    
+                  </div>
+                  <div class="modal-body text-center" id="mediaContainer">
+                    <!-- Media will be injected here -->
+                  </div>
+                </div>
+              </div>
+            </div>
             
+          
 
                 <div class="row" id="mainRow">  
 
@@ -165,6 +182,7 @@
                                   <%= complaint.description %>
                                 </p>
                               <% } %>
+                              <br>
                       
                               <!-- Media Preview -->
                               <% if (complaint.media) { 
@@ -172,42 +190,22 @@
                               %>
                                 <div class="mb-3">
                                   <strong>📎 Attached Media:</strong><br>
-                                  <% if (["jpg", "jpeg", "png", "webp", "gif"].includes(ext)) { %>
-                                    <img src="<%= complaint.media %>" alt="Media" style="width: 100%; height: 200px; object-fit: cover;" class="rounded border" />
-                                  <% } else if (["mp4", "webm", "ogg"].includes(ext)) { %>
-                                    <video controls style="width: 100%; height: 200px; object-fit: cover;" class="rounded border">
-                                      <source src="<%= complaint.media %>" type="video/<%= ext %>">
-                                      Your browser does not support video.
-                                    </video>
-                                  <% } else if (["mp3", "wav", "ogg"].includes(ext)) { %>
-                                    <audio controls style="width: 100%;">
-                                      <source src="<%= complaint.media %>" type="audio/<%= ext %>">
-                                      Your browser does not support audio.
-                                    </audio>
-                                  <% } else { %>
-                                    <a href="<%= complaint.media %>" target="_blank">📁 View Media File</a>
-                                  <% } %>
+                                  <button 
+                                  class="btn btn-sm btn-outline-info"
+         onclick="showMediaModal('<%= complaint.media.replace(/\\/g, '/') %>', '<%= ext %>')" >
+                                  🔍 Preview Media
+                                </button>
                                 </div>
                               <% } %>
+                              
                       
-                              <!-- Status -->
-                              <% if (complaint.status) { %>
-                                <p class="mb-2">
-                                  🔖 <strong>Status:</strong>
-                                  <% if (complaint.status === "pending") { %>
-                                    <span class="badge badge-warning">Pending</span>
-                                  <% } else if (complaint.status === "reviewed") { %>
-                                    <span class="badge badge-success">Reviewed</span>
-                                  <% } else if (complaint.status === "rejected") { %>
-                                    <span class="badge badge-danger">Rejected</span>
-                                  <% } %>
-                                </p>
-                              <% } %>
-                      
+                 
+                              
                               <!-- Delete Button -->
-                              <button onclick="deleteComplaint('<%= complaint._id %>')" class="btn btn-sm btn-danger mt-3">
+                              <button onclick="deleteComplaint('<%= complaint._id %>', this)" class="btn btn-sm btn-danger mt-3">
                                 🗑️ Delete Complaint
                               </button>
+                              
                       
                             </div>
                           </div>
@@ -217,8 +215,8 @@
                       <% } else { %>
 
   
-                        <p class="card-description mt-3 ml-2 px-2 py-1  rounded text-muted border">
-                          No <code>Complaint</code> 
+                        <p class="card-description mt-3 ml-2 px-2 py-1 text-muted">
+                          No Complaint has been registered  by <%=submitterType  %>.
         
                         </p>
                         
@@ -261,19 +259,18 @@
     <script src="/assets/js/hoverable-collapse.js"></script>
     <script src="/assets/js/misc.js"></script>
     <script src="/assets/js/settings.js"></script>
-    <script src="/assets/js/todolist.js"></script>
+    <scrip src="/assets/js/todolist.js"></script>
     <!-- endinject -->
     <!-- Custom js for this page -->
          <!-- custom Script -->
-    <script>
-      window.onload = function () {
-        document.getElementById("loader").style.display = "none";
-      };
+    
 
 
       
-    </script>
+  
     <script>
+      if(document.getElementById("vehicleNumber")){
+
         document.addEventListener("DOMContentLoaded", function () {
           const vehicleInput = document.getElementById("vehicleNumber");
           const mainRow = document.getElementById("mainRow");
@@ -310,64 +307,92 @@
             }
           });
         });
-      </script>
+
+      }
 
 
-<script>
-    async function deleteComplaint(id) {
 
-        
-      if (!confirm("do you really want to delete this complaint ?")) return;
-  
-      try {
-        const res = await fetch(`/admin/deleteComplaint/${id}`, {
-    method: "DELETE",
-  });
-  
-    
-  
-            
-        const result= await res.json()
+  async function deleteComplaint(id, btnElement) {
+    if (!confirm("Do you really want to delete this complaint?")) return;
 
-        
+    // Change button text and disable it
+    const originalText = btnElement.innerHTML;
+    btnElement.innerHTML = "⏳ Deleting...";
+    btnElement.disabled = true;
+
+    try {
+      const res = await fetch(`/admin/deleteComplaint/${id}`, {
+        method: "DELETE",
+      });
+
+      const result = await res.json();
+
+      if (res.ok) {
         alert(result.message);
-        if(res.ok){
-            
 
-
-            const child = document.getElementById(id);
+        const child = document.getElementById(id);
         if (child) {
-          const card = child.closest(".col-xl-4");
+          const card = child.closest(".col-xl-4"); // Adjust class if needed
           if (card) {
             card.classList.add("fade-out");
-    setTimeout(() => {
-      card.remove();
-    }, 500); // match the CSS transition duration
+            setTimeout(() => {
+              card.remove();
+            }, 500);
           }
         }
-      else {
-        alert("❌ Failed to delete complaint");
+      } else {
+        throw new Error(result.message || "Failed to delete complaint");
       }
-        
-      
-        }   
-        
-        
-  
+    } catch (error) {
+      console.error(error.message);
+      alert("❌ Network error: Could not delete complaint");
+      // Revert button state
+      btnElement.innerHTML = originalText;
+      btnElement.disabled = false;
+    }
+  }
 
-   
-        
-      } catch (error) {
-        console.log(error.message)
 
-        
-        alert("❌ Error in deleting Complaint");
-        
-      }
+
+function closeMediaModal() {
+  const modalEl = document.getElementById('mediaModal');
+  modalEl.classList.remove('show');
+  modalEl.style.display = 'none';
+  document.body.classList.remove('modal-open');
+  document.querySelector('.modal-backdrop')?.remove();
+  document.getElementById('mediaContainer').innerHTML = '';
+}
+
+
+
+
+  function showMediaModal(mediaUrl, ext) {
+    const container = document.getElementById("mediaContainer");
+    container.innerHTML = ""; // Clear previous
+
+    ext = ext.toLowerCase();
+
+    if (["jpg", "jpeg", "png", "webp", "gif"].includes(ext)) {
+      container.innerHTML = `<img src="${mediaUrl}" class="img-fluid rounded border" style="max-height: 400px; object-fit: contain;" />`;
+    } else if (["mp4", "webm", "ogg"].includes(ext)) {
+      container.innerHTML = `<video controls style="width: 100%; max-height: 400px;" class="rounded border"><source src="${mediaUrl}" type="video/${ext}">Your browser does not support video.</video>`;
+    } else if (["mp3", "wav", "ogg"].includes(ext)) {
+      container.innerHTML = `<audio controls style="width: 100%;"><source src="${mediaUrl}" type="audio/${ext}">Your browser does not support audio.</audio>`;
+    } else {
+      container.innerHTML = `<a href="${mediaUrl}" target="_blank">📁 Open Media</a>`;
     }
 
-    
-  </script>
+    const modal = new bootstrap.Modal(document.getElementById("mediaModal"));
+    modal.show();
+  }
+
+
+  window.onload = function () {
+        document.getElementById("loader").style.display = "none";
+      };
+
+</script>
+
     <!-- custom Script -->
     <!-- End custom js for this page -->
   </body>

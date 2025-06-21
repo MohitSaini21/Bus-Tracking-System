@@ -280,7 +280,11 @@ router.post(
       let driver = await Driver.findOne({ driverId: trimmedUserId });
       if (driver) {
         if (trimmedPassword === driver.password) {
-          const token = generateTokenAndSetCookie(res, driver._id, driver.role);
+          const token = generateTokenAndSetCookie(
+            res,
+            driver.driverId,
+            driver.role
+          );
           if (token) {
             return res.status(200).json({ success: true });
           }
@@ -295,7 +299,7 @@ router.post(
           if (trimmedPassword === conductor.password) {
             const token = generateTokenAndSetCookie(
               res,
-              conductor._id,
+              conductor.conductorId,
               conductor.role
             );
             if (token) {
@@ -361,8 +365,17 @@ router.post("/adminLogin", checkAuthHome, limiter, async (req, res) => {
         message: "The credentials provided are incorrect. Please try again.",
       });
     }
+    if (user.isLogged) {
+      return res.status(401).json({
+        success: false,
+        message: "The account has been previously logged in by someone else.",
+      });
+    }
 
-    // Success: Issue token and return
+    user.isLogged = true;
+    await user.save();
+
+  
     generateTokenAndSetCookie(res, user._id, user.role);
 
     return res.status(200).json({
@@ -419,6 +432,5 @@ router.post("/complaints", async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 });
-
 
 export { router as publicRouter };

@@ -196,14 +196,24 @@ mainRow.appendChild(newCol); // ✅ This appends it at the end
 
 }
 
-// append("67f5503b1adadc8c3c290007")
 
-  
+
+
+const user= <%- JSON.stringify(user) %>;
   const socket = io({
     query: {
-      administratorId: "1234567890"
+      administratorId: user._id
     }
   });
+
+
+  
+
+  socket.on("connect_error", (err) => {
+        console.error("❌ Socket connect error:", err.message);
+      });
+  
+  
  socket.on("deleteStream",(busId)=>{
     console.log(busId)
     console.log("Disconnectoin")
@@ -217,23 +227,7 @@ mainRow.appendChild(newCol); // ✅ This appends it at the end
 
 
 
-  // Temprorary
-
   
-// Temproray
-
-socket.on("tempAlert", (message) => {
-  alert(message); // ✅ This will show a browser alert popup
-});
-socket.on("campusAlert", (message) => {
-  // alert(message); // ✅ This will show a browser alert popup
-
-  console.log(message)
-});
-
-
-// Temproray
-
 
 
 
@@ -465,9 +459,11 @@ const popupHTML = `
     .bindPopup(popupHTML);
     
     markerCache[busId] = marker;
-    // Add event listener for details panel
+
+    
     marker.on("click", () => {
-      showBusDetails(data.bus); // or just data.bus._id
+    
+      
     });
     console.log("creating the marker")
     busLayerGroup.addLayer(marker);
@@ -478,90 +474,8 @@ const popupHTML = `
 
 });
 
-function showBusDetails(data) {
-  console.log(data);
-
-  const stopsHtml = data.routeStops
-    .map((stop, index) => {
-      return `
-        <tr>
-          <td>${index + 1}</td>
-          <td>${stop.stopName}</td>
-          <td>${stop.morningTime}</td>
-          <td>${stop.eveningTime}</td>
-        </tr>
-      `;
-    })
-    .join("");
-
-  const html = `
-    <div class="row" id="particularBus">
-      <div class="col-12">
-        <div class="card">
-          <div class="card-body">
-            <h4 class="card-title">Route Stops for Bus: ${data.busNumber}</h4>
-            <div class="row">
-              <div class="col-md-6">
-                <div class="table-responsive">
-                  <table class="table">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Stop</th>
-                        <th>Morning Time</th>
-                        <th>Evening Time</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${stopsHtml}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div class="col-md-6">
-                <div class="container">
-        
-                        <iframe
-                          src="/locationBus/${data._id}"
-                          frameborder="0"
-                          style="
-                            width: 100%;
-                            height: 100%;
-                            border: none;
-                            display: block;
-                          "
-                        ></iframe>
-                </div>
-              </div>
-
-              <div class="container mt-4">
-                <div class="d-flex justify-content-end">
-        
-                  
-<a href="/tmu/administrator/settings/particularBusLive/${data._id}" class="btn btn-secondary btn-fw mr-2">
-  Live Track
-</a>
 
 
-                  <button type="button" class="btn btn-success btn-fw" onclick="document.getElementById('particularBus').remove()">Close</button>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-  const card = document.getElementById("particularBus");
-  if (card) card.remove();
-  // Prepend to the top of bodyContent without clearing existing content
-  const container = document.getElementById("bodyContent");
-  const tempDiv = document.createElement("div");
-  tempDiv.innerHTML = html;
-  container.insertBefore(tempDiv.firstElementChild, container.firstChild);
-}
 
 
 function expandMapFullScreen() {

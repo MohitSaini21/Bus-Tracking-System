@@ -51,15 +51,13 @@ async function checkUserExistenceAndRedirect(req, res, next) {
 
     // Check if the user is a driver or conductor
     if (req.user.role === "driver") {
-      worker = await Driver.findById(req.user.id).populate(
-        "assignedBus",
-        "busNumber route distanceTravelled status"
-      ); // Check for driver in the database
+      worker = await Driver.findOne({ driverId: req.user.id })
+        .populate("assignedBus", "busNumber route distanceTravelled status")
+        .lean(); // Check for driver in the database
     } else if (req.user.role === "conductor") {
-      worker = await Conductor.findById(req.user.id).populate(
-        "assignedBus",
-        "busNumber route distanceTravelled status"
-      );
+      worker = await Conductor.findOne({ conductorId: req.user.id })
+        .populate("assignedBus", "busNumber route distanceTravelled status")
+        .lean();
     }
 
     // If worker doesn't exist, clear cookies and redirect to login page
@@ -184,8 +182,7 @@ router.post("/odometer", async (req, res) => {
 
 router.get("/goLive", checkUserExistenceAndRedirect, async (req, res) => {
   try {
-    // Checking the user role and fetching bus details accordingly
-    const bus = await getBusDetailsByRole(req.user.role, req.user.id);
+    const bus = await getBusDetailsByRole(req.user.role, req.worker._id);
 
     if (bus) {
       return res.render("DC/goLive.ejs", { bus, user: req.worker }); // Passing user as req.worker
@@ -202,7 +199,7 @@ router.get("/goLive", checkUserExistenceAndRedirect, async (req, res) => {
 router.get("/startStream", checkUserExistenceAndRedirect, async (req, res) => {
   try {
     // Checking the user role and fetching bus details accordingly
-    const bus = await getBusDetailsByRole(req.user.role, req.user.id);
+    const bus = await getBusDetailsByRole(req.user.role, req.worker._id);
 
     if (bus) {
       return res.render("DC/stream.ejs", { bus, user: req.worker }); // Passing user as req.worker
@@ -400,7 +397,7 @@ router.get("/profile", checkUserExistenceAndRedirect, async (req, res) => {
   return res.render("DC/profile.ejs", { user: req.worker, worker: req.worker });
 });
 router.get("/helper", checkUserExistenceAndRedirect, async (req, res) => {
-  const bus = await getBusDetailsByRole(req.user.role, req.user.id);
+  const bus = await getBusDetailsByRole(req.user.role, req.worker._id);
 
   if (req.user.role == "driver") {
     return res.render("DC/profile.ejs", {
@@ -412,7 +409,7 @@ router.get("/helper", checkUserExistenceAndRedirect, async (req, res) => {
   }
 });
 router.get("/aboutBus", checkUserExistenceAndRedirect, async (req, res) => {
-  const bus = await getBusDetailsByRole(req.user.role, req.user.id);
+  const bus = await getBusDetailsByRole(req.user.role, req.worker.id);
   return res.render("DC/bus.ejs", { user: req.worker, bus: bus });
 });
 

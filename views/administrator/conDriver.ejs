@@ -60,7 +60,7 @@
                       class="forms-sample"
                       id="row"
                       method="POST"
-                      action="<%= locals.worker.driverId ? `/tmu/administrator/settings/driverRow/${locals.worker._id}` : `/tmu/admin/settings/conductorRow/${locals.worker._id}` %>"
+                      action="<%= locals.worker.driverId ? `/tmu/administrator/settings/driverRow/${locals.worker._id}` : `/tmu/administrator/settings/conductorRow/${locals.worker._id}` %>"
                     >
                       <div class="form-group">
                         <label for="exampleInputName1">Name</label>
@@ -108,35 +108,56 @@
                         <label for="phone" class="col-sm-3 col-form-label"
                           >conductorId</label
                         >
-                        <div class="col-sm-9">
+                        <div class="col-sm-7">
                           <input
                             type="text"
                             class="form-control text-white"
-                            id="driverId"
-                            name="driverId"
+                            id="CND"
+                            name="conductorId"
                             value="<%= worker.conductorId  %>"
                             placeholder="Enter Phone Number"
                           />
                         </div>
+                        <div class="col-sm-2">
+                          <button
+                          class="btn btn-outline-primary"
+                          type="button"
+                          onclick="generateNewId('CND')"
+                        >
+                      generateNewId
+                        </button>
+                        </div>
+          
+                        
+              
                       </div>
                                <% } %>
 
                       <% if (locals.worker.driverId) { %>
 
-                          <div class="form-group row">
+                  <div class="form-group row">
                         <label for="phone" class="col-sm-3 col-form-label"
                           >DriverId</label
                         >
-                        <div class="col-sm-9">
+                        <div class="col-sm-7">
                           <input
                             type="text"
                             class="form-control text-white"
-                            id="driverId"
+                            id="DVR"
                             name="driverId"
                             value="<%= worker.driverId  %>"
                             placeholder="Enter Phone Number"
                           />
                         </div>
+                        <div class="col-sm-2">
+                          <button
+                          class="btn btn-outline-primary"
+                          type="button"
+                          onclick="generateNewId('DVR')"
+                        >
+                      generateNewId
+                        </button>
+                      </div>
                       </div>
                      
                       <div class="form-group row">
@@ -472,9 +493,22 @@
     mainRow.insertBefore(newCol, mainRow.children[2]);
   });
         }
+
+
+        function generateCustomId(prefix = "ID") {
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase(); // 4 random characters
+  const timestamp = Date.now().toString().slice(-4); // Last 4 digits of timestamp
+  return `${prefix}-${random}${timestamp}`; // Example: CND-A9B32491
+}
+
+function generateNewId(role) {
+  const newId = generateCustomId(role);
+
+  
+  document.getElementById(role).value = newId;
+}
     </script> 
-    <!-- endinject -->
-    <!-- Custom js for this page -->
-    <!-- End custom js for this page -->
+
+
   </body>
 </html>

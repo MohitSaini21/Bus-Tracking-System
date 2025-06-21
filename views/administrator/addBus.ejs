@@ -476,9 +476,14 @@ function validateBusData(busData) {
 
 
 function Collect() {
-  // Collect form data from each form
+
+
   const busData = getBusData("eventForm");
 
+
+  console.log(busData)
+
+  
 
   if (!validateBusData(busData)) {
   return; // Stop form submission
@@ -555,6 +560,18 @@ console.log("Conductor Data:", conductorData);
 
     document.getElementById("loader").style.display = "none";
     alert(data.message)
+    if (data.code === "SUCCESS") {
+  const forms = ["eventForm", "driverForm", "ConductorForm"];
+
+  forms.forEach((formId) => {
+    const form = document.getElementById(formId);
+    if (form) form.reset(); // Reset only if form exists
+  });
+
+  // Optional: show a success message
+  console.log("✅ All forms have been reset successfully.");
+}
+
   })
   .catch((error) => {
     console.log(error.message)
@@ -570,19 +587,12 @@ console.log("Conductor Data:", conductorData);
   
      </script>
 
-<script>
-  
-      // 3. Hide loader once window is loaded
-      window.onload = function () {
-        document.getElementById("loader").style.display = "none";
-      };
-</script>
 
 <!-- additon new  stop  -->
  
 <script>
   // Adding additional stop inputs dynamically
-  docuentment.getElementById("add-stop").addEventListener("click", function () {
+  document.getElementById("add-stop").addEventListener("click", function () {
     const additionalStops = document.getElementById("additional-stops");
   
     const stopRow = `
@@ -635,6 +645,12 @@ console.log("Conductor Data:", conductorData);
   
     additionalStops.insertAdjacentHTML("beforeend", stopRow);
   });
+
+    
+  
+      window.onload = function () {
+        document.getElementById("loader").style.display = "none";
+      };
   </script>
       <!-- custom Scripts -->
 <!-- additon new  stop  -->

@@ -170,7 +170,7 @@
     Bus
   </a>
 
-  <a href="/admin/CDB" class="small text-dark bg-white text-center py-1 rounded"
+  <a href="/admin/CDB/<%=bus._id  %>" class="small text-dark bg-white text-center py-1 rounded"
      style="width: 22%; height: 35px; display: flex; align-items: center; justify-content: center; 
             border: 2px solid black; box-shadow: inset 0 0 5px rgba(0,0,0,0.3); font-weight: bold;">
     View
@@ -190,22 +190,22 @@
 
      
 
-  <a href="/admin/CDB" class="small text-dark bg-white text-center py-1 rounded"
+  <a href="/admin/CDB/<%=bus._id  %>" class="small text-dark bg-white text-center py-1 rounded"
      style="width: 22%; height: 35px; display: flex; align-items: center; justify-content: center; 
             border: 2px solid black; box-shadow: inset 0 0 5px rgba(0,0,0,0.3); font-weight: bold;">
   View
   </a>
-  <a href="/admin/CDB" class="small text-dark bg-white text-center py-1 rounded"
+  <a href="/admin/CDB/<%=bus._id  %>" class="small text-dark bg-white text-center py-1 rounded"
      style="width: 22%; height: 35px; display: flex; align-items: center; justify-content: center; 
             border: 2px solid black; box-shadow: inset 0 0 5px rgba(0,0,0,0.3); font-weight: bold;">
  View 
   </a>
-  <a href="/admin/CDB" class="small text-dark bg-white text-center py-1 rounded"
+  <a href="/admin/CDB/<%=bus._id  %>" class="small text-dark bg-white text-center py-1 rounded"
      style="width: 22%; height: 35px; display: flex; align-items: center; justify-content: center; 
             border: 2px solid black; box-shadow: inset 0 0 5px rgba(0,0,0,0.3); font-weight: bold;">
   View
   </a>
-  <a href="/admin/CDB" class="small text-dark bg-white text-center py-1 rounded"
+  <a href="/admin/CDB/<%=bus._id  %>" class="small text-dark bg-white text-center py-1 rounded"
      style="width: 22%; height: 35px; display: flex; align-items: center; justify-content: center; 
             border: 2px solid black; box-shadow: inset 0 0 5px rgba(0,0,0,0.3); font-weight: bold;">
   View
@@ -296,17 +296,9 @@
     <!-- Custom js for this page -->
          <!-- custom Script -->
     <script>
-      window.onload = function () {
-        document.getElementById("loader").style.display = "none";
-      };
 
-      function Fetch(){
-        document.getElementById("fetch").innerHTML=""
-        document.getElementById("fetch").innerText="Fetching............."
-     
-        
-      }
 
+      
       
     </script>
     <script>
@@ -469,6 +461,12 @@ if (searchElement) {
     alert("Invalid status value");
   }
 }
+
+
+window.onload = function () {
+        document.getElementById("loader").style.display = "none";
+      };
+      
 
 
  </script>

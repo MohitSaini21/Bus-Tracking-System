@@ -7,7 +7,8 @@ setTimeout(() => {
     reconnectionDelay: 3000, // Start with 3s delay
     reconnectionDelayMax: 10000,
 
-    query: {
+    query: {  
+      role: user.role,
       liveBusId: bus._id, // Convert the _id to a string (if it’s a MongoDB ObjectId)
     },
   });

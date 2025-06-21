@@ -40,18 +40,60 @@
     <link rel="stylesheet" href="/assets/css/style.css" />
     <!-- End layout styles -->
     <link rel="shortcut icon" href="/assets/images/favicon.png" />
+
     <style>
-      .vehicle-moving {
-        animation: drive 2s linear infinite;
-        display: inline-block;
+      .card {
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        background-color: #f9f9f9;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        transition: 0.3s ease;
       }
 
-      @keyframes drive {
+      .card:hover {
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      }
+
+      .card h5 a {
+        color: #2c3e50;
+        font-weight: 600;
+      }
+
+      .card h5 a:hover {
+        color: #1e2e3e;
+        text-decoration: underline;
+      }
+
+      .card-body {
+        padding: 1.5rem;
+      }
+
+      .card h2 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2c3e50;
+      }
+
+      .card h5 {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+      }
+
+      .icon-lg {
+        font-size: 2.2rem;
+        opacity: 0.8;
+      }
+
+      .vehicle-moving {
+        animation: moveIcon 1.8s infinite linear;
+      }
+
+      @keyframes moveIcon {
         0% {
           transform: translateX(0);
         }
         50% {
-          transform: translateX(5px);
+          transform: translateX(2px);
         }
         100% {
           transform: translateX(0);
@@ -72,126 +114,199 @@
         <!-- partial -->
         <div class="main-panel">
           <div class="content-wrapper">
+            <div class="row mb-4">
+              <div class="col-12">
+                <h3 class="text-light font-weight-bold border-bottom pb-2 mb-3">
+                  🚍 Insights
+                </h3>
+              </div>
+            </div>
+
             <div class="row">
               <div class="col-sm-4 grid-margin">
                 <div class="card">
                   <div class="card-body">
                     <h5>
-                      <a href="/admin/garrage" style="text-decoration: none"
-                        >Total Vehicles Registered</a
-                      >
+                      <a href="/admin/garrage">Total Vehicles Registered</a>
                     </h5>
-                    <div class="row">
-                      <div class="col-8 col-sm-12 col-xl-8 my-auto">
-                        <div
-                          class="d-flex d-sm-block d-md-flex align-items-center"
-                        >
-                          <h2 class="mb-0">30</h2>
-                        </div>
-                      </div>
-                      <div
-                        class="col-4 col-sm-12 col-xl-4 text-center text-xl-right"
-                      >
-                        <i
-                          class="icon-lg mdi mdi-jeepney ml-auto vehicle-moving"
-                          style="color: #ffc107"
-                        ></i>
-                      </div>
+                    <div
+                      class="d-flex align-items-center justify-content-between"
+                    >
+                      <h2 class="mb-0"><%= totalCount %></h2>
+                      <i
+                        class="icon-lg mdi mdi-jeepney text-primary vehicle-moving"
+                      ></i>
                     </div>
                   </div>
                 </div>
               </div>
+
               <div class="col-sm-4 grid-margin">
                 <div class="card">
                   <div class="card-body">
                     <h5>
-                      <a
-                        href="/admin/garrage?search=Out+of+Service"
-                        style="text-decoration: none"
+                      <a href="/admin/garrage?search=Out+of+Service"
                         >Out Of Service Vehicles</a
                       >
                     </h5>
-
-                    <div class="row">
-                      <div class="col-8 col-sm-12 col-xl-8 my-auto">
-                        <div
-                          class="d-flex d-sm-block d-md-flex align-items-center"
-                        >
-                          <h2 class="mb-0">23</h2>
-                        </div>
-                      </div>
-                      <div
-                        class="col-4 col-sm-12 col-xl-4 text-center text-xl-right"
-                      >
-                        <i
-                          class="icon-lg mdi mdi-jeepney text-danger ml-auto vehicle-moving"
-                        ></i>
-                      </div>
+                    <div
+                      class="d-flex align-items-center justify-content-between"
+                    >
+                      <h2 class="mb-0"><%= totalCount - operationalCount %></h2>
+                      <i
+                        class="icon-lg mdi mdi-jeepney text-muted vehicle-moving"
+                      ></i>
                     </div>
                   </div>
                 </div>
               </div>
+
               <div class="col-sm-4 grid-margin">
                 <div class="card">
                   <div class="card-body">
                     <h5>
-                      <a
-                        href="/admin/garrage?search=Operational"
-                        style="text-decoration: none"
+                      <a href="/admin/garrage?search=Operational"
                         >Operational Vehicles</a
                       >
                     </h5>
-                    <div class="row">
-                      <div class="col-8 col-sm-12 col-xl-8 my-auto">
-                        <div
-                          class="d-flex d-sm-block d-md-flex align-items-center"
-                        >
-                          <h2 class="mb-0">20</h2>
-                        </div>
-                      </div>
-                      <div
-                        class="col-4 col-sm-12 col-xl-4 text-center text-xl-right"
-                      >
-                        <i
-                          class="icon-lg mdi mdi-jeepney text-success ml-auto vehicle-moving"
-                        ></i>
-                      </div>
+                    <div
+                      class="d-flex align-items-center justify-content-between"
+                    >
+                      <h2 class="mb-0"><%= operationalCount %></h2>
+                      <i
+                        class="icon-lg mdi mdi-jeepney text-success vehicle-moving"
+                      ></i>
                     </div>
                   </div>
                 </div>
               </div>
-              <% if (user.role=="administrator") { %>
+            </div>
+
+            <div class="row">
+              <div class="col-sm-4 grid-margin">
+                <div class="card">
+                  <div class="card-body">
+                    <h5>
+                      <a href="/admin/inActiveVehicles"
+                        >Offline/Inactive Vehicles</a
+                      >
+                    </h5>
+                    <div
+                      class="d-flex align-items-center justify-content-between"
+                    >
+                      <h2 class="mb-0" id="offline"></h2>
+                      <i
+                        class="icon-lg mdi mdi-jeepney text-muted vehicle-moving"
+                      ></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-sm-4 grid-margin">
+                <div class="card">
+                  <div class="card-body">
+                    <h5><a href="/admin/gridView">Live/Active Vehicles</a></h5>
+                    <div
+                      class="d-flex align-items-center justify-content-between"
+                    >
+                      <h2 class="mb-0" id="live"></h2>
+                      <i
+                        class="icon-lg mdi mdi-jeepney text-success vehicle-moving"
+                      ></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-sm-4 grid-margin">
+                <div class="card">
+                  <div class="card-body">
+                    <h5><a href="/admin/complaints">Complaints Count</a></h5>
+                    <div
+                      class="d-flex align-items-center justify-content-between"
+                    >
+                      <h2 class="mb-0"><%= Complaints %></h2>
+                      <i class="icon-lg mdi mdi-alert-circle text-danger"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-sm-4 grid-margin">
+                <div class="card">
+                  <div class="card-body">
+                    <h5>
+                      <a href="/admin/complaints?by=parent">P&S Complaints</a>
+                    </h5>
+                    <div
+                      class="d-flex align-items-center justify-content-between"
+                    >
+                      <h2 class="mb-0"><%= parentsComplaints %></h2>
+                      <i class="icon-lg mdi mdi-alert-circle text-warning"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               <div class="col-sm-4 grid-margin">
                 <div class="card">
                   <div class="card-body">
                     <h5>
-                      <a
-                        href="/tmu/administrator/settings/addAdmin"
-                        style="text-decoration: none"
+                      <a href="/admin/complaints?by=operator">D&C Complaints</a>
+                    </h5>
+                    <div
+                      class="d-flex align-items-center justify-content-between"
+                    >
+                      <h2 class="mb-0">
+                        <%= Complaints - parentsComplaints %>
+                      </h2>
+                      <i class="icon-lg mdi mdi-alert-circle text-warning"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <% if (user.role == "administrator") { %>
+              <div class="col-sm-4 grid-margin">
+                <div class="card">
+                  <div class="card-body">
+                    <h5>
+                      <a href="/tmu/administrator/settings/addAdmin"
                         >Total Admins</a
                       >
                     </h5>
-                    <div class="row">
-                      <div class="col-8 col-sm-12 col-xl-8 my-auto">
-                        <div
-                          class="d-flex d-sm-block d-md-flex align-items-center"
-                        >
-                          <h2 class="mb-0">4</h2>
-                        </div>
-                      </div>
-                      <div
-                        class="col-4 col-sm-12 col-xl-4 text-center text-xl-right"
-                      >
-                        <i
-                          class="icon-lg mdi mdi-account-multiple-plus text-success ml-auto"
-                        ></i>
-                      </div>
+                    <div
+                      class="d-flex align-items-center justify-content-between"
+                    >
+                      <h2 class="mb-0"><%= adminCount %></h2>
+                      <i
+                        class="icon-lg mdi mdi-account-multiple-plus text-primary"
+                      ></i>
                     </div>
                   </div>
                 </div>
               </div>
               <% } %>
+            </div>
+            <div class="row mt-3">
+              <div class="col-12">
+                <div class="card">
+                  <div class="card-body">
+                    <h5 class="text-center mb-3 text-dark">
+                      🚦 Vehicle Status (Operational vs Out of Service)
+                    </h5>
+                    <div
+                      class="chart-container"
+                      style="position: relative; height: 300px"
+                    >
+                      <canvas id="vehicleStatusChart"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           <!-- content-wrapper ends -->
@@ -273,7 +388,127 @@
         document.getElementById("loader").style.display = "none";
       };
     </script>
+    <script src="/socket.io/socket.io.js"></script>
 
+    <script>
+            const user = <%- JSON.stringify(user) %>;
+            const totalCount = <%- totalCount %>; // ✅ Passed from backend
+
+            const socket = io({
+              query: {
+                adminId: user._id
+              }
+            });
+
+            socket.on("connect_error", (err) => {
+        console.error("❌ Socket connect error:", err.message);
+      });
+            // DOM elements for count
+            const liveCount = document.getElementById("live");
+            const offlineCount = document.getElementById("offline");
+
+            // Initialize counters
+            let live = 0;
+            let offline = totalCount;
+
+            // 🔌 Request live buses from server
+            socket.emit("liveBuses", function (response) {
+              if (response.success) {
+                const liveBusIds = response.data || [];
+
+                if (liveBusIds.length === 0) {
+                  // ✅ No live buses
+                  live = 0;
+                  offline = totalCount;
+                } else {
+                  live = liveBusIds.length;
+                  offline = totalCount - live;
+                }
+
+                // Update DOM
+                liveCount.innerText = live;
+                offlineCount.innerText = offline;
+
+                console.log(`🟢 Live: ${live}, 🔴 Offline: ${offline}`);
+              } else {
+                // Server failed to send data — keep safe fallback
+                live = 0;
+                offline = totalCount;
+
+                liveCount.innerText = live;
+                offlineCount.innerText = offline;
+
+                console.warn("❌ Could not fetch live buses.");
+              }
+            });
+
+            // 📈 When a bus comes online
+            socket.on("add", (busId) => {
+              if (live < totalCount) {
+                live++;
+                offline = Math.max(0, totalCount - live);
+              }
+
+              liveCount.innerText = live;
+              offlineCount.innerText = offline;
+              console.log(`✅ Bus ${busId} went live. 🟢 Live: ${live}, 🔴 Offline: ${offline}`);
+            });
+
+            // 📉 When a bus goes offline
+            socket.on("remove", (busId) => {
+              if (live > 0) {
+                live--;
+                offline = Math.min(totalCount, totalCount - live);
+              }
+
+              liveCount.innerText = live;
+              offlineCount.innerText = offline;
+              console.log(`❌ Bus ${busId} went offline. 🟢 Live: ${live}, 🔴 Offline: ${offline}`);
+            });
+    </script>
+    <!-- Chart.js Library -->
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+      const ctx = document.getElementById('vehicleStatusChart').getContext('2d');
+
+      const operational = <%= operationalCount %>;
+      const total = <%= totalCount %>;
+      const outOfService = total - operational;
+
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Operational', 'Out of Service'],
+          datasets: [{
+            data: [operational, outOfService],
+            backgroundColor: [
+              'rgba(40, 167, 69, 0.8)',   // Green
+              'rgba(220, 53, 69, 0.8)'    // Red
+            ],
+            borderColor: '#fff',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                color: '#333',
+                font: {
+                  size: 14
+                }
+              }
+            }
+          }
+        }
+      });
+    </script>
     <!-- custom Script -->
   </body>
 </html>

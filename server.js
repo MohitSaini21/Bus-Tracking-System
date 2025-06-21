@@ -7,6 +7,7 @@ import { dcRouter } from "./routes/DC.js";
 import { sendNotificationToClient } from "./utils/notify.js";
 import { Worker } from "worker_threads";
 import os from "os";
+import jwt from "jsonwebtoken";
 
 import { administratorRouter } from "./routes/administrator.js";
 import { adminRouter } from "./routes/admin.js";
@@ -17,6 +18,7 @@ import cron from "node-cron"; // or const cron = require('node-cron');
 import saveLogs from "./utils/saveLogs.js";
 
 import { checkAuth } from "./middlware/rootCheckAuth.js";
+import cookie from "cookie"; // 🔥 NOT 'cookie-parser'
 
 import { checkEntryExit } from "./utils/polygon.js";
 
@@ -72,6 +74,7 @@ app.use(
   },
   administratorRouter
 );
+
 app.use(
   "/admin",
   checkAuth,
@@ -110,6 +113,7 @@ const peers = {};
 let liveBuses = [];
 
 let adminConnectionsBus = {};
+let administratorConnectionsBus = {};
 
 let lastLocation = new Map();
 
@@ -243,7 +247,41 @@ function processQueue(busId) {
   }
 }
 
-//  NewArch Based Code
+io.use((socket, next) => {
+  try {
+    const query = socket.handshake.query;
+
+    // ✅ Allow public connections if no admin identifiers are present
+    if (!query.adminId && !query.administratorId) {
+      return next();
+    }
+
+    const rawCookies = socket.handshake.headers.cookie || "";
+
+    const parsed = cookie.parse(rawCookies);
+    const token = parsed.authToken;
+
+    if (!token) {
+      return next(new Error("Missing auth token"));
+    }
+
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "Secret String"
+    );
+
+    if (query.adminId) {
+      socket.adminId = decoded.id;
+    } else if (query.administratorId) {
+      socket.administratorId = decoded.id;
+    }
+
+    return next();
+  } catch (err) {
+    console.error("🚨 JWT decode failed:", err.message);
+    return next(new Error("Invalid token"));
+  }
+});
 
 io.on("connection", (socket) => {
   if (socket.handshake.query.busId) {
@@ -268,11 +306,10 @@ io.on("connection", (socket) => {
       `Current connections for bus ${busId}: `,
       busConnections[busId]
     );
-  } else if (socket.handshake.query.bus && socket.handshake.query.adminId) {
+  } else if (socket.handshake.query.bus && socket.adminId) {
     const busId = socket.handshake.query.bus;
 
     socket.bus = busId;
-    socket.adminId = socket.handshake.query.adminId;
 
     if (!adminConnectionsBus[busId]) {
       // If no array exists, create one
@@ -283,24 +320,40 @@ io.on("connection", (socket) => {
     adminConnectionsBus[busId].push(socket.id);
 
     console.log(
-      `New connection of admin or administrator for busId: ${busId} with socketId: ${socket.id}`
+      `New connection of admin  for busId: ${busId} with socketId: ${socket.id}`
     );
     console.log(
-      `Current connections for bus ${busId}: `,
+      `Current connections  (admi) for bus ${busId}: `,
       adminConnectionsBus[busId]
     );
-  } else if (socket.handshake.query.administratorId) {
-    // We have to check from the databaes it's exist or not got it
+  } else if (socket.handshake.query.bus && socket.administratorId) {
+    const busId = socket.handshake.query.bus;
+
+    socket.bus = busId;
+
+    if (!administratorConnectionsBus[busId]) {
+      // If no array exists, create one
+      administratorConnectionsBus[busId] = [];
+    }
+
+    // Push the new socket.id into the array for the given busId
+    administratorConnectionsBus[busId].push(socket.id);
+
+    console.log(
+      `New connection of administrator  for busId: ${busId} with socketId: ${socket.id}`
+    );
+    console.log(
+      `Current connections  (administrator) for bus ${busId}: `,
+      administratorConnectionsBus[busId]
+    );
+  } else if (socket.administratorId) {
     console.log(`New administrator Connection: ${socket.id}`);
     administratorIds.push(socket.id);
     console.log(administratorIds);
-    socket.administratorId = socket.handshake.query.administratorId;
-  } else if (socket.handshake.query.adminId) {
+  } else if (socket.adminId) {
     console.log(`New admin Connection: ${socket.id}`);
     allAdmins.push(socket.id);
     console.log(allAdmins);
-    socket.adminId = socket.handshake.query.adminId;
-    // Executes if condition1 is false, and condition2 is true
   } else {
     if (socket.handshake.query.liveBusId) {
       // Bus(driver or conductor Connectiosn)
@@ -331,11 +384,7 @@ io.on("connection", (socket) => {
   // asking about is ther ebus obejt exist
   socket.on("liveBuses", async (callback) => {
     try {
-      if (liveBuses.length > 0) {
-        callback({ success: true, data: liveBuses });
-      } else {
-        callback({ success: false, message: "No live Bus" });
-      }
+      callback({ success: true, data: liveBuses });
     } catch (err) {
       console.error("Error fetching bus:", err);
       callback({ success: false, message: "Server error" });
@@ -356,6 +405,16 @@ io.on("connection", (socket) => {
       if (administratorIds.length) {
         for (let i = 0; i < administratorIds.length; i++) {
           io.to(administratorIds[i]).emit("newStream", bus._id);
+        }
+      }
+
+      if (administratorConnectionsBus[bus._id]?.length) {
+        // Iterate through each connected admin socket
+        for (let i = 0; i < administratorConnectionsBus[bus._id].length; i++) {
+          io.to(administratorConnectionsBus[bus._id][i]).emit(
+            "newStream",
+            bus._id
+          );
         }
       }
     }
@@ -450,8 +509,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("busLocationUpdate", (data) => {
-
-    console.log(data)
+    console.log(data);
     addTask(data);
     lastLocation.set(data.bus._id, data);
 
@@ -478,16 +536,12 @@ io.on("connection", (socket) => {
     if (socket.bus) {
       const busId = socket.bus; // Now we can access busId from the socket object
 
-      console.log(
-        `Socket ${socket.id} disconnected from busId (admin or adminstrartoor): ${busId}`
-      );
-
       if (adminConnectionsBus[busId]) {
         adminConnectionsBus[busId] = adminConnectionsBus[busId].filter(
           (id) => id !== socket.id
         );
         console.log(
-          `Updated admin or administraot  connections for bus ${busId}: `,
+          `Updated admin connections for bus ${busId}: `,
           adminConnectionsBus[busId]
         );
 
@@ -495,7 +549,24 @@ io.on("connection", (socket) => {
         if (adminConnectionsBus[busId].length === 0) {
           delete adminConnectionsBus[busId];
           console.log(
-            `No more connections for bus of admin and admisniartor  ${busId}, deleting busId entry.`
+            `No more connections for bus of admin  ${busId}, deleting busId entry.`
+          );
+        }
+      }
+      if (administratorConnectionsBus[busId]) {
+        administratorConnectionsBus[busId] = administratorConnectionsBus[
+          busId
+        ].filter((id) => id !== socket.id);
+        console.log(
+          `Updated administrator connections for bus ${busId}: `,
+          administratorConnectionsBus[busId]
+        );
+
+        // Optionally, remove the busId key if no socket is connected to it
+        if (administratorConnectionsBus[busId].length === 0) {
+          delete administratorConnectionsBus[busId];
+          console.log(
+            `No more connections for bus of administrator  ${busId}, deleting busId entry.`
           );
         }
       }
@@ -565,6 +636,20 @@ io.on("connection", (socket) => {
             for (let i = 0; i < administratorIds.length; i++) {
               console.log("Emiitting the event to delte the connection");
               io.to(administratorIds[i]).emit("deleteStream", busId);
+            }
+          }
+
+          if (administratorConnectionsBus[busId]?.length) {
+            // Iterate through each connected admin socket
+            for (
+              let i = 0;
+              i < administratorConnectionsBus[busId].length;
+              i++
+            ) {
+              io.to(administratorConnectionsBus[busId][i]).emit(
+                "deleteStream",
+                busId
+              );
             }
           }
           delete peers[busId]; // Clean up offers and candidates

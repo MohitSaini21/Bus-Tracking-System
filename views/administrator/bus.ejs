@@ -21,6 +21,7 @@
     <!-- endinject -->
     <!-- Layout styles -->
     <link rel="stylesheet" href="/assets/css/style.css" />
+    <link rel="stylesheet" href="/assets/loader.css" />
     <!-- End layout styles -->
     <link rel="shortcut icon" href="/assets/images/faces/tmu.jpg" />
 
@@ -201,61 +202,76 @@
 
                 
                       
-                      <!-- working -->
-                       <% if (bus.routeStops && bus.routeStops.length > 0) { %>
-  <% bus.routeStops.forEach((stop, index) => { %>
-<div class="row">
-  <div class="col-md-3">
-    <div class="form-group row">
-      <label class="col-sm-12 col-form-label">Stop Name</label>
-      <div class="col-sm-12">
-        <input type="text" class="form-control text-white" name="stopName[]" value="<%=stop.stopName  %>" placeholder="Enter stop name" />
-      </div>
-    </div>
-  </div>
+                      <% bus.routeStops.forEach((stop, index) => { %>
+                        <div class="row align-items-end" id="stopRow-<%=stop._id %>">
+                          <!-- Stop Name -->
+                          <div class="col-md-2">
+                            <div class="form-group row">
+                              <label class="col-sm-12 col-form-label">Stop Name</label>
+                              <div class="col-sm-12">
+                                <input type="text" class="form-control text-white" style="color: black !important" readonly name="stopName[]" value="<%= stop.stopName %>" placeholder="Enter stop name" />
+                              </div>
+                            </div>
+                          </div>
+                        
+                          <!-- Morning Time -->
+                          <div class="col-md-2">
+                            <div class="form-group row">
+                              <label class="col-sm-12 col-form-label">MT</label>
+                              <div class="col-sm-12">
+                                <input type="time" value="<%= stop.morningTime %>" style="color: black !important" readonly class="form-control text-white" name="morningTime[]" />
+                              </div>
+                            </div>
+                          </div>
+                        
+                          <!-- Evening Time -->
+                          <div class="col-md-2">
+                            <div class="form-group row">
+                              <label class="col-sm-12 col-form-label">ET</label>
+                              <div class="col-sm-12">
+                                <input type="time" value="<%= stop.eveningTime %>" style="color: black !important" readonly class="form-control text-white" name="eveningTime[]" />
+                              </div>
+                            </div>
+                          </div>
+                        
+                          <!-- Latitude -->
+                          <div class="col-md-2">
+                            <div class="form-group row">
+                              <label class="col-sm-12 col-form-label">Latitude</label>
+                              <div class="col-sm-12">
+                                <input type="number" step="any" style="color: black !important" readonly class="form-control text-white" value="<%= stop.latitude %>" name="latitude[]" placeholder="Enter latitude" />
+                              </div>
+                            </div>
+                          </div>
+                        
+                          <!-- Longitude -->
+                          <div class="col-md-2">
+                            <div class="form-group row">
+                              <label class="col-sm-12 col-form-label">Longitude</label>
+                              <div class="col-sm-12">
+                                <input type="number" step="any" style="color: black !important" readonly class="form-control text-white" value="<%= stop.longitude %>" name="longitude[]" placeholder="Enter longitude" />
+                              </div>
+                            </div>
+                          </div>
+                        
+                          <!-- Delete Button -->
 
-  <div class="col-md-2">
-    <div class="form-group row">
-      <label class="col-sm-12 col-form-label">MT</label>
-      <div class="col-sm-12">
-        <input type="time" value="<%=stop.morningTime  %>" class="form-control text-white" name="morningTime[]" />
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-2">
-    <div class="form-group row">
-      <label class="col-sm-12 col-form-label">ET</label>
-      <div class="col-sm-12">
-        <input type="time" value="<%=stop.eveningTime  %>" class="form-control text-white" name="eveningTime[]" />
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-2">
-    <div class="form-group row">
-      <label class="col-sm-12 col-form-label">Latitude</label>
-      <div class="col-sm-12">
-        <input type="number" step="any" class="form-control text-white"  value="<%=stop.latitude  %>" name="latitude[]" placeholder="Enter latitude" />
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-3">
-    <div class="form-group row">
-      <label class="col-sm-12 col-form-label">Longitude</label>
-      <div class="col-sm-12">
-        <input type="number" step="any" class="form-control text-white"  value="<%=stop.longitude  %>" name="longitude[]" placeholder="Enter longitude" />
-      </div>
-    </div>
-  </div>
-</div>
-
-  <% }); %>
-<% } else { %>
-
-    
-<% } %>
+                          <div class="col-md-2">
+                            <div class="form-group row">
+                              <label class="col-sm-12 col-form-label">Delete</label>
+                              <div class="col-sm-12">
+                  <button type="button" class="btn btn-danger btn-sm" onclick="deleteStop('<%= stop._id %>','<%= bus._id %>',this)">
+                                  🗑️
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                          
+                  
+                          
+                        </div>
+                        <% }); %>
+                        
 
                       <!-- working -->
 
@@ -453,27 +469,10 @@
           </div>
           <!-- content-wrapper ends -->
           <!-- partial:../.../corePartials/_footer.html -->
-          <footer class="footer">
-            <div
-              class="d-sm-flex justify-content-center justify-content-sm-between"
-            >
-              <span
-                class="text-muted d-block text-center text-sm-left d-sm-inline-block"
-                >Copyright © bootstrapdash.com 2020</span
-              >
-              <span
-                class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center"
-              >
-                Free
-                <a
-                  href="https://www.bootstrapdash.com/bootstrap-admin-template/"
-                  target="_blank"
-                  >Bootstrap admin templates</a
-                >
-                from Bootstrapdash.com</span
-              >
-            </div>
-          </footer>
+
+          <%- include('../corePartials/footer.ejs') %>
+          <%-include('../corePartials/loader.ejs') %>
+          
           <!-- partial -->
         </div>
         <!-- main-panel ends -->
@@ -776,7 +775,9 @@ function validateBusData(busData) {
       
       const busData = getBusData("eventForm");
 
+      console.log(busData);
 
+      
       
   
       
@@ -818,6 +819,42 @@ function validateBusData(busData) {
 
 
     </script>
+
+<script>
+  function deleteStop(stopId, busId,btn) {
+    if (!confirm("❗ Are you sure you want to delete this stop?")) return;
+
+    btn.innerText = "⏳ Deleting...";
+
+    fetch(`/tmu/administrator/settings/deleteStop/${busId}/${stopId}`, {
+      method: "DELETE"
+    })
+    .then(res => res.json())
+    .then(data => {
+      alert(data.message);
+
+      if (data.code === "SUCCESS") {
+        // Optionally remove the row from DOM if successful
+        document.getElementById(`stopRow-${stopId}`).remove();
+      }
+      btn.innerText = "🗑️";
+    })
+     
+    
+    .catch(err => {
+      btn.innerText = "🗑️";
+      console.error("❌ Error:", err);
+      alert("⚠️ Something went wrong while deleting the stop.");
+    });
+  }
+
+     // 3. Hide loader once window is loaded
+     window.onload = function () {
+        document.getElementById("loader").style.display = "none";
+      };
+</script>
+
+
     <!-- custom Scripts -->
 
     <!-- plugins:js -->

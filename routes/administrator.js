@@ -1,4 +1,4 @@
-import express from "express";
+import express, { query } from "express";
 import CORE from "../model/admin.js";
 
 import Bus from "../model/bus.js";
@@ -10,10 +10,24 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { v4 as uuidv4 } from "uuid";
 import generatePassword from "../utils/password.js";
-import { rewind } from "@turf/turf";
+import mongoose from "mongoose";
+import FCM from "../model/FCM.js";
+
 import { create } from "domain";
 
 let router = express.Router();
+
+function generateCustomId(prefix = "ID") {
+  const random = Math.random().toString(36).substring(2, 6).toUpperCase(); // 4 random characters
+  const timestamp = Date.now().toString().slice(-4); // Last 4 digits of timestamp
+  return `${prefix}-${random}${timestamp}`; // Example: CND-A9B32491
+}
+
+function isValidPhone(phone) {
+  // Validates 10-digit numbers that start with 6-9
+  const phoneRegex = /^[6-9]\d{9}$/;
+  return phoneRegex.test(phone);
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,69 +50,94 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
+// checked
 router.get("/addBus", async (req, res) => {
   const user = await CORE.findById(req.user.id);
-  if (!user) {
-    res.clearCookie("authToken"); // clear the correct cookie
-    return res.redirect("/coreLogin");
-  }
+
   res.render("administrator/addBus.ejs", { user });
 });
 
+// checked
 router.post("/addBus", async (req, res) => {
-  const formDataArray = req.body; // The array of objects that was sent in the request body
+  const formDataArray = req.body;
 
   // Separate data by type
   const busData = formDataArray.find((item) => item.type === "bus");
   const driverData = formDataArray.find((item) => item.type === "driver");
   const conductorData = formDataArray.find((item) => item.type === "conductor");
 
-  // Initialize variables for the driver and conductor IDs
-  let driverDocId = null;
-  let conductorDocId = null;
-  let busDocId = null;
-
-  console.log(driverData);
-  console.log(conductorData);
-
   try {
-    if (driverData) {
-      // Create a new driver
-      const newDriver = await Driver.create({
-        driverId: uuidv4(),
-        name: driverData.data.driverName, // Fix variable name mismatch
-        phone: driverData.data.driverPhone, // Fix variable name mismatch
-        licenseNumber: driverData.data.driverLicenseNumber, // Fix variable name mismatch
-        address: driverData.data.driverAddress, // Fix variable name mismatch
-        joiningDate: driverData.data.DriverJoiningDate,
-        password: generatePassword(8),
-        status: "Active", // Default status
-        profilePhoto: "/assets/images/faces/driver.png",
+    // 🔎 Check for existing bus
+    const existingBus = await Bus.findOne({
+      busNumber: busData.data.busNumber,
+    });
+    if (existingBus) {
+      return res.status(409).json({
+        message:
+          "❌ A bus with this bus number already exists. Please use a unique number.",
+        code: "BUS_DUPLICATE",
       });
-
-      driverDocId = newDriver._id; // Store the driver's ID
-      console.log("Driver created successfully:", newDriver);
     }
 
+    // Initialize document IDs
+    let driverDocId = null;
+    let conductorDocId = null;
+    let busDocId = null;
+
+    // 👨‍✈️ Create Driver (if provided)
+
+    let phone = driverData.data.driverPhone;
+
+    if (!isValidPhone(phone)) {
+      return res.status(400).json({
+        message: `❌ Invalid driver phone number. It must be a 10-digit number starting with 6–9.`,
+        code: "INVALID_PHONE",
+      });
+    }
+
+    if (driverData) {
+      const newDriver = await Driver.create({
+        driverId: generateCustomId("DRV"),
+        name: driverData.data.driverName,
+        phone: driverData.data.driverPhone,
+        licenseNumber: driverData.data.driverLicenseNumber,
+        address: driverData.data.driverAddress,
+        joiningDate: driverData.data.DriverJoiningDate,
+        password: generatePassword(8),
+        status: "Active",
+        profilePhoto: "/assets/images/faces/driver.png",
+      });
+      driverDocId = newDriver._id;
+      console.log("✅ Driver created:", newDriver.name);
+    }
+
+    // 🧍 Create Conductor (if provided)
+
+    phone = conductorData.data.conductorPhone;
+
+    if (!isValidPhone(phone)) {
+      return res.status(400).json({
+        message: `❌ Invalid conductor phone number. It must be a 10-digit number starting with 6–9.`,
+        code: "INVALID_PHONE",
+      });
+    }
     if (conductorData) {
-      // Create a new conductor
       const newConductor = await Conductor.create({
-        conductorId: uuidv4(),
-        name: conductorData.data.conductorName, // Fix variable name mismatch
-        phone: conductorData.data.conductorPhone, // Fix variable name mismatch
-        address: conductorData.data.conductorAddress, // Fix variable name mismatch
+        conductorId: generateCustomId("CND"),
+        name: conductorData.data.conductorName,
+        phone: conductorData.data.conductorPhone,
+        address: conductorData.data.conductorAddress,
         joiningDate: conductorData.data.conductorJoiningDate,
-        status: "Active", // Default status
+        status: "Active",
         password: generatePassword(8),
         profilePhoto: "/assets/images/faces/conductor.jpg",
       });
-
-      conductorDocId = newConductor._id; // Store the conductor's ID
-      console.log("Conductor created successfully:", newConductor);
+      conductorDocId = newConductor._id;
+      console.log("✅ Conductor created:", newConductor.name);
     }
 
+    // 🚌 Create Bus
     if (busData) {
-      // Extract bus data
       const {
         busNumber,
         route,
@@ -109,9 +148,8 @@ router.post("/addBus", async (req, res) => {
         stops,
         averageSpeed,
         distanceTravelled,
-      } = busData.data; // Access actual bus data
+      } = busData.data;
 
-      // Create a new bus
       const newBus = await Bus.create({
         busNumber,
         route,
@@ -119,36 +157,47 @@ router.post("/addBus", async (req, res) => {
         status,
         fuelType,
         lastServiced,
-        routeStops: stops, // Storing route stops
-        busDocuments: [], // You can add bus documents if you have them
-        driver: driverDocId, // Add the driver's ID to the bus
-        conductor: conductorDocId, // Add the conductor's ID to the bus
+        routeStops: stops,
+        busDocuments: [],
+        driver: driverDocId,
+        conductor: conductorDocId,
         averageSpeed,
         distanceTravelled,
       });
 
-      busDocId = newBus._id; // Store the bus's ID
-      console.log("Bus created successfully:", newBus);
+      busDocId = newBus._id;
+      console.log("✅ Bus created:", newBus.busNumber);
 
-      // Update the driver and conductor with the bus ID
-      await Driver.findByIdAndUpdate(driverDocId, {
-        assignedBus: busDocId, // Assign the bus to the driver
-      });
+      // 🔄 Link Bus ID to Driver & Conductor
+      if (driverDocId) {
+        await Driver.findByIdAndUpdate(driverDocId, { assignedBus: busDocId });
+      }
 
-      await Conductor.findByIdAndUpdate(conductorDocId, {
-        assignedBus: busDocId, // Assign the bus to the conductor
-      });
+      if (conductorDocId) {
+        await Conductor.findByIdAndUpdate(conductorDocId, {
+          assignedBus: busDocId,
+        });
+      }
     }
 
-    // Respond with a success message
-    return res.json({
-      message: "Bus, Driver, and Conductor created and assigned successfully.",
+    // ✅ Final Response
+    return res.status(201).json({
+      message:
+        "✅ Bus, Driver, and Conductor created and assigned successfully.",
+      code: "SUCCESS",
+      data: {
+        busId: busDocId,
+        driverId: driverDocId,
+        conductorId: conductorDocId,
+      },
     });
   } catch (error) {
-    console.error("Error occurred:", error);
-    return res
-      .status(500)
-      .json({ message: "Error processing data", error: error.message });
+    console.error("❗ Error occurred:", error);
+    return res.status(500).json({
+      message: "⚠️ Internal Server Error while creating records.",
+      error: error.message,
+      code: "SERVER_ERROR",
+    });
   }
 });
 
@@ -203,6 +252,12 @@ router.post("/conductorDocuments/:id", upload.any(), async (req, res) => {
     const { id } = req.params;
     const { paperNames } = req.body;
     const files = req.files;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "❌ Invalid bus ID. Please do not tamper with the URL.",
+        code: "INVALID_ID",
+      });
+    }
 
     console.log(files);
     // Find the conductor and update its documents
@@ -243,6 +298,12 @@ router.post(
   async (req, res) => {
     try {
       const { id } = req.params;
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({
+          message: "❌ Invalid bus ID. Please do not tamper with the URL.",
+          code: "INVALID_ID",
+        });
+      }
 
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
@@ -259,6 +320,26 @@ router.post(
       const relativePath = fullPath.split("public")[1];
       conductor.profilePhoto = relativePath;
       await conductor.save();
+
+      const io = req.app.get("io");
+      const queryBusId = conductor.assignedBus;
+
+      for (const [socketId, socket] of io.sockets.sockets) {
+        const query = socket.handshake?.query;
+        const connectedBusId = query?.liveBusId;
+        const role = query?.role;
+
+        if (!connectedBusId || !role) {
+          continue;
+        }
+
+        if (connectedBusId === String(queryBusId) && role === "conductor") {
+          socket.disconnect(true);
+        }
+      }
+      if (!conductor) {
+        return res.status(404).json({ message: "Conductor not found" });
+      }
 
       console.log("File uploaded:", req.file);
 
@@ -277,6 +358,12 @@ router.post("/conductorRow/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body; // Get all fields from req.body
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "❌ Invalid bus ID. Please do not tamper with the URL.",
+        code: "INVALID_ID",
+      });
+    }
 
     // Fetch conductor by ID and update
     const conductor = await Conductor.findByIdAndUpdate(id, updateData, {
@@ -284,6 +371,22 @@ router.post("/conductorRow/:id", async (req, res) => {
       runValidators: true, // Ensures validation rules are applied
     });
 
+    const io = req.app.get("io");
+    const queryBusId = conductor.assignedBus;
+
+    for (const [socketId, socket] of io.sockets.sockets) {
+      const query = socket.handshake?.query;
+      const connectedBusId = query?.liveBusId;
+      const role = query?.role;
+
+      if (!connectedBusId || !role) {
+        continue;
+      }
+
+      if (connectedBusId === String(queryBusId) && role === "conductor") {
+        socket.disconnect(true);
+      }
+    }
     if (!conductor) {
       return res.status(404).json({ message: "Conductor not found" });
     }
@@ -297,13 +400,17 @@ router.post("/conductorRow/:id", async (req, res) => {
   }
 });
 
-// Driver Related End Point
-
 router.post("/driverDocuments/:id", upload.any(), async (req, res) => {
   try {
     const { id } = req.params;
     const { paperNames } = req.body;
     const files = req.files;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "❌ Invalid bus ID. Please do not tamper with the URL.",
+        code: "INVALID_ID",
+      });
+    }
 
     const documentNames = Array.isArray(paperNames) ? paperNames : [paperNames];
 
@@ -337,6 +444,12 @@ router.post(
   async (req, res) => {
     try {
       const { id } = req.params;
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({
+          message: "❌ Invalid bus ID. Please do not tamper with the URL.",
+          code: "INVALID_ID",
+        });
+      }
 
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
@@ -354,6 +467,23 @@ router.post(
       conductor.profilePhoto = relativePath;
       await conductor.save();
 
+      const io = req.app.get("io");
+      const queryBusId = conductor.assignedBus;
+
+      for (const [socketId, socket] of io.sockets.sockets) {
+        const query = socket.handshake?.query;
+        const connectedBusId = query?.liveBusId;
+        const role = query?.role;
+
+        if (!connectedBusId || !role) {
+          continue;
+        }
+
+        if (connectedBusId === String(queryBusId) && role === "driver") {
+          socket.disconnect(true);
+        }
+      }
+
       console.log("File uploaded:", req.file);
 
       // Redirect user after successful upload
@@ -370,46 +500,118 @@ router.post(
 router.post("/driverRow/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body; // Get all fields from req.body
 
-    // Fetch conductor by ID and update
-    const conductor = await Driver.findByIdAndUpdate(id, updateData, {
-      new: true, // Returns updated document
-      runValidators: true, // Ensures validation rules are applied
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "❌ Invalid bus ID. Please do not tamper with the URL.",
+        code: "INVALID_ID",
+      });
+    }
+    const updateData = req.body;
+
+    console.log("📥 Update request received for driver ID:", id);
+    console.log("🛠️ Update data:", updateData);
+
+    // Update driver
+    const driver = await Driver.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true,
     });
 
-    if (!conductor) {
-      return res.status(404).json({ message: "Conductor not found" });
+    if (!driver) {
+      console.log("❌ Driver not found in DB.");
+      return res.status(404).json({ message: "Driver not found" });
     }
 
-    res.redirect(
-      `/tmu/administrator/settings/conductorDriver?driverId=${conductor._id}`
+    const io = req.app.get("io");
+    const queryBusId = driver.assignedBus;
+
+    for (const [socketId, socket] of io.sockets.sockets) {
+      const query = socket.handshake?.query;
+      const connectedBusId = query?.liveBusId;
+      const role = query?.role;
+
+      if (!connectedBusId || !role) {
+        continue;
+      }
+
+      if (connectedBusId === String(queryBusId) && role === "driver") {
+        socket.disconnect(true);
+      }
+    }
+
+    // Redirect after disconnect
+    return res.redirect(
+      `/tmu/administrator/settings/conductorDriver?driverId=${driver._id}`
     );
   } catch (error) {
-    console.error("Error updating conductor:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error("🔥 Error in driver update and socket logic:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 });
 
 // Bus Related Route
 
+// let's write down fucntion to disconnect it from server when it is updated
+
+function disConnect(req, busId) {
+  // ✅ Disconnect relevant sockets
+  const io = req.app.get("io");
+
+  for (const [socketId, socket] of io.sockets.sockets) {
+    const queryBusId = socket.handshake.query?.liveBusId;
+
+    if (queryBusId && queryBusId === busId.toString()) {
+      socket.disconnect(true);
+      console.log(
+        `🔌 Disconnected socket ${socketId} for busId: ${queryBusId}`
+      );
+    }
+  }
+}
+
 router.get("/busEntire/:id", async (req, res) => {
   try {
     const user = await CORE.findById(req.user.id);
-    if (!user) {
-      res.clearCookie("authToken"); // clear the correct cookie
-      return res.redirect("/coreLogin");
-    }
     const { id } = req.params;
 
+    // Check if ID is a valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "❌ Invalid bus ID. Please do not tamper with the URL.",
+        code: "INVALID_ID",
+      });
+    }
+
     const bus = await Bus.findById(id);
+    if (!bus) {
+      return res.status(404).json({
+        message: "🚫 No bus found with the given ID.",
+        code: "BUS_NOT_FOUND",
+      });
+    }
 
     return res.render("administrator/bus.ejs", { bus, user });
-  } catch (error) {}
+  } catch (error) {
+    console.error("Error fetching bus:", error);
+    return res.status(500).json({
+      message: "🛑 Server Error. Please try again later.",
+      code: "SERVER_ERROR",
+    });
+  }
 });
+
 router.post("/busEntire/:id", async (req, res) => {
   try {
     const { id } = req.params;
+    // Check if ID is a valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "❌ Invalid bus ID. Please do not tamper with the URL.",
+        code: "INVALID_ID",
+      });
+    }
+
     const {
       stops, // this should be an array of stop objects
       ...busData
@@ -458,6 +660,7 @@ router.post("/busEntire/:id", async (req, res) => {
 
     // 3. Save the updated bus document
     await bus.save();
+    disConnect(req, bus._id);
 
     return res.json({ message: "Bus updated successfully", bus });
   } catch (error) {
@@ -466,9 +669,71 @@ router.post("/busEntire/:id", async (req, res) => {
   }
 });
 
+router.delete("/deleteStop/:busId/:stopId", async (req, res) => {
+  const { busId, stopId } = req.params;
+
+  // Validate IDs
+  if (
+    !mongoose.Types.ObjectId.isValid(busId) ||
+    !mongoose.Types.ObjectId.isValid(stopId)
+  ) {
+    return res.status(400).json({
+      message: "❌ Invalid bus or stop ID.",
+      code: "INVALID_ID",
+    });
+  }
+
+  try {
+    const bus = await Bus.findById(busId);
+    if (!bus) {
+      return res.status(404).json({
+        message: "❌ Bus not found.",
+        code: "BUS_NOT_FOUND",
+      });
+    }
+
+    // Check if stop exists in the routeStops array
+    const stopIndex = bus.routeStops.findIndex(
+      (stop) => stop._id.toString() === stopId
+    );
+    if (stopIndex === -1) {
+      return res.status(404).json({
+        message: "❌ Stop not found in this bus route.",
+        code: "STOP_NOT_FOUND",
+      });
+    }
+
+    // Remove the stop
+    bus.routeStops.splice(stopIndex, 1);
+    await bus.save();
+    await FCM.deleteMany({ stopId });
+
+    disConnect(req, bus._id);
+
+    return res.status(200).json({
+      message: "✅ Stop deleted successfully.",
+      code: "SUCCESS",
+    });
+  } catch (error) {
+    console.error("❗ Error deleting stop:", error);
+    return res.status(500).json({
+      message: "🛑 Server error while deleting stop.",
+      error: error.message,
+      code: "SERVER_ERROR",
+    });
+  }
+});
+
 router.post("/busDocuments/:id", upload.any(), async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "❌ Invalid bus ID. Please do not tamper with the URL.",
+        code: "INVALID_ID",
+      });
+    }
     const { paperNames } = req.body;
     const files = req.files;
 
@@ -496,9 +761,66 @@ router.post("/busDocuments/:id", upload.any(), async (req, res) => {
   }
 });
 
+router.post("/delete-bus", async (req, res) => {
+  try {
+    const { busId, password } = req.body;
+
+    if (!busId || !password) {
+      return res.json({ message: "⚠️ Missing bus ID or password." });
+    }
+
+    const user = await CORE.findById(req.user.id).select("password");
+    if (!user) {
+      return res.json({ message: "🚫 User not found." });
+    }
+
+    if (password !== user.password) {
+      return res.json({ message: "❌ Incorrect password." });
+    }
+
+    // ✅ Fetch the bus and its driver/conductor IDs
+    const bus = await Bus.findById(busId).select("driver conductor");
+
+    if (!bus) {
+      return res.json({ message: "🚫 Bus not found or already deleted." });
+    }
+
+    const driverId = bus.driver;
+    const conductorId = bus.conductor;
+
+    // ✅ Delete the bus
+    await Bus.findByIdAndDelete(busId);
+
+    // ✅ Delete driver and conductor if they exist
+    if (driverId) await Driver.findByIdAndDelete(driverId);
+    if (conductorId) await Conductor.findByIdAndDelete(conductorId);
+    disConnect(req, bus._id);
+
+    return res.status(201).json({
+      success: true,
+      message:
+        "✔️ Bus, driver, and conductor deleted successfully. All live sockets disconnected.",
+    });
+  } catch (err) {
+    console.error("❗ Server error while deleting bus:", err);
+    return res
+      .status(500)
+      .json({ message: "❗ Internal Server Error. Please try again later." });
+  }
+});
+
 router.get("/deleteBusDocument/:docId/:busId", async (req, res) => {
   try {
     const { docId, busId } = req.params;
+    if (
+      !mongoose.Types.ObjectId.isValid(busId) ||
+      !mongoose.Types.ObjectId.isValid(docId)
+    ) {
+      return res.status(400).json({
+        message: "❌ Invalid bus or doc ID.",
+        code: "INVALID_ID",
+      });
+    }
 
     // Find the bus
     const bus = await Bus.findById(busId);
@@ -541,6 +863,12 @@ router.get("/deleteBusDocument/:docId/:busId", async (req, res) => {
 router.post("/busIcon/:id", upload.single("iconPhoto"), async (req, res) => {
   try {
     const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "❌ Invalid bus ID. Please do not tamper with the URL.",
+        code: "INVALID_ID",
+      });
+    }
 
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
@@ -559,7 +887,7 @@ router.post("/busIcon/:id", upload.single("iconPhoto"), async (req, res) => {
     await bus.save();
 
     console.log("File uploaded:", req.file);
-
+    disConnect(req, bus._id);
     // Redirect user after successful upload
     res.redirect(`/tmu/administrator/settings/busEntire/${bus._id}`);
   } catch (error) {
@@ -572,6 +900,13 @@ router.post("/busImages/:id", upload.any(), async (req, res) => {
   try {
     // Get the bus ID from the route params
     const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "❌ Invalid bus ID. Please do not tamper with the URL.",
+        code: "INVALID_ID",
+      });
+    }
 
     // Get the uploaded files from the request
     const uploadedFiles = req.files;
@@ -607,6 +942,13 @@ router.post("/busImages/:id", upload.any(), async (req, res) => {
 router.get("/deleteImage/:index/:busId", async (req, res) => {
   try {
     const { index, busId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(busId)) {
+      return res.status(400).json({
+        message: "❌ Invalid bus ID. Please do not tamper with the URL.",
+        code: "INVALID_ID",
+      });
+    }
 
     // Find the bus
     const bus = await Bus.findById(busId);
@@ -652,6 +994,15 @@ router.get("/deleteImage/:index/:busId", async (req, res) => {
 router.get("/deleteDriverDocument/:docId/:userId", async (req, res) => {
   try {
     const { docId, userId } = req.params;
+    if (
+      !mongoose.Types.ObjectId.isValid(userId) ||
+      !mongoose.Types.ObjectId.isValid(docId)
+    ) {
+      return res.status(400).json({
+        message: "❌ Invalid userId or doc ID.",
+        code: "INVALID_ID",
+      });
+    }
 
     // Find the bus
     const user = await Driver.findById(userId);
@@ -695,6 +1046,15 @@ router.get("/deleteDriverDocument/:docId/:userId", async (req, res) => {
 router.get("/deleteConductorDocument/:docId/:userId", async (req, res) => {
   try {
     const { docId, userId } = req.params;
+    if (
+      !mongoose.Types.ObjectId.isValid(userId) ||
+      !mongoose.Types.ObjectId.isValid(docId)
+    ) {
+      return res.status(400).json({
+        message: "❌ Invalid userId or doc ID.",
+        code: "INVALID_ID",
+      });
+    }
 
     // Find the bus
     const user = await Conductor.findById(userId);
@@ -736,25 +1096,34 @@ router.get("/deleteConductorDocument/:docId/:userId", async (req, res) => {
   }
 });
 
-
-
-// Track Route
-
-router.get("/tracker", async (req, res) => {
-  const user = await CORE.findById(req.user.id);
-
-  if (user) {
-    return res.render("administrator/liveViews.ejs", { user });
-  } else {
-    res.clearCookie("authToken"); // clear the correct cookie
-    return res.redirect("/coreLogin");
-  }
-});
+// All About Stream
 
 router.get("/liveStream/:id", async (req, res) => {
-  let bus = await Bus.findById(req.params.id);
+  try {
+    // Step 1: Validate bus ID
+    const busId = req.params.id;
+    if (!mongoose.Types.ObjectId.isValid(busId)) {
+      return res.status(400).send("❌ Invalid bus ID");
+    }
 
-  return res.render("administrator/busStream.ejs", { bus });
+    // Step 2: Validate user (administrator)
+    const user = await CORE.findById(req.user.id);
+    if (!user) {
+      res.clearCookie("authToken");
+      return res.redirect("/coreLogin");
+    }
+
+    // Step 3: Fetch bus
+    const bus = await Bus.findById(busId);
+    if (!bus) {
+      return res.status(404).send("❌ Bus not found");
+    }
+
+    return res.render("administrator/busStream.ejs", { user, bus });
+  } catch (error) {
+    console.error("🚨 Error in /liveStream:", error.message);
+    return res.status(500).send("❌ Server error occurred");
+  }
 });
 
 // Regarding Admin
@@ -762,16 +1131,10 @@ router.get("/liveStream/:id", async (req, res) => {
 router.get("/addAdmin", async (req, res) => {
   try {
     const admins = await CORE.find({ role: "admin" });
-    // console.log(admins);
 
     const user = await CORE.findById(req.user.id);
 
-    if (user) {
-      return res.render("administrator/addAdmin.ejs", { admins, user });
-    } else {
-      res.clearCookie("authToken"); // clear the correct cookie
-      return res.redirect("/coreLogin");
-    }
+    return res.render("administrator/addAdmin.ejs", { admins, user });
   } catch (error) {
     console.error("Error fetching admins:", error);
     return res
@@ -798,7 +1161,7 @@ router.post("/addAdmin", async (req, res) => {
 
     const passwordPlain = generatePassword();
 
-    const adminId = "ADM-" + uuidv4();
+    const adminId = generateCustomId("ADM");
 
     const newAdmin = new CORE({
       email,
@@ -825,6 +1188,13 @@ router.post("/addAdmin", async (req, res) => {
 router.post("/deleteAdmin", async (req, res) => {
   try {
     const { id } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "❌ Invalid admin ID. Please do not tamper with the URL.",
+        code: "INVALID_ID",
+      });
+    }
     const result = await CORE.findByIdAndDelete(id);
 
     if (!result) {
@@ -837,7 +1207,5 @@ router.post("/deleteAdmin", async (req, res) => {
     return res.status(500).json({ done: false, message: "Server error" });
   }
 });
-
-// particular bus live preview
 
 export { router as administratorRouter };

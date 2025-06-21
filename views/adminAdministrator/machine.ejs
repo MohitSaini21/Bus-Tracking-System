@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Routing Machine</title>
     <style>
-      html, body {
+      html,
+      body {
         margin: 0;
         padding: 0;
         height: 100%;
@@ -18,71 +19,84 @@
         width: 100vw;
       }
     </style>
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7"
+      crossorigin="anonymous"
+    />
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-k6d4wzSIapyDyv1kpU366/PK5hCdSbCRGRCMv+eplOQJWyd1fbcAu9OCUj5zNLiq"
+      crossorigin="anonymous"
+    ></script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
   </head>
   <body>
     <div id="map"></div>
 
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+
+    <script src="https://unpkg.com/leaflet.marker.slideto/leaflet.marker.slideto.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
+    <script src="https://unpkg.com/leaflet.marker.slideto/leaflet.marker.slideto.js"></script>
     <script>
-           const bus = <%- JSON.stringify(bus) %>;
+      // Get data from server
+      const bus = <%- JSON.stringify(bus) %>;
+      const busLog = <%- JSON.stringify(busLog) %>;
 
-// Ensure 'bus' is passed correctly from the server
+      // Initialize Map
+      const map = L.map("map").setView([28.82347, 78.66076], 15);
 
+      // Add Google Tile Layer
+      const googleStreets = L.tileLayer(
+        "http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+        {
+          maxZoom: 20,
+          subdomains: ["mt0", "mt1", "mt2", "mt3"],
+        }
+      );
+      googleStreets.addTo(map);
 
-    var map = L.map("map").setView([51.505, -0.09], 30);
-           let googleStreets = L.tileLayer(
-                                                                        "http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
-                                                                        {
-                                                                          maxZoom: 20,
-                                                                          subdomains: ["mt0", "mt1", "mt2", "mt3"],
-                                                                        }
-                                                                      );
+      // Define Start and End (Expected Path)
+      const startLatLng = L.latLng(busLog.path[0].lat, busLog.path[0].lon);
+      const endLatLng = L.latLng(busLog.path[busLog.path.length-1].lat,busLog.path[busLog.path.length-1].lon); // hardcoded last stop or adjust if needed
 
+      // Add Expected Start/End Markers
+      L.marker(startLatLng, { title: "End" }).addTo(map).bindPopup("End");
+      L.marker(endLatLng, { title: "Start" }).addTo(map).bindPopup("Start");
 
-                                                                      googleStreets.addTo(map)
+      // Draw Expected Route (Blue Line)
+      
+      L.Routing.control({
+        waypoints: [startLatLng, endLatLng],
+        routeWhileDragging: false,
+        draggableWaypoints: false,
+        createMarker: () => null, // No extra markers
+        show: false,
+        addWaypoints: false,
+        lineOptions: {
+          styles: [{ color: "blue", opacity: 0.7, weight: 4 }] // Blue solid line
+        }
+      }).addTo(map);
 
-// Create fixed markers at start and end
-const startLatLng = L.latLng(bus.routeStops[0].latitude,bus.routeStops[0].longitude);
-const endLatLng = L.latLng(28.82347, 78.66076);
-
-L.marker(startLatLng, { title: "Start Point" ,}).addTo(map).bindPopup("Start").openPopup();
-L.marker(endLatLng, { title: "End Point" }).addTo(map).bindPopup("End");
-
-let animatedMarker = L.marker(startLatLng, {
-icon: L.icon({
-iconUrl: "/public/newBusIcon.png", // Corrected icon URL
-iconSize: [32, 32], // Adjust icon size if necessary
-iconAnchor: [16, 16], // Adjust anchor point if needed
-popupAnchor: [0, -16] // Optional: adjust popup position
-})
-}).addTo(map);
-
-// Routing control to get the path
-L.Routing.control({
-waypoints: [startLatLng, endLatLng],
-// addWaypoints: false,
-routeWhileDragging: false,
-draggableWaypoints: false,
-createMarker: () => null, // Prevent Routing plugin from auto-adding markers
-show: false
-}).addTo(map).on("routesfound", function (e) {
-const route = e.routes[0].coordinates;
-
-
-
-route.forEach((coord, index) => {
-setTimeout(() => {
-animatedMarker.slideTo([coord.lat, coord.lng], {
-duration: 1000,
-keepAtCenter: false
-});
-
-
-
-}, 100 * index);
-});
-
-
-});
+      
     </script>
   </body>
 </html>

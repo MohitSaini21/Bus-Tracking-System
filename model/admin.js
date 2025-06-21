@@ -30,6 +30,9 @@ const userSchema = new Schema(
     notificationToken: {
       type: String,
     },
+    isLogged: {
+      type: Boolean,
+    },
     permissions: [String], // optional: custom access flags
   },
   { timestamps: true }
