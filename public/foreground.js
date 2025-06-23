@@ -26,7 +26,7 @@ onMessage(messaging, (payload) => {
     const { title, body } = payload.notification;
 
     // ✅ Formal message creation
-    const formattedMessage = `🔔 ${title}\n\n${body}\n\nकृपया तुरंत ध्यान दें।`;
+    const formattedMessage = `🔔 ${title}\n\n${body}\n\n pls Pay attention।`;
 
     // ✅ Show using alert
     alert(formattedMessage);

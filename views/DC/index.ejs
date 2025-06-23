@@ -147,7 +147,7 @@
             
           <!-- content-wrapper ends -->
           <!-- partial:../../partials/_footer.html -->
-
+          <%- include('./partials/footer.ejs') %>
           
           <!-- partial -->
         </div>
@@ -177,7 +177,7 @@
     <!-- custom Script -->
 
     <script type="module">
-      import { fetchToken, sendTokenToServer } from "/afirebase.js";
+      import { fetchToken, sendTokenToServer } from "/wfirebase.js";
 
       // Helper: Check if a cookie exists
       function getCookie(name) {

@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 
-
 // Schema for route stops with morning and evening timings
 const stopSchema = new mongoose.Schema({
   stopName: {
@@ -17,6 +16,9 @@ const stopSchema = new mongoose.Schema({
     type: String,
   },
   longitude: {
+    type: String,
+  },
+  stopOrder: {
     type: String,
   },
 });
@@ -92,7 +94,5 @@ const busSchema = new mongoose.Schema(
 );
 
 const Bus = mongoose.model("Bus", busSchema);
-
-
 
 export default Bus;

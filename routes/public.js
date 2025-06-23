@@ -278,6 +278,13 @@ router.post(
       const trimmedPassword = password.trim();
 
       let driver = await Driver.findOne({ driverId: trimmedUserId });
+      if (driver.isLogged) {
+        return res.status(400).json({
+          message:
+            "आपका खाता पहले से एक डिवाइस में लॉगिन है। कृपया पहले वहाँ से लॉगआउट करें।",
+        });
+      }
+
       if (driver) {
         if (trimmedPassword === driver.password) {
           const token = generateTokenAndSetCookie(
@@ -286,6 +293,8 @@ router.post(
             driver.role
           );
           if (token) {
+            driver.isLogged = true;
+            await driver.save();
             return res.status(200).json({ success: true });
           }
         } else {
@@ -295,6 +304,13 @@ router.post(
         }
       } else {
         let conductor = await Conductor.findOne({ conductorId: trimmedUserId });
+        if (conductor.isLogged) {
+          return res.status(400).json({
+            message:
+              "आपका खाता पहले से एक डिवाइस में लॉगिन है। कृपया पहले वहाँ से लॉगआउट करें।",
+          });
+        }
+
         if (conductor) {
           if (trimmedPassword === conductor.password) {
             const token = generateTokenAndSetCookie(
@@ -303,6 +319,8 @@ router.post(
               conductor.role
             );
             if (token) {
+              conductor.isLogged = true;
+              await conductor.save();
               return res.status(200).json({ success: true });
             }
           } else {
@@ -375,7 +393,6 @@ router.post("/adminLogin", checkAuthHome, limiter, async (req, res) => {
     user.isLogged = true;
     await user.save();
 
-  
     generateTokenAndSetCookie(res, user._id, user.role);
 
     return res.status(200).json({
@@ -432,5 +449,9 @@ router.post("/complaints", async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 });
+
+
+
+
 
 export { router as publicRouter };

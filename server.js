@@ -45,7 +45,7 @@ const app = express();
 
 app.use(cookieParser());
 // Enable trust proxy
-app.set("trust proxy", true);
+// app.set("trust proxy", true);
 
 // Middleware and Settings
 // Set EJS as the view engine (Corrected 'view engine' typo)
@@ -195,12 +195,10 @@ function processQueue(busId) {
           lastEvaluated[msg.busId] = msg.updatedBusObject;
           if (adminConnectionsBus[msg.busId]) {
             // Iterate through each connected admin socket
-            adminConnectionsBus[msg.busId].forEach((socket) => {
-              if (socket && socket.emit) {
-                socket.emit("busUpdate", {
-                  busObject: lastEvaluated[msg.busId],
-                });
-              }
+            adminConnectionsBus[msg.busId].forEach((socketId) => {
+              io.to(socketId).emit("busUpdate", {
+                busObject: lastEvaluated[msg.busId],
+              });
             });
           }
 
@@ -251,8 +249,8 @@ io.use((socket, next) => {
   try {
     const query = socket.handshake.query;
 
-    // ✅ Allow public connections if no admin identifiers are present
-    if (!query.adminId && !query.administratorId) {
+    // ✅ Allow public connections if no admin identifiers or liveBusid are present
+    if (!query.adminId && !query.administratorId && !query.liveBusId) {
       return next();
     }
 
@@ -274,6 +272,8 @@ io.use((socket, next) => {
       socket.adminId = decoded.id;
     } else if (query.administratorId) {
       socket.administratorId = decoded.id;
+    } else if (query.liveBusId) {
+      socket.liveBusId = query.liveBusId;
     }
 
     return next();
@@ -355,9 +355,9 @@ io.on("connection", (socket) => {
     allAdmins.push(socket.id);
     console.log(allAdmins);
   } else {
-    if (socket.handshake.query.liveBusId) {
+    if (socket.liveBusId) {
       // Bus(driver or conductor Connectiosn)
-      const busId = socket.handshake.query.liveBusId;
+      const busId = socket.liveBusId;
 
       if (busId) {
         if (liveBuses.includes(busId)) {
@@ -375,7 +375,6 @@ io.on("connection", (socket) => {
           console.log(`Bus ${busId} is now live with socket ${socket.id}`);
 
           socket.emit("connectionApproved", "You are now live.");
-          socket.liveBusId = busId; // Store it on socket for disconnect cleanup
         }
       }
     }
@@ -509,8 +508,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("busLocationUpdate", (data) => {
-
-    
     addTask(data);
     lastLocation.set(data.bus._id, data);
 

@@ -3,33 +3,64 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Record Video and Audio</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css"
+    />
+    <title>Document</title>
+    <style>
+      #map {
+        height: 100vh; /* full viewport height */
+        width: 100%; /* full width */
+      }
+    </style>
   </head>
   <body>
-    <p>
-      Lorem ipsum dolor sit amet consectetur adipisicing elit. Atque rem magnam
-      fugiat alias aperiam nulla laborum impedit reiciendis, dignissimos in
-      obcaecati veniam corporis dolore quidem! Repudiandae illum quas adipisci
-      dicta.
-    </p>
+    <div id="map"></div>
 
-    <!-- Video element to display recorded video -->
-    <video id="video" width="640" height="480" autoplay></video>
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
 
+    <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
     <script>
-      // Access the user's webcam and microphone
-      navigator.mediaDevices
-        .getUserMedia({ video: true, audio: true })
-        .then(function (stream) {
-          // Get the video element
-          const videoElement = document.getElementById("video");
-          console.log(stream);
+      var map = L.map("map").setView([51.505, -0.09], 13);
 
-          // Optionally, save the stream or add more functionality (e.g., record, pause, etc.)
-        })
-        .catch(function (error) {
-          console.log("Error accessing media devices.", error);
+      var marker = L.marker([57.74, 11.94])
+        .addTo(map)
+        .bindPopup("A pretty CSS popup.<br> Easily customizable.")
+        .openPopup(); 
+
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      }).addTo(map);
+
+      L.Routing.control({
+        waypoints: [L.latLng(57.74, 11.94), L.latLng(57.6792, 11.949)],
+      })
+        .addTo(map)
+        .on("routesfound", function (e) {
+          e.routes[0].coordinates.forEach((element, index) => {
+            setTimeout(() => {
+              marker.setLatLng([element.lat, element.lng]);
+
+            }, 100 * index);
+          });
         });
+
+      // map.on("click", function (e) {
+      //   console.log(e);
+      // });
     </script>
   </body>
 </html>

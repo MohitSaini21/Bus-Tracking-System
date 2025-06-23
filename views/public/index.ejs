@@ -607,7 +607,7 @@
     <!-- book section -->
     <section class="book_section">
       <div class="form_container">
-        <form>
+        <form id="busForm">
           <div class="row g-3 align-items-center">
             <div class="col-auto">
               <label for="inputPassword6" class="col-form-label"
@@ -626,9 +626,7 @@
             </div>
           </div>
           <br />
-          <button type="button" class="btn btn-outline-primary" onclick="Go()">
-            Go
-          </button>
+          <button type="submit" class="btn btn-outline-primary">Go</button>
         </form>
       </div>
       <div class="img-box text-center">
@@ -807,6 +805,9 @@
     <!-- footer section -->
 
     <script>
+            setTimeout(() => {
+        document.getElementById("loader").style.display = "none";
+      }, 2000); // Just to be extra safe
       function Redirect() {
         const fcmToken = localStorage.getItem("fcmToken");
         if (fcmToken) {
@@ -826,60 +827,57 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/public/js/custom.js"></script>
 
-    <script src="/custom/public.js"></script>
+
+    
     <script type="module">
       import { fetchToken } from "/firebase.js";
-      async function Go() {
-        const input = document.getElementById("busNumber");
-        const inputValue = input.value.trim();
+      document
+        .getElementById("busForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault(); // ✅ Prevent default form submission
 
-        input.value = ""; // Clear the input
+          const input = document.getElementById("busNumber");
+          const inputValue = input.value.trim();
+          input.value = ""; // ✅ Clear the input field
 
-        try {
-          let response = await fetch("/", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ inputValue }),
-          });
-
-          // You can handle response status or JSON parsing here
-          response = await response.json();
-          if (!response.success) {
-            alert(response.message);
-          } else {
-            console.log(response.data);
-
-            localStorage.setItem(
-              "lastSearchBus",
-              JSON.stringify(response.data)
-            );
-
-            appendBuses();
-            window.scrollBy({
-              top: 200,
-              left: 0,
-              behavior: "smooth",
+          try {
+            const res = await fetch("/", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ inputValue }),
             });
+
+            if (!res.ok) {
+              throw new Error(`Server error: ${res.status}`);
+            }
+
+            const response = await res.json();
+
+            if (!response.success) {
+              alert(response.message);
+            } else {
+              console.log(response.data);
+              appendBuses(response.data); // ✅ Make sure this function exists
+
+              window.scrollBy({
+                top: 200,
+                left: 0,
+                behavior: "smooth",
+              });
+            }
+          } catch (error) {
+            alert(
+              "Network error occurred. Please check your internet or try again later."
+            );
+            console.error("Fetch error:", error);
           }
-        } catch (error) {
-          // This block only runs for *network* errors like no connection
-          alert(
-            "Network error occurred. Please check your internet or try again later."
-          );
-          console.error("Fetch error:", error);
-        }
-      }
+        });
 
-      window.Go = Go; // ✅ Makes it available in HTML onclick
-
-      function appendBuses() {
+      function appendBuses(bus) {
         // Clear previous content
         document.getElementById("Buses").innerHTML = "";
-
-        let bus = JSON.parse(localStorage.getItem("lastSearchBus"));
-        console.log(bus);
 
         if (bus) {
           // Create stop options
@@ -896,54 +894,56 @@
           }
 
           let cardHTML = `
-      <div class="card mb-3" style="width: 100%">
-        <div class="row g-0">
-          <div class="col-md-4">  
-            <img src="${
-              bus.busImages && bus.busImages.length > 0 ? bus.busImages[0] : ""
-            }" alt="Bus Image will be uploaded soon" class="img-fluid">
-          </div>
-          <div class="col-md-8">
-            <div class="card-body">
-              <h5 class="card-title">${bus.route}</h5>
-              <a href="/particularBus/${
-                bus._id
-              }"  style="text-decoration: none"  >Track Now</a>
-              <p class="card-text">Bus Number: ${bus.busNumber}</p>
-              <br>
+            <div class="card mb-3" style="width: 100%">
+              <div class="row g-0">
+                <div class="col-md-4">
+                  <img src="${
+                    bus.busImages && bus.busImages.length > 0
+                      ? bus.busImages[0]
+                      : ""
+                  }" alt="Bus Image will be uploaded soon" class="img-fluid">
+                </div>
+                <div class="col-md-8">
+                  <div class="card-body">
+                    <h5 class="card-title">${bus.route}</h5>
+                    <a href="/particularBus/${
+                      bus._id
+                    }"  style="text-decoration: none"  >Track Now</a>
+                    <p class="card-text">Bus Number: ${bus.busNumber}</p>
+                    <br>
 
-              <!-- Button trigger modal -->
-              <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
-                Receive Notification
-              </button>
+                    <!-- Button trigger modal -->
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+                      Receive Notification
+                    </button>
 
-              <!-- Modal -->
-              <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
-                <div class="modal-dialog">
-                  <div class="modal-content">
-                    <div class="modal-header">
-                      <h1 class="modal-title fs-5" id="staticBackdropLabel">Select Stop</h1>
-                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <!-- Modal -->
+                    <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                      <div class="modal-dialog">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="staticBackdropLabel">Select Stop</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+      <div class="modal-body">
+        <div id="stopMap" class="position-relative" style="height: 300px; background: #f0f8ff; border: 1px solid #ccc; border-radius: 10px;">
+          <!-- Markers will be added dynamically here -->
+        </div>
+        <div class="modal-footer mt-3">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" id="informMeBtn" disabled>Inform Me</button>
+        </div>
+      </div>
+
+                        </div>
+                      </div>
                     </div>
-<div class="modal-body">
-  <div id="stopMap" class="position-relative" style="height: 300px; background: #f0f8ff; border: 1px solid #ccc; border-radius: 10px;">
-    <!-- Markers will be added dynamically here -->
-  </div>
-  <div class="modal-footer mt-3">
-    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-    <button type="button" class="btn btn-primary" id="informMeBtn" disabled>Inform Me</button>
-  </div>
-</div>
 
                   </div>
                 </div>
               </div>
-
             </div>
-          </div>
-        </div>
-      </div>
-    `;
+          `;
 
           document.getElementById("Buses").innerHTML = cardHTML;
 
@@ -968,17 +968,17 @@
                 const marker = document.createElement("div");
                 marker.classList.add("map-marker");
                 marker.innerHTML = `
-        <svg viewBox="0 0 24 24">
-          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 
-            0-2.5-1.12-2.5-2.5s1.12-2.5 
-            2.5-2.5 2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
-        </svg>
-      <div class="stop-label">
-  <div class="stop-number">S${index + 1}</div>
-  ${stop.stopName}
-</div>
+              <svg viewBox="0 0 24 24">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38
+                  0-2.5-1.12-2.5-2.5s1.12-2.5
+                  2.5-2.5 2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/>
+              </svg>
+            <div class="stop-label">
+        <div class="stop-number">S${index + 1}</div>
+        ${stop.stopName}
+      </div>
 
-      `;
+            `;
 
                 marker.dataset.stopId = stop._id;
                 marker.style.left = `${x}%`;
@@ -1041,9 +1041,6 @@
           }, 100);
         }
       }
-
-      // Call the function to append buses when needed
-      appendBuses();
 
       async function sendNotificationRequest(stopId, busId) {
         try {
@@ -1125,10 +1122,6 @@
         }
       }
 
-      window.onload = function () {
-        document.getElementById("loader-text").textContent = "loading...";
-        document.getElementById("loader").style.display = "none";
-      };
     </script>
 
     <script>

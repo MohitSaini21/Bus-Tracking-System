@@ -119,13 +119,13 @@ router.post("/api/save-fcm-token", async (req, res) => {
     let user;
     let userType;
 
-    // Try to find Driver
-    user = await Driver.findById(userId);
+    user = await Driver.findOne({ driverId: userId });
+
     if (user) {
       userType = "Driver";
     } else {
       // Try Conductor if not a Driver
-      user = await Conductor.findById(userId);
+      user = await Conductor.findOne({ conductorId: userId });
       if (user) {
         userType = "Conductor";
       }
@@ -200,8 +200,37 @@ router.get("/startStream", checkUserExistenceAndRedirect, async (req, res) => {
   try {
     // Checking the user role and fetching bus details accordingly
     const bus = await getBusDetailsByRole(req.user.role, req.worker._id);
+    const driverMobile = bus.driver.phone;
+    const conductorMobile = bus.conductor.phone;
+
+    // 👥 Fetch admins and superadmins
+    const admins = await CORE.find({
+      role: { $in: ["admin", "administrator"] },
+      isLogged: true, // ✅ Only logged-in users
+      notificationToken: { $exists: true, $ne: "" }, // ✅ Token must exist and not be empty
+    });
 
     if (bus) {
+      // 🚀 Send notification to each
+      for (const admin of admins) {
+        const title = "📡 Live Stream Alert";
+        let message;
+
+        if (admin.role === "admin") {
+          message = `Bus number ${bus.busNumber} has started live streaming.
+Driver: ${driverMobile}, Conductor: ${conductorMobile}.
+
+Please confirm the situation and take necessary actions.`;
+        } else {
+          message = `Bus number ${bus.busNumber} has started live streaming.
+Driver: ${driverMobile}, Conductor: ${conductorMobile}.
+
+As an administrator, please monitor the stream.`;
+        }
+
+        sendNotificationToClient(admin.notificationToken, title, message);
+      }
+
       return res.render("DC/stream.ejs", { bus, user: req.worker }); // Passing user as req.worker
     } else {
       return res.status(404).json({
@@ -244,6 +273,8 @@ router.post(
   async (req, res) => {
     try {
       // ⚠️ चेक करें कि अनुरोध में डेटा है या नहीं
+
+      console.log("compalin has been recieved");
       if (!req.body || !req.body.type || !req.body.incidentTime) {
         return res.status(400).json({
           message: "❌ कृपया सभी आवश्यक जानकारी भरें।",
@@ -265,6 +296,27 @@ router.post(
       });
 
       if (complaint) {
+        // 🚀 Fetch logged-in admins and administrators with tokens
+        const admins = await CORE.find({
+          role: { $in: ["admin", "administrator"] },
+          isLogged: true,
+          notificationToken: { $exists: true, $ne: "" },
+        });
+
+        // 🧾 Determine role and bus number
+        const userRole = req.worker.role; // assuming req.worker is set
+        const submittedBy = userRole === "driver" ? "driver" : "conductor";
+        const busNumber = req.body.busNumber || "unknown";
+
+        // 📢 Notification content
+        const title = "🛠 New Complaint Registered";
+        const message = `A new complaint has been submitted from bus number ${busNumber} by the ${submittedBy}. Please review it.`;
+
+        // 🔔 Send notification to each admin
+        for (const admin of admins) {
+          sendNotificationToClient(admin.notificationToken, title, message);
+        }
+
         return res.status(200).json({
           message: "✅ आपकी शिकायत सफलतापूर्वक दर्ज कर ली गई है। धन्यवाद!",
         });
@@ -311,19 +363,19 @@ router.post("/emergencyAlert", async (req, res) => {
     const driverMobile = bus.driver?.phone || "नहीं मिला";
     const conductorMobile = bus.conductor?.phone || "नहीं मिला";
 
-    // 🧾 Notification content
-    const title = "🛑 आपातकालीन सूचना";
-    const message = `बस संख्या ${busNumber} से आपातकालीन सूचना प्राप्त हुई है। चालक: ${driverMobile}, परिचालक: ${conductorMobile}`;
+    const title = "🛑 Emergency Alert";
+    const message = `An emergency alert has been received from bus number ${busNumber}. Driver: ${driverMobile}, Conductor: ${conductorMobile}`;
 
     // 👥 Fetch admins and superadmins
     const admins = await CORE.find({
       role: { $in: ["admin", "administrator"] },
-      notificationToken: { $exists: true, $ne: "" },
+      isLogged: true, // ✅ Only logged-in users
+      notificationToken: { $exists: true, $ne: "" }, // ✅ Token must exist and not be empty
     });
 
     // 🚀 Send notification to each
     for (const admin of admins) {
-      await sendNotificationToClient(admin.notificationToken, title, message);
+      sendNotificationToClient(admin.notificationToken, title, message);
     }
 
     return res.status(200).json({ message: "✅ सूचना भेज दी गई है।" });
@@ -409,13 +461,37 @@ router.get("/helper", checkUserExistenceAndRedirect, async (req, res) => {
   }
 });
 router.get("/aboutBus", checkUserExistenceAndRedirect, async (req, res) => {
-  const bus = await getBusDetailsByRole(req.user.role, req.worker.id);
+  const bus = await getBusDetailsByRole(req.user.role, req.worker._id);
   return res.render("DC/bus.ejs", { user: req.worker, bus: bus });
 });
 
-router.get("/logout", (req, res) => {
-  res.clearCookie("authToken"); // clear the correct cookie
-  return res.redirect("/driverConductorLogin");
+router.get("/logout", async (req, res) => {
+  try {
+    if (req.user.role === "driver") {
+      await Driver.findOneAndUpdate(
+        { driverId: req.user.id },
+        {
+          isLogged: false,
+          notificationToken: "",
+        }
+      );
+    } else if (req.user.role === "conductor") {
+      await Conductor.findOneAndUpdate(
+        { conductorId: req.user.id },
+        {
+          isLogged: false,
+          notificationToken: "",
+        }
+      );
+    }
+
+    res.clearCookie("authToken");
+    res.clearCookie("fcmTokenExpiry");
+    return res.redirect("/driverConductorLogin");
+  } catch (error) {
+    console.error("Logout error:", error);
+    return res.status(500).send("Something went wrong during logout.");
+  }
 });
 
 router.get("/meterReading", checkUserExistenceAndRedirect, async (req, res) => {
@@ -423,18 +499,19 @@ router.get("/meterReading", checkUserExistenceAndRedirect, async (req, res) => {
     const busId = req.worker.assignedBus;
 
     const currentIST = moment().tz("Asia/Kolkata");
-    const todayDate = currentIST.clone().startOf("day").toDate(); // ✅ Used only for DB
-    const targetTime = currentIST.clone().startOf("day").add(14, "hours"); // 2 PM IST
 
+    const todayStart = currentIST.clone().startOf("day").toDate(); // Start of the day in IST
+    const todayEnd = currentIST.clone().endOf("day").toDate(); // End of the day in IST
+
+    const targetTime = currentIST.clone().startOf("day").add(14, "hours"); // 2 PM IST
     const isMorning = currentIST.hour() < 14;
-    console.log("Current hour:", currentIST.hour());
-    console.log("isMorning:", isMorning);
 
     let remainingTime = null;
 
+    // ✅ Updated: Use createdAt instead of `date` field
     const activity = await BusActivityLog.findOne({
       bus: busId,
-      date: todayDate,
+      createdAt: { $gte: todayStart, $lte: todayEnd },
     });
 
     if (
@@ -443,17 +520,12 @@ router.get("/meterReading", checkUserExistenceAndRedirect, async (req, res) => {
       activity.morningSnap.image &&
       activity.morningSnap.reading
     ) {
-      console.log("Current IST:", currentIST.format());
-      console.log("Target 2PM IST:", targetTime.format());
-      console.log("Raw diff ms:", targetTime.diff(currentIST));
-
-      const diffMs = targetTime.diff(currentIST); // ✅ How much time left till 2PM?
+      const diffMs = targetTime.diff(currentIST);
 
       if (diffMs > 0) {
         const duration = moment.duration(diffMs);
-
         remainingTime = {
-          hours: Math.floor(duration.asHours()), // ✅ Now will show correct hours
+          hours: Math.floor(duration.asHours()),
           minutes: duration.minutes(),
           seconds: duration.seconds(),
         };
@@ -485,8 +557,11 @@ router.post("/meterReading", upload.single("meterPhoto"), async (req, res) => {
         .json({ message: "कृपया सभी आवश्यक जानकारी भरें।" });
     }
 
-    const currentIST = moment().tz("Asia/Kolkata"); // ✅ पूरा समय
-    const todayDate = currentIST.clone().startOf("day").toDate(); // ✅ सिर्फ तारीख
+    // Get start and end of the day in IST
+
+    const currentIST = moment().tz("Asia/Kolkata");
+    const todayStart = moment().tz("Asia/Kolkata").startOf("day").toDate();
+    const todayEnd = moment().tz("Asia/Kolkata").endOf("day").toDate();
 
     const isMorning = currentIST.hour() < 14;
     console.log("Current hour:", currentIST.hour());
@@ -495,11 +570,11 @@ router.post("/meterReading", upload.single("meterPhoto"), async (req, res) => {
     // एक्टिविटी लॉग ढूँढो या नया बनाओ
     let activity = await BusActivityLog.findOne({
       bus: busId,
-      date: todayDate,
+      createdAt: { $gte: todayStart, $lte: todayEnd },
     });
 
     if (!activity) {
-      activity = new BusActivityLog({ bus: busId, date: todayDate });
+      activity = new BusActivityLog({ bus: busId });
     }
 
     // इमेज का सिर्फ रिलेटिव पाथ स्टोर करो

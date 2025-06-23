@@ -27,8 +27,11 @@ const driverSchema = new mongoose.Schema({
   },
   profilePhoto: {
     type: String, // URL or path to the driver's profile photo
+    default: "/assets/images/faces/driver.png",
   },
-
+  isLogged: {
+    type: Boolean,
+  },
   address: {
     type: String,
   },

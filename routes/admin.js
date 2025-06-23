@@ -166,13 +166,16 @@ router.get("/CDB/:busId", async (req, res) => {
 
   // 1️⃣ Validate MongoDB ObjectId
   if (!mongoose.Types.ObjectId.isValid(busId)) {
-    return res.status(400).json({ message: "❌ Invalid complaint ID" });
+    return res.status(400).json({ message: "❌ Invalid bus ID" });
   }
 
   const bus = await Bus.findById(busId) // ❌ Problem here
     .populate("driver")
     .populate("conductor")
     .lean();
+  if (!bus) {
+    return res.json({ message: "bus not found" });
+  }
 
   const user = await CORE.findById(req.user.id);
 
@@ -218,7 +221,7 @@ router.get("/particularBusLive/:id", async (req, res) => {
   // only fetch name and phone of conductor
 
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-    return res.status(400).json({ message: "❌ Invalid complaint ID" });
+    return res.status(400).json({ message: "❌ Invalid bus ID" });
   }
 
   const user = await CORE.findById(req.user.id);
@@ -321,7 +324,7 @@ router.get("/particularHistory/:id", async (req, res) => {
     const id = req.params.id;
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "❌ Invalid complaint ID" });
+      return res.status(400).json({ message: "❌ Invalid Bus ID" });
     }
 
     const user = await CORE.findById(req.user.id);
@@ -334,30 +337,34 @@ router.get("/particularHistory/:id", async (req, res) => {
     if (!bus) return res.status(404).send("Bus not found");
 
     const requestedDate = req.query.date;
-
     let busLog = null;
 
     if (requestedDate) {
-      const startOfDay = moment(requestedDate, "YYYY-MM-DD").startOf("day");
-      const endOfDay = moment(requestedDate, "YYYY-MM-DD").endOf("day");
+      // Search by date (00:00 to 23:59)
+      const startOfDay = moment(requestedDate, "YYYY-MM-DD")
+        .startOf("day")
+        .toDate();
+      const endOfDay = moment(requestedDate, "YYYY-MM-DD")
+        .endOf("day")
+        .toDate();
 
       busLog = await BusActivityLog.findOne({
-        bus: req.params.id,
-        date: { $gte: startOfDay.toDate(), $lte: endOfDay.toDate() },
+        bus: id,
+        createdAt: { $gte: startOfDay, $lte: endOfDay },
       });
     } else {
-      busLog = await BusActivityLog.findOne({ bus: req.params.id }).sort({
-        date: -1,
+      // No date provided — get the latest
+      busLog = await BusActivityLog.findOne({ bus: id }).sort({
+        createdAt: -1,
       });
     }
-    console.log(busLog);
 
     return res.render("adminAdministrator/history.ejs", {
       user,
       bus,
-      busLog, // single log object
+      busLog, // will be null if not found
       requestedDate: requestedDate || null,
-      moment, // ✅ pass moment to EJS
+      moment,
     });
   } catch (err) {
     console.error("GET /particularHistory error:", err.message);
@@ -367,53 +374,93 @@ router.get("/particularHistory/:id", async (req, res) => {
 
 // Regardin Routing machines
 
-router.get("/routingMachine/:id", async (req, res) => {
+router.get("/routingMachine", async (req, res) => {
   try {
     const user = await CORE.findById(req.user.id);
+
     if (!user) {
       res.clearCookie("authToken");
       return res.redirect("/coreLogin");
     }
 
-    const bus = await Bus.findById(req.params.id);
-    if (!bus) return res.status(404).send("Bus not found");
+    const { logId, busId } = req.query;
 
-    const requestedDate = req.query.date;
+    if (logId) {
+      // Case: BusActivityLog route rendering
+      const log = await BusActivityLog.findById(logId).populate(
+        "bus",
+        "iconPhoto"
+      );
+      if (!log) {
+        return res
+          .status(404)
+          .json({ message: "❌ No log found with this ID." });
+      }
 
-    let busLog = null;
+      const path = log.path.map((point) => ({
+        lat: point.lat,
+        lng: point.lon, // lon → lng for Leaflet
+      }));
 
-    if (requestedDate) {
-      const startOfDay = moment(requestedDate, "YYYY-MM-DD").startOf("day");
-      const endOfDay = moment(requestedDate, "YYYY-MM-DD").endOf("day");
+      return res.render("adminAdministrator/machine.ejs", {
+        coordinates: path,
+        iconUrl: log.bus.iconPhoto,
+      });
+    } else if (busId) {
+      // Case: Bus route rendering
+      const bus = await Bus.findById(busId);
+      if (!bus) {
+        return res
+          .status(404)
+          .json({ message: "❌ No bus found with this ID." });
+      }
 
-      busLog = await BusActivityLog.findOne({
-        bus: req.params.id,
-        date: { $gte: startOfDay.toDate(), $lte: endOfDay.toDate() },
+      const route = bus.routeStops
+        .map((stop) => ({
+          order: parseInt(stop.stopOrder),
+          lat: parseFloat(stop.latitude),
+          lng: parseFloat(stop.longitude),
+        }))
+        .filter(
+          (point) =>
+            !isNaN(point.lat) && !isNaN(point.lng) && !isNaN(point.order)
+        )
+        .sort((a, b) => a.order - b.order)
+        .map(({ lat, lng }) => ({ lat, lng })); // ✅ Remove `order`
+
+      console.log(route);
+
+      return res.render("adminAdministrator/machine.ejs", {
+        coordinates: route,
+        iconUrl: bus.iconPhoto,
+      });
+    } else {
+      return res.status(400).json({
+        message: "❌ Invalid URL: Provide either logId or busId in query.",
       });
     }
-
-    return res.render("adminAdministrator/machine.ejs", {
-      user,
-      bus,
-      busLog,
-    });
-  } catch (err) {
-    console.log(err.message);
-    return res.status(500).send("Internal Server Erro");
+  } catch (error) {
+    console.error("Error in /routingMachine:", error);
+    res.status(500).json({ message: "❌ Internal server error" });
   }
 });
 
 router.get("/logout", async (req, res) => {
   try {
     if (req.user.id) {
-      await CORE.findByIdAndUpdate(req.user.id, { isLogged: false });
+      await CORE.findByIdAndUpdate(req.user.id, {
+        isLogged: false,
+        notificationToken: "",
+      });
     }
 
     res.clearCookie("authToken");
+    res.clearCookie("fcmTokenExpiry"); // clear the correct cookie
     return res.redirect("/coreLogin");
   } catch (error) {
     console.error("Logout error:", error);
     res.clearCookie("authToken");
+    res.clearCookie("fcmTokenExpiry"); // clear the correct cookie
     return res.redirect("/coreLogin"); // safe fallback
   }
 });

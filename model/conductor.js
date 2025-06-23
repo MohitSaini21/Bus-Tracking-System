@@ -26,6 +26,7 @@ const conductorSchema = new mongoose.Schema({
   },
   profilePhoto: {
     type: String, // URL or path to the conductor's profile photo
+    default: "/assets/images/faces/conductor.jpg",
   },
 
   address: {
@@ -46,6 +47,9 @@ const conductorSchema = new mongoose.Schema({
   },
   notificationToken: {
     type: String,
+  },
+  isLogged: {
+    type: Boolean,
   },
   role: {
     type: String,

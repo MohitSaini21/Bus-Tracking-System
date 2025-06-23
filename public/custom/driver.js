@@ -95,18 +95,19 @@ setTimeout(() => {
 </div>
 
   `;
-    let thirdCloumn = `<div class="col-md-6 grid-margin stretch-card" id="videoTag">
-  <div class="card">
-    <div class="card-body p-0"> <!-- Remove padding for full container usage -->
+    let thirdCloumn = `<div class="col-md-12 grid-margin stretch-card" id="videoTag" style="height: 70vh;">
+  <div class="card h-100">
+    <div class="card-body p-0" style="height: 100%;">
       <iframe
         id="videoIframe"
-        src="/locationBus/${bus._id}"  <!-- Replace with actual source -->
+        src="/locationBus/${bus._id}"
         frameborder="0"
         style="width: 100%; height: 100%;"
         allow="autoplay; fullscreen"></iframe>
     </div>
   </div>
 </div>
+
 `;
     const tempDiv = document.createElement("div");
     tempDiv.innerHTML = col.trim();
@@ -178,10 +179,9 @@ setTimeout(() => {
       console.error("📡 GPS त्रुटि:", error.message);
 
       const errorMessage = `📡 GPS त्रुटि: कृपया सुनिश्चित करें कि आपने लोकेशन सेवा चालू की है और इस वेबसाइट को अनुमति दी है।`;
-      safeSpeakHindi("कृपया लोकेशन ऑन करें और वेबसाइट को अनुमति दें।");
       alert(errorMessage);
-
       window.location.href = "/DC";
+      safeSpeakHindi("कृपया लोकेशन ऑन करें और वेबसाइट को अनुमति दें।");
     },
     {
       enableHighAccuracy: true,

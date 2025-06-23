@@ -196,7 +196,8 @@
             <div class="col-auto">
 
               <p>
-                If the live bus location is not available, you will be provided with the last known location of the bus. Please ensure this data is used responsibly and securely.
+           
+                
                 <br />
                 <strong>Powered by:</strong> Mohit Saini
                 <br />
@@ -308,8 +309,8 @@
     <script src="/public/js/jquery-3.4.1.min.js"></script>
     <script src="/public/js/bootstrap.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
-    <script src="/public/js/custom.js"></script>
-
+   
+    
     <script
       src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
       integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
@@ -341,7 +342,17 @@
                                                                                                   googleStreets.addTo(map)
 
                  // Create fixed markers at start and end
-            const startLatLng = L.latLng(bus.routeStops[0].latitude,bus.routeStops[0].longitude);
+                 const orderedStops = bus.routeStops
+  .map(stop => ({
+    order: parseInt(stop.stopOrder),
+    latitude: parseFloat(stop.latitude),
+    longitude: parseFloat(stop.longitude)
+  }))
+  .filter(stop => !isNaN(stop.order) && !isNaN(stop.latitude) && !isNaN(stop.longitude))
+  .sort((a, b) => a.order - b.order);
+
+const startLatLng = L.latLng(orderedStops[0].latitude, orderedStops[0].longitude);
+
             const endLatLng = L.latLng(28.82347, 78.66076);
 
             L.marker(startLatLng, { title: "Start Point" ,}).addTo(map).bindPopup("Start").openPopup();
@@ -349,7 +360,7 @@
 
       let animatedMarker = L.marker(startLatLng, {
         icon: L.icon({
-          iconUrl: "/public/newBusIcon.png", // Corrected icon URL
+          iconUrl: bus.iconPhoto, // Corrected icon URL
           iconSize: [32, 32], // Adjust icon size if necessary
           iconAnchor: [16, 16], // Adjust anchor point if needed
           popupAnchor: [0, -16] // Optional: adjust popup position

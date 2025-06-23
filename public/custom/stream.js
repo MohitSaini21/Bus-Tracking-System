@@ -7,7 +7,7 @@ setTimeout(() => {
     reconnectionDelay: 3000, // Start with 3s delay
     reconnectionDelayMax: 10000,
 
-    query: {  
+    query: {
       role: user.role,
       liveBusId: bus._id, // Convert the _id to a string (if it’s a MongoDB ObjectId)
     },
@@ -203,9 +203,9 @@ setTimeout(() => {
       console.error("📡 GPS त्रुटि:", error.message);
 
       const errorMessage = `📡 GPS त्रुटि: कृपया सुनिश्चित करें कि आपने लोकेशन सेवा चालू की है और इस वेबसाइट को अनुमति दी है।`;
-      safeSpeakHindi("कृपया लोकेशन ऑन करें और वेबसाइट को अनुमति दें।");
       alert(errorMessage);
       window.location.href = "/DC";
+      safeSpeakHindi("कृपया लोकेशन ऑन करें और वेबसाइट को अनुमति दें।");
     },
     {
       enableHighAccuracy: true,
@@ -257,7 +257,7 @@ setTimeout(() => {
 
   var peerConnection;
 
-  async function  collectionIceCandidateInfo() {
+  async function collectionIceCandidateInfo() {
     peerConnection = new RTCPeerConnection(iceConfig);
 
     // Get media stream (video)

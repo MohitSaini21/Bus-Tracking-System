@@ -9,13 +9,19 @@ export default async function saveLogs(busObject) {
   }
 
   try {
+    if (!busObject.busId || !mongoose.Types.ObjectId.isValid(busObject.busId)) {
+      console.log("❌ Invalid or missing busId.");
+      return;
+    }
     const busId = new mongoose.Types.ObjectId(busObject.busId);
+
+    // Get start and end of the day in IST
     const todayStart = moment().tz("Asia/Kolkata").startOf("day").toDate();
     const todayEnd = moment().tz("Asia/Kolkata").endOf("day").toDate();
 
     const log = await BusActivityLog.findOne({
       bus: busId,
-      date: { $gte: todayStart, $lte: todayEnd },
+      createdAt: { $gte: todayStart, $lte: todayEnd },
     });
 
     // Convert reachedStops into stop log array
@@ -74,7 +80,7 @@ export default async function saveLogs(busObject) {
       // 🆕 Create new log entry
       const newLog = new BusActivityLog({
         bus: busId,
-        date: new Date(),
+
         stops: stopsData,
         path: busObject.path || [],
       });

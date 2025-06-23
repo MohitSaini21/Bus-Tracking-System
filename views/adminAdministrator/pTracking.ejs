@@ -157,6 +157,9 @@
                         <thead class="thead-dark">
                           <tr>
                             <th>#</th>
+                            
+
+                            
                             <th>Stop Name</th>
                             <th>Morning</th>
                             <th>Evening</th>
@@ -166,7 +169,7 @@
                           <% if (busLog && busLog.stops && busLog.stops.length >
                           0) { %> <% busLog.stops.forEach((stopLog, index) => {
                           %>
-                          <tr id="stop-<%= stopLog.stop._id || stopLog.stop %>">
+                          <tr id="<%= stopLog.stop._id%>">
                             <td><%= index + 1 %></td>
                             <td><%= stopLog.stopName || '__' %></td>
 
@@ -201,38 +204,6 @@
                                 '__' %>
                               </div>
                             </td>
-
-                            <!-- Fluctuation (dummy logic, customize as needed) -->
-                            <!-- <td>
-                              <% if (stopLog.morningTime &&
-                              stopLog.eMorningTime) { const fluctuationMin =
-                              Math.round((new Date(stopLog.morningTime) - new
-                              Date(stopLog.eMorningTime)) / 60000); const sign =
-                              fluctuationMin > 0 ? '+' : ''; %>
-                              <span class="badge bg-warning text-dark"
-                                ><%= sign + fluctuationMin %> mins</span
-                              >
-                              <% } else { %>
-                              <span class="badge bg-secondary">__</span>
-                              <% } %>
-                            </td> -->
-
-                            <!-- Status -->
-                            <!-- <td>
-                              <% const actual = stopLog.morningTime; const
-                              expected = stopLog.eMorningTime; let statusText =
-                              "__", badgeClass = "bg-secondary"; if (actual &&
-                              expected) { const diff = Math.abs(new Date(actual)
-                              - new Date(expected)) / 60000; if (diff <= 5) {
-                              statusText = "On Time"; badgeClass = "bg-success";
-                              } else if (actual > expected) { statusText =
-                              "Late"; badgeClass = "bg-danger"; } else {
-                              statusText = "Early"; badgeClass = "bg-info"; } }
-                              %>
-                              <span class="badge <%= badgeClass %>"
-                                ><%= statusText %></span
-                              >
-                            </td> -->
                           </tr>
                           <% }) %> <% } else { %> <% } %>
                         </tbody>
@@ -343,7 +314,7 @@
         const tbody = document.querySelector("#stops-covered tbody");
 
         Object.entries(reachedStops).forEach(([stopId, info], index) => {
-          const rowId = `stop-${stopId}`;
+          const rowId = `${stopId}`;
           const existingRow = document.getElementById(rowId);
 
           const stopName = info.stopName || "Unknown";
@@ -356,33 +327,15 @@
 
           const formatTime = (d) => (d ? d.toLocaleTimeString() : "__");
 
-          let fluctuationCell = `<span class="badge bg-secondary">__</span>`;
-          if (morningTime && eMorningTime) {
-            const diffMin = Math.round((morningTime - eMorningTime) / 60000);
-            const sign = diffMin > 0 ? "+" : "";
-            fluctuationCell = `<span class="badge bg-warning text-dark">${sign}${diffMin} mins</span>`;
-          }
 
-          let statusText = "__";
-          let badgeClass = "bg-secondary";
-          if (morningTime && eMorningTime) {
-            const diff = Math.abs(morningTime - eMorningTime) / 60000;
-            if (diff <= 5) {
-              statusText = "On Time";
-              badgeClass = "bg-success";
-            } else if (morningTime > eMorningTime) {
-              statusText = "Late";
-              badgeClass = "bg-danger";
-            } else {
-              statusText = "Early";
-              badgeClass = "bg-info";
-            }
-          }
+
 
           const newRowHTML = `
             <tr id="${rowId}">
               <td></td>
               <td>${stopName}</td>
+
+
 
               <td>
                 <div><strong>Expected:</strong> ${formatTime(eMorningTime)}</div>
@@ -426,7 +379,6 @@
       }
 
 
-      // fucntiom to update the row
 
 
 

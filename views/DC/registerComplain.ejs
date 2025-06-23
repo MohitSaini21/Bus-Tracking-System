@@ -101,10 +101,13 @@
                       <div class="form-group">
                         <label for="media">मीडिया फ़ाइल अपलोड करें (Upload Media File)</label>
                         <input type="file" class="form-control" id="media" name="media" accept="image/*,video/*,audio/*">
+                        <br>
                         <small class="form-text text-muted">
                           📷 यदि संभव हो तो फ़ोटो / वीडियो / ऑडियो अपलोड करें। <br>
-                          🎤 आप सिर्फ ऑडियो रिकॉर्ड कर सकते हैं या वीडियो बना सकते हैं – जिससे घटना समझाने में मदद मिले।
+                          🎤 आप सिर्फ ऑडियो रिकॉर्ड कर सकते हैं या वीडियो बना सकते हैं – जिससे घटना समझाने में मदद मिले। <br>
+                          ⚠️ कृपया बहुत लंबा वीडियो अपलोड न करें – यह आपके डेटा के लिए महँगा पड़ सकता है। बेहतर होगा कि इसे अपने फ़ोन में ही सुरक्षित रखें।
                         </small>
+                        
                       </div>
               
                       <!-- Submit + Cancel Buttons -->
@@ -133,6 +136,7 @@
           <!-- partial:../../partials/_footer.html -->
 
           
+        <%- include('./partials/footer.ejs') %>
           <!-- partial -->
         </div>
         <!-- main-panel ends -->
@@ -200,6 +204,7 @@ const user = <%- JSON.stringify(user) %>;
           }
     
           // 🚀 OPTIONAL: If you want to send manually via fetch (uncomment below)
+          document.getElementById("loader").style.display = "flex";
         
           try {
             const response = await fetch("/DC/registerComplain", {
@@ -212,11 +217,13 @@ const user = <%- JSON.stringify(user) %>;
         safeSpeakHindi(message)
    // ✅ Reset the form after successful submission
 complaintForm.reset();
+document.getElementById("loader").style.display = "none";
             
             alert(result.message);
   
             
           } catch (error) {
+            document.getElementById("loader").style.display = "none";
             console.error("❌ नेटवर्क त्रुटि:", error);
             alert("❌ नेटवर्क त्रुटि: सर्वर से संपर्क नहीं हो सका");
             safeSpeakHindi("नेटवर्क त्रुटि: सर्वर से संपर्क नहीं हो सका")
@@ -229,7 +236,7 @@ complaintForm.reset();
           document.getElementById("loader").style.display = "none";
         };
     </script>
-    
+        <script type="module" src="/foreground.js"></script>
     <!-- Custom js for this page -->
     <!-- End custom js for this page -->
   </body>

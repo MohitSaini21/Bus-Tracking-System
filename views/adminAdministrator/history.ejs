@@ -127,7 +127,8 @@
                 <h6>
                   <p>
                     Bus Record for <%= bus.busNumber %> on <%=
-                    moment(busLog.date).format("DD-MM-YYYY") %>
+                    moment(busLog.createdAt).format("DD-MM-YYYY [at] hh:mm A")
+                    %>
                   </p>
                 </h6>
                 <br />
@@ -194,7 +195,7 @@
                           <div class="card-body p-0">
                             <iframe
                               id="videoIframe"
-                              src="/admin/routingMachine/<%= bus._id %>?date=<%= requestedDate %>"
+                              src="/admin/routingMachine?busId=<%=bus._id  %>"
                               frameborder="0"
                               style="width: 100%; height: 300px"
                               allow="autoplay; fullscreen"
@@ -212,7 +213,7 @@
                             <!-- Remove padding for full container usage -->
                             <iframe
                               id="videoIframe"
-                              src="/admin/routingMachine/<%= bus._id %>?date=<%= requestedDate %>"
+                              src="/admin/routingMachine?logId=<%=busLog._id  %>"
                               frameborder="0"
                               style="width: 100%; height: 300px"
                               allow="autoplay; fullscreen"
@@ -588,6 +589,6 @@
         document.getElementById("loader").style.display = "none";
       };
     </script>
-        <script type="module" src="/foreground.js"></script>
+    <script type="module" src="/foreground.js"></script>
   </body>
 </html>

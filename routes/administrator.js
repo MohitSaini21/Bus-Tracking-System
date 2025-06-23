@@ -103,7 +103,6 @@ router.post("/addBus", async (req, res) => {
         joiningDate: driverData.data.DriverJoiningDate,
         password: generatePassword(8),
         status: "Active",
-        profilePhoto: "/assets/images/faces/driver.png",
       });
       driverDocId = newDriver._id;
       console.log("✅ Driver created:", newDriver.name);
@@ -128,7 +127,6 @@ router.post("/addBus", async (req, res) => {
         joiningDate: conductorData.data.conductorJoiningDate,
         status: "Active",
         password: generatePassword(8),
-        profilePhoto: "/assets/images/faces/conductor.jpg",
       });
       conductorDocId = newConductor._id;
     }
@@ -311,7 +309,24 @@ router.post(
       // Update profile
       const fullPath = req.file.path;
       const relativePath = fullPath.split("public")[1];
+      // Replace the old image only if it's not the default
+      if (
+        conductor.profilePhoto &&
+        conductor.profilePhoto !== "/assets/images/faces/conductor.jpg"
+      ) {
+        const absolutePath = path.join(
+          process.cwd(),
+          "public",
+          conductor.profilePhoto
+        );
+        if (fs.existsSync(absolutePath)) {
+          fs.unlinkSync(absolutePath);
+          console.log("🗑️ Old profile photo deleted:", conductor.profilePhoto);
+        }
+      }
+
       conductor.profilePhoto = relativePath;
+
       await conductor.save();
 
       const io = req.app.get("io");
@@ -457,6 +472,22 @@ router.post(
       // Update profile
       const fullPath = req.file.path;
       const relativePath = fullPath.split("public")[1];
+
+      if (
+        conductor.profilePhoto &&
+        conductor.profilePhoto !== "/assets/images/faces/driver.png"
+      ) {
+        const absolutePath = path.join(
+          process.cwd(),
+          "public",
+          conductor.profilePhoto
+        );
+        if (fs.existsSync(absolutePath)) {
+          fs.unlinkSync(absolutePath);
+          console.log("🗑️ Old profile photo deleted:", conductor.profilePhoto);
+        }
+      }
+
       conductor.profilePhoto = relativePath;
       await conductor.save();
 
@@ -627,7 +658,8 @@ router.post("/busEntire/:id", async (req, res) => {
         incomingStop.morningTime &&
         incomingStop.eveningTime &&
         incomingStop.latitude &&
-        incomingStop.longitude
+        incomingStop.longitude &&
+        incomingStop.stopOrder
       ) {
         if (i < existingStops.length) {
           // Update existing stop
@@ -636,6 +668,7 @@ router.post("/busEntire/:id", async (req, res) => {
           existingStops[i].eveningTime = incomingStop.eveningTime;
           existingStops[i].latitude = incomingStop.latitude;
           existingStops[i].longitude = incomingStop.longitude;
+          existingStops[i].stopOrder = incomingStop.stopOrder;
 
           updatedStops.push(existingStops[i]);
         } else {
@@ -759,46 +792,130 @@ router.post("/delete-bus", async (req, res) => {
     const { busId, password } = req.body;
 
     if (!busId || !password) {
-      return res.json({ message: "⚠️ Missing bus ID or password." });
+      console.log("❌ Missing bus ID or password.");
+      return res
+        .status(400)
+        .json({ message: "❌ Missing bus ID or password." });
     }
 
     const user = await CORE.findById(req.user.id).select("password");
     if (!user) {
-      return res.json({ message: "🚫 User not found." });
+      console.log("❌ User not found.");
+      return res.status(401).json({ message: "❌ User not found." });
     }
 
     if (password !== user.password) {
-      return res.json({ message: "❌ Incorrect password." });
+      console.log("❌ Incorrect password.");
+      return res.status(403).json({ message: "❌ Incorrect password." });
     }
 
-    // ✅ Fetch the bus and its driver/conductor IDs
-    const bus = await Bus.findById(busId).select("driver conductor");
-
+    const bus = await Bus.findById(busId).lean();
     if (!bus) {
-      return res.json({ message: "🚫 Bus not found or already deleted." });
+      console.log("❌ Bus not found.");
+      return res
+        .status(404)
+        .json({ message: "❌ Bus not found or already deleted." });
     }
 
-    const driverId = bus.driver;
-    const conductorId = bus.conductor;
+    const [driver, conductor] = await Promise.all([
+      bus.driver ? Driver.findById(bus.driver).lean() : null,
+      bus.conductor ? Conductor.findById(bus.conductor).lean() : null,
+    ]);
 
-    // ✅ Delete the bus
-    await Bus.findByIdAndDelete(busId);
+    // ✅ Safe file delete helper (skips default files)
+    const deleteFileIfExists = (
+      relativePath,
+      label = "File",
+      defaultPaths = []
+    ) => {
+      if (
+        !relativePath ||
+        typeof relativePath !== "string" ||
+        relativePath.trim().length === 0 ||
+        defaultPaths.includes(relativePath)
+      )
+        return;
 
-    // ✅ Delete driver and conductor if they exist
-    if (driverId) await Driver.findByIdAndDelete(driverId);
-    if (conductorId) await Conductor.findByIdAndDelete(conductorId);
+      const fullPath = path.join(process.cwd(), "public", relativePath);
+      if (fs.existsSync(fullPath)) {
+        try {
+          fs.unlinkSync(fullPath);
+          console.log(`🗑️ Deleted ${label}: ${relativePath}`);
+        } catch (err) {
+          console.error(`❗ Error deleting ${label}: ${relativePath}`, err);
+        }
+      }
+    };
+
+    // 🧹 Bus icon (skip default)
+    deleteFileIfExists(bus.iconPhoto, "Bus Icon", [
+      "/assets/images/faces/busIcon.png",
+    ]);
+
+    // 🧹 Bus images
+    if (Array.isArray(bus.busImages)) {
+      bus.busImages.forEach((img) => deleteFileIfExists(img, "Bus Image"));
+    }
+
+    // 🧹 Bus documents
+    if (Array.isArray(bus.busDocuments)) {
+      bus.busDocuments.forEach((doc) =>
+        deleteFileIfExists(doc.url, "Bus Document")
+      );
+    }
+
+    // 🧹 Driver cleanup
+    if (driver) {
+      // Delete driver profile photo if not default
+      deleteFileIfExists(driver.profilePhoto, "Driver Profile Photo", [
+        "/assets/images/faces/driver.png",
+      ]);
+
+      if (Array.isArray(driver.driverDocuments)) {
+        driver.driverDocuments.forEach((doc) =>
+          deleteFileIfExists(doc.url, "Driver Document")
+        );
+      }
+
+      await Driver.findByIdAndDelete(driver._id);
+      console.log("✅ Driver deleted.");
+    }
+
+    // 🧹 Conductor cleanup
+    if (conductor) {
+      // Delete conductor profile photo if not default
+      deleteFileIfExists(conductor.profilePhoto, "Conductor Profile Photo", [
+        "/assets/images/faces/conductor.jpg",
+      ]);
+
+      if (Array.isArray(conductor.conductorDocuments)) {
+        conductor.conductorDocuments.forEach((doc) =>
+          deleteFileIfExists(doc.url, "Conductor Document")
+        );
+      }
+
+      await Conductor.findByIdAndDelete(conductor._id);
+      console.log("✅ Conductor deleted.");
+    }
+
+    // 🔌 Disconnect from socket
     disConnect(req, bus._id);
+    console.log("🔌 Socket disconnected for bus.");
+
+    // 🚌 Delete bus
+    await Bus.findByIdAndDelete(busId);
+    console.log("🚌 Bus deleted from database.");
 
     return res.status(201).json({
       success: true,
       message:
-        "✔️ Bus, driver, and conductor deleted successfully. All live sockets disconnected.",
+        "✔️ Bus, driver, conductor, and all documents deleted successfully.",
     });
   } catch (err) {
     console.error("❗ Server error while deleting bus:", err);
-    return res
-      .status(500)
-      .json({ message: "❗ Internal Server Error. Please try again later." });
+    return res.status(500).json({
+      message: "❗ Internal Server Error. Please try again later.",
+    });
   }
 });
 
@@ -876,6 +993,15 @@ router.post("/busIcon/:id", upload.single("iconPhoto"), async (req, res) => {
     // Update profile
     const fullPath = req.file.path;
     const relativePath = fullPath.split("public")[1];
+
+    if (bus.iconPhoto && bus.iconPhoto !== "/assets/images/faces/busIcon.png") {
+      const absolutePath = path.join(process.cwd(), "public", bus.iconPhoto);
+      if (fs.existsSync(absolutePath)) {
+        fs.unlinkSync(absolutePath);
+        console.log("🗑️ Old busIcon deleted:", bus.iconPhoto);
+      }
+    }
+
     bus.iconPhoto = relativePath;
     await bus.save();
 
