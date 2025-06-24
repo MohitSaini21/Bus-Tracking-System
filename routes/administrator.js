@@ -200,43 +200,39 @@ router.post("/addBus", async (req, res) => {
 router.get("/conductorDriver", async (req, res) => {
   const user = await CORE.findById(req.user.id);
 
-  let { driverId = "N/A", conductorId = "N/A" } = req.query;
+  const { driverId = "N/A", conductorId = "N/A" } = req.query;
 
-  // ✅ Driver ID valid hai → Process karo
-  if (driverId !== "N/A") {
-    try {
+  try {
+    if (driverId !== "N/A") {
       const driver = await Driver.findById(driverId);
       if (driver) {
-        // console.log(driver);
         return res.render("administrator/conDriver.ejs", {
           worker: driver,
           user,
         });
+      } else {
+        return res.json({ message: "Driver not found" });
       }
-    } catch (error) {
-      return; // ❌ No response → Hacker ko kuch bhi leak nahi hoga
     }
-  }
 
-  // ✅ Conductor ID valid hai → Process karo
-  if (conductorId !== "N/A") {
-    try {
+    if (conductorId !== "N/A") {
       const conductor = await Conductor.findById(conductorId);
       if (conductor) {
-        // console.log(conductor);
         return res.render("administrator/conDriver.ejs", {
           worker: conductor,
           user,
         });
+      } else {
+        return res.json({ message: "Conductor not found" });
       }
-    } catch (error) {
-      return; // ❌ No response → Hacker ko kuch bhi leak nahi hoga
     }
-  }
 
-  // 🚨 Invalid request → No response (silently ignore)
-  return;
+    return res.json({ message: "No valid ID provided" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
 });
+
 
 // Conductor Related End paths
 

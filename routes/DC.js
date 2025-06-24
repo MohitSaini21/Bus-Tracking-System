@@ -180,22 +180,31 @@ router.post("/odometer", async (req, res) => {
   }
 });
 
+
+
+
 router.get("/goLive", checkUserExistenceAndRedirect, async (req, res) => {
   try {
     const bus = await getBusDetailsByRole(req.user.role, req.worker._id);
 
-    if (bus) {
-      return res.render("DC/goLive.ejs", {
-        bus: { _id: bus._id }, // ✅ Only sending the _id
-        user: req.worker,
-      });
-    } else {
-      return res.status(404).json({
-        message: "No bus assigned to this user.",
+    if (!bus) {
+      return res.status(404).json({ message: "बस की जानकारी नहीं मिली।" });
+    }
+    if (bus.status === "Out of Service") {
+      return res.status(403).json({
+        message: "यह बस इस समय सेवा में नहीं है। कृपया प्रशासक से संपर्क करें।",
+        status: "out_of_service",
       });
     }
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
+    
+
+    // If bus is operational, return normal data
+    return res.json(bus);
+  } catch (err) {
+    console.error("❌ Error fetching bus:", err);
+    return res
+      .status(500)
+      .json({ message: "सर्वर त्रुटि। कृपया बाद में पुनः प्रयास करें।" });
   }
 });
 

@@ -54,10 +54,12 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // Case-insensitive exact match
+    // Case-insensitive exact match and fetch only required fields
     const bus = await Bus.findOne({
       busNumber: { $regex: new RegExp(`^${busNumber}$`, "i") },
-    });
+    })
+      .select("_id busNumber routeStops busImages status")
+      .lean();
 
     if (bus) {
       return res.json({
@@ -90,15 +92,17 @@ router.patch("/toggleFCM/:id", async (req, res) => {
         .json({ success: false, message: "Invalid request data" });
     }
 
-    const fcm = await FCM.findById(id);
-    if (!fcm) {
+    const updated = await FCM.findByIdAndUpdate(
+      id,
+      { isActive },
+      { new: true, runValidators: true }
+    );
+
+    if (!updated) {
       return res
         .status(404)
         .json({ success: false, message: "Tracking entry not found" });
     }
-
-    fcm.isActive = isActive;
-    await fcm.save();
 
     return res.json({ success: true, message: "Status updated" });
   } catch (err) {
@@ -106,6 +110,7 @@ router.patch("/toggleFCM/:id", async (req, res) => {
     return res.status(500).json({ success: false, message: "Server error" });
   }
 });
+
 router.delete("/deleteFCM/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -240,8 +245,10 @@ router.post("/saveToken", async (req, res) => {
 router.get("/particularBus/:id", async (req, res) => {
   const { id } = req.params;
   const bus = await Bus.findById(id)
-    .populate("driver", "name phone") // only get driver's name and phone
-    .populate("conductor", "name phone"); // only get conductor's name and phone
+    .select("busNumber routeStops iconPhoto route _id") // select only the needed fields
+    .populate("driver", "name phone") // populate driver's name & phone
+    .populate("conductor", "name phone") // populate conductor's name & phone
+    .lean();
 
   if (bus) {
     return res.render("public/particularBus.ejs", { bus });
@@ -250,7 +257,9 @@ router.get("/particularBus/:id", async (req, res) => {
 
 router.get("/locationBus/:id", async (req, res) => {
   const { id } = req.params;
-  const bus = await Bus.findById(id);
+  const bus = await Bus.findById(id)
+    .select("busNumber routeStops iconPhoto  _id")
+    .lean();
   if (bus) {
     return res.render("public/locationBus.ejs", { bus });
   }
@@ -449,9 +458,5 @@ router.post("/complaints", async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 });
-
-
-
-
 
 export { router as publicRouter };
