@@ -180,9 +180,6 @@ router.post("/odometer", async (req, res) => {
   }
 });
 
-
-
-
 router.get("/goLive", checkUserExistenceAndRedirect, async (req, res) => {
   try {
     const bus = await getBusDetailsByRole(req.user.role, req.worker._id);
@@ -196,10 +193,9 @@ router.get("/goLive", checkUserExistenceAndRedirect, async (req, res) => {
         status: "out_of_service",
       });
     }
-    
 
     // If bus is operational, return normal data
-    return res.json(bus);
+    return res.render("DC/goLive.ejs", { user: req.worker, bus });
   } catch (err) {
     console.error("❌ Error fetching bus:", err);
     return res
