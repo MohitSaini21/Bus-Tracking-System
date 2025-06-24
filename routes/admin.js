@@ -217,8 +217,6 @@ router.get("/particularBusLive/:id", async (req, res) => {
   let bus = await Bus.findById(req.params.id)
     .populate("driver", "name phone")
     .populate("conductor", "name phone");
-  // only fetch name and phone of driver
-  // only fetch name and phone of conductor
 
   if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
     return res.status(400).json({ message: "❌ Invalid bus ID" });
@@ -233,7 +231,7 @@ router.get("/particularBusLive/:id", async (req, res) => {
 
   const busLog = await BusActivityLog.findOne({
     bus: bus._id,
-    date: {
+    createdAt: {
       $gte: startOfDayUTC,
       $lte: endOfDayUTC,
     },
@@ -560,6 +558,27 @@ router.post("/changePass", async (req, res) => {
       success: false,
       message: "❌ Server error. Please try again later.",
     });
+  }
+});
+
+// fetch busDetail
+
+// routes/admin.js or similar
+router.get("/bus/:busId", async (req, res) => {
+  try {
+    const bus = await Bus.findById(req.params.busId)
+      .select("busNumber route capacity   fuelType  driver conductor")
+      .populate("driver", "name profilePhoto phone")
+      .populate("conductor", "name profilePhoto phone")
+      .lean();
+
+    if (!bus) {
+      return res.status(404).json({ message: "Bus not found" });
+    }
+
+    res.json(bus); // Full clean bus object
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
   }
 });
 

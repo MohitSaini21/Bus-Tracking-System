@@ -10,6 +10,7 @@ parentPort.on("message", ({ task, busObject }) => {
     const busLat = parseFloat(task.latitude);
     const busLng = parseFloat(task.longitude);
     const timestamp = task.timestamp;
+    let eventType;
 
     const RADIUS_METERS = 50;
     const MIN_TIME_DIFF = 60 * 1000;
@@ -17,10 +18,9 @@ parentPort.on("message", ({ task, busObject }) => {
     // 1. Check entry/exit polygon if previous point is provided
     if (task.previousPoint) {
       try {
-        checkEntryExit({
+        eventType = checkEntryExit({
           previousPoint: task.previousPoint,
           currentPoint: { longitude: busLng, latitude: busLat },
-          bus,
         });
       } catch (err) {
         console.error("checkEntryExit failed:", err);
@@ -106,7 +106,18 @@ parentPort.on("message", ({ task, busObject }) => {
       }
     }
 
-    // 4. Final response back to main thread
+    if (eventType) {
+      if (!Array.isArray(busObject.eventTimeline)) {
+        busObject.eventTimeline = [];
+      }
+
+      busObject.eventTimeline.push({
+        eventType,
+        time: currentTime.toISOString(),
+      });
+    }
+    console.log(`✅ Worker completed and response sent for bus ${bus._id}`);
+
     parentPort.postMessage({
       updatedBusObject: busObject,
       busId: bus._id,

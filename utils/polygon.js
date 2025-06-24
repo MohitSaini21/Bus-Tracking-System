@@ -1,7 +1,5 @@
 import * as turf from "@turf/turf";
 
-import { logBusEvent } from "./updateExitEntry.js";
-
 const tmuHeadCampus = turf.polygon([
   [
     [78.66361657971697, 28.822244722324484],
@@ -13,12 +11,12 @@ const tmuHeadCampus = turf.polygon([
   ],
 ]);
 
-export async function checkEntryExit(data) {
-  const { previousPoint, currentPoint, bus } = data;
 
-  if (!previousPoint || !currentPoint || !bus) {
-    console.warn("⚠️ Incomplete data provided to checkEntryExit.");
-    return;
+
+export function checkEntryExit({ previousPoint, currentPoint }) {
+  if (!previousPoint || !currentPoint) {
+    console.warn("⚠️ Incomplete data for checkEntryExit.");
+    return null;
   }
 
   const previousGeoJsonPoint = turf.point([
@@ -39,27 +37,11 @@ export async function checkEntryExit(data) {
     tmuHeadCampus
   );
 
-  try {
-    if (!wasInside && isInside) {
-      console.log(`🟢 Bus ${bus.busNumber} has ENTERED the campus.`);
-      await logBusEvent({
-        busId: bus._id,
-        eventType: "Entered",
-        lat: currentPoint.latitude,
-        lon: currentPoint.longitude,
-      });
-    } else if (wasInside && !isInside) {
-      console.log(`🔴 Bus ${bus.busNumber} has EXITED the campus.`);
-      await logBusEvent({
-        busId: bus._id,
-        eventType: "Exited",
-        lat: currentPoint.latitude,
-        lon: currentPoint.longitude,
-      });
-    } else {
-      console.log(`🟡 Bus ${bus.busNumber} has no entry/exit change.`);
-    }
-  } catch (err) {
-    console.error("❌ Failed to log entry/exit:", err.message);
+  if (!wasInside && isInside) {
+    return "Entered";
+  } else if (wasInside && !isInside) {
+    return "Exited";
+  } else {
+    return null;
   }
 }

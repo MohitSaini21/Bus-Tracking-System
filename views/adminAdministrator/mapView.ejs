@@ -277,139 +277,268 @@ const BusIcon = L.Icon.extend({
   }
 });
 
+
+
+
 socket.on("allBusLocations", (data) => {
   console.log(data)
   const busId = data.bus._id;
   const lat = data.latitude;
   const lng = data.longitude;
 
-  const busIcon = new BusIcon({ iconUrl: data.bus.iconPhoto });
+  
 
-const popupHTML = `
-  <style>
-    .leaflet-popup-content {
-      margin: 0 !important;
-    }
-    .bus-popup {
-      font-family: Arial, sans-serif;
-      max-width: 400px;
-      padding: 10px;
-    }
-    .bus-title {
-      font-weight: bold;
-      font-size: 16px;
-      margin-bottom: 10px;
-      color: #333;
-      text-align: center;
-    }
-    .person-img {
-      width: 45px;
-      height: 45px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-    .info-line {
-      font-size: 13px;
-      margin: 4px 0;
-    }
-    .info-line b {
-      color: #444;
-    }
-    .track-btn, .call-btn {
-      font-size: 14px;
-      border-radius: 6px;
-      text-decoration: none;
-      padding: 6px 10px;
-      display: inline-block;
-      margin: 4px 0;
-    }
-    .track-btn {
-      background-color: #4CAF50;
-      color: white;
-    }
-    .track-btn:hover {
-      background-color: #45a049;
-    }
-    .call-btn {
-      background-color: #007bff;
-      color: white;
-    }
-    .call-btn:hover {
-      background-color: #0056b3;
-    }
-    .last-updated {
-      font-size: 12px;
-      color: #777;
-      margin-top: 8px;
-      text-align: center;
-    }
-  </style>
 
-  <div class="bus-popup">
-    <div class="bus-title">🚌 Bus No: ${data.bus.busNumber}</div>
 
-    <div class="row">
-      <div class="col-6 text-center">
-        <img src="${data.bus.driver?.profilePhoto || 'default-driver.jpg'}" class="person-img mb-2" alt="Driver">
-        <div class="info-line"><b>Driver</b></div>
-        <div class="info-line">${data.bus.driver?.name || 'N/A'}</div>
-        <div class="info-line">📞 ${data.bus.driver?.phone || 'N/A'}</div>
-      </div>
 
-      <div class="col-6 text-center">
-        <img src="${data.bus.conductor?.profilePhoto || 'default-conductor.jpg'}" class="person-img mb-2" alt="Conductor">
-        <div class="info-line"><b>Conductor</b></div>
-        <div class="info-line">${data.bus.conductor?.name || 'N/A'}</div>
-        <div class="info-line">📞 ${data.bus.conductor?.phone || 'N/A'}</div>
-      </div>
-    </div>
-
-    <hr>
-
-    
-    <div class="text-center mt-2">
-      <a href="javascript:void(0);" class="track-btn" onclick="trackBus('${data.bus._id}')">📍 Track Bus</a>
-    </div>
-
-    <div class="d-flex justify-content-center mt-1 flex-wrap">
-      <a href="tel:${data.bus.driver?.phone || ''}" class="call-btn mr-1">📞 Call Driver</a>
-      <a href="tel:${data.bus.conductor?.phone || ''}" class="call-btn ml-1">📞 Call Conductor</a>
-    </div>
-
-    <div class="last-updated">
-      Last updated: ${new Date(data.timestamp).toLocaleString()}
-    </div>
-  </div>
-`;
+  
 
 
 
 
   if (markerCache[busId]) {
-    // Update existing marker
-    markerCache[busId].slideTo([lat, lng], {
-    duration: 1000
-  });
-  console.log("updatin the amrker")
-    markerCache[busId].setPopupContent(popupHTML);
+  const group = markerCache[busId];
+
+  // 🔍 Extract marker and circle from the group
+  const layers = group.getLayers();
+  const marker = layers[0]; // assuming marker is first
+  const accuracyCircle = layers[1]; // and circle is second
+
+  // ✅ Move the marker smoothly
+  marker.slideTo([lat, lng], { duration: 1000 });
+  console.log("📍 Updating the marker and accuracy...");
+
+  // ✅ Move and resize the accuracy circle
+  accuracyCircle.setLatLng([lat, lng]);
+  accuracyCircle.setRadius(data.accuracy || 100); // fallback 100m if not sent
+
+  // ✅ If popup is open, update the "Last updated" field
+  const popup = marker.getPopup();
+  if (popup && popup.isOpen()) {
+    const popupEl = document.querySelector(".leaflet-popup-content");
+    const lastUpdatedEl = popupEl?.querySelector(".last-updated");
+    const accuracyUpdatedEI=popupEl?.querySelector(".accuracy-updated")
+    if (lastUpdatedEl) {
+      lastUpdatedEl.textContent = `Last updated: ${new Date(data.timestamp).toLocaleString()}`;
+    }
+    if(accuracyUpdatedEI){
+      accuracyUpdatedEI.textContent=  `Accuracy: ±${Math.round(data.accuracy)} meters`
+    }
+  
+  }
+}
+ else {
+ 
+    
+
+        // Create new marker and add to LayerGroup
+        const busIcon = new BusIcon({ iconUrl: data.bus.iconPhoto });
+console.log("creating the marker.................................");
+
+// Marker
+const marker = L.marker([lat, lng], { icon: busIcon });
+
+// Accuracy circle
+const accuracyRadius = data.accuracy || 100;
+console.log("Accuracy Radius:", accuracyRadius); // ✅ Check what's being passed
+
+const accuracyCircle = L.circle([lat, lng], {
+  radius: accuracyRadius,
+  color: "#3498db",
+  fillColor: "#3498db",
+  fillOpacity: 0.2,
+  weight: 1,
+});
+
+// Combine both in a group
+const group = L.layerGroup([marker, accuracyCircle]);
+
+// Cache and add
+markerCache[busId] = group;
+busLayerGroup.addLayer(group); // ✅ Critical step!
+
+    marker.on("click", async () => {
+  const loaderContent = `
+    <div style="width: 250px; text-align: center;">
+      <p>Loading bus details...</p>
+      <div class="loader"></div>
+    </div>
+  `;
+
+  marker.unbindPopup();
+  marker.bindPopup(loaderContent).openPopup();
+
+  try {
+  const response = await fetch(`/admin/bus/${busId}`);
+
+  if (!response.ok) {
+    const errorResponse = await response.json();
+    throw new Error(errorResponse.message || "Unknown server error");
+    return
+  }
+
+  const busData = await response.json();
+
+
+  const html = `
+<style>
+  .leaflet-popup-content {
+    margin: 0 !important;
+  }
+
+  .bus-card {
+    font-family: "Segoe UI", sans-serif;
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+    padding: 16px;
+    max-width: 360px;
+    color: #2c3e50;
+    transition: all 0.3s ease-in-out;
+  }
+
+  .bus-card:hover {
+    box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+  }
+
+  .bus-title {
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #333;
+  }
+
+  .bus-info {
+    text-align: center;
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 10px;
+  }
+
+  .crew {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 12px;
+  }
+
+  .crew-member {
+    flex: 1;
+    text-align: center;
+  }
+
+  .crew-photo {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 6px;
+    border: 2px solid #eee;
+  }
+
+  .crew-name {
+    font-weight: bold;
+    font-size: 13px;
+  }
+
+  .crew-phone {
+    font-size: 12px;
+    color: #777;
+  }
+
+  .actions {
+    text-align: center;
+    margin-top: 12px;
+  }
+
+  .action-btn {
+    margin: 4px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    text-decoration: none;
+    display: inline-block;
+    transition: 0.2s;
+  }
+
+  .call-btn {
+    background: #3498db;
+    color: white;
+  }
+
+  .call-btn:hover {
+    background: #2980b9;
+  }
+
+  .track-btn {
+    background: #2ecc71;
+    color: white;
+  }
+
+  .track-btn:hover {
+    background: #27ae60;
+  }
+</style>
+
+<div class="bus-card">
+  <div class="bus-title">🚌 Bus No: ${busData.busNumber}</div>
+
+  <div class="bus-info">📍 <b>Route:</b> ${busData.route}</div>
+  <div class="bus-info">👥 <b>Capacity:</b> ${busData.capacity} | ⛽ <b>Fuel:</b> ${busData.fuelType}</div>
+
+  <div class="crew">
+    <div class="crew-member">
+      <img src="${busData.driver?.profilePhoto || 'default-driver.jpg'}" class="crew-photo" alt="Driver">
+      <div class="crew-name">${busData.driver?.name || "N/A"}</div>
+      <div class="crew-phone">📞 ${busData.driver?.phone || "N/A"}</div>
+    </div>
+    <div class="crew-member">
+      <img src="${busData.conductor?.profilePhoto || 'default-conductor.jpg'}" class="crew-photo" alt="Conductor">
+      <div class="crew-name">${busData.conductor?.name || "N/A"}</div>
+      <div class="crew-phone">📞 ${busData.conductor?.phone || "N/A"}</div>
+    </div>
+  </div>
+
+  <div class="actions">
+<a href="/admin/particularBusLive/${busData._id}" class="action-btn track-btn">📍 Track</a>
+
+    <a href="tel:${busData.driver?.phone || ''}" class="action-btn call-btn">Call Driver</a>
+    <a href="tel:${busData.conductor?.phone || ''}" class="action-btn call-btn">Call Conductor</a>
+  </div>
+
+     <div class="last-updated">
+      Last updated: ${new Date(data.timestamp).toLocaleString()}
+    </div>
+     <div class="accuracy-updated">
+     Accuracy: ±${Math.round(data.accuracy)} meters
+    </div>
+</div>
+`;
+
+
+  marker.setPopupContent(html);
+} catch (err) {
+  console.error("❌ Failed to fetch bus data:", err);
+
+  const errorHTML = `
+    <div style="width: 250px; color: red;">
+      ${err.message}
+    </div>
+  `;
+
+  marker.setPopupContent(errorHTML);
+}
+
+});
+
 
     
-  } else {
-    // Create new marker and add to LayerGroup
-    console.log("creating the marker")
-    const marker = L.marker([lat, lng], { icon: busIcon })
-    .bindPopup(popupHTML);
+
     
-    markerCache[busId] = marker;
-    // Add event listener for details panel
-    marker.on("click", () => {
     
-      
-      
-    });
-    console.log("creating the marker")
     busLayerGroup.addLayer(marker);
-    console.log("creating the marker")
+
+    
   }
 
   

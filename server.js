@@ -7,6 +7,8 @@ import { dcRouter } from "./routes/DC.js";
 import { sendNotificationToClient } from "./utils/notify.js";
 import { Worker } from "worker_threads";
 import os from "os";
+import { setAllRouteStops } from "./utils/busRouteStops.js";
+import { getBusCacheData } from "./utils/busRouteStops.js";
 import jwt from "jsonwebtoken";
 
 import { administratorRouter } from "./routes/administrator.js";
@@ -117,7 +119,7 @@ let administratorConnectionsBus = {};
 
 let lastLocation = new Map();
 
-let locationEvaluationCooldown = 5 * 1000; // ms (5 seconds)
+let locationEvaluationCooldown = 1000; // ms (5 seconds)
 let lastEvaluated = {}; // { [busId]: timestamp }
 
 // Cron Jobs
@@ -150,14 +152,24 @@ const isProcessing = new Map(); // Map<busId, Boolean>
 
 // ---- Add task to bus queue ----
 function addTask(task) {
-  if (!taskQueues.has(task.bus._id)) {
-    taskQueues.set(task.bus._id, []);
-    isProcessing.set(task.bus._id, false);
+  const busId = task.bus._id;
+
+  if (!taskQueues.has(busId)) {
+    taskQueues.set(busId, []);
+    isProcessing.set(busId, false);
   }
 
-  taskQueues.get(task.bus._id).push(task);
-  processQueue(task.bus._id); // Try to start processing
+  const queue = taskQueues.get(busId);
+  queue.push(task);
+
+  console.log(`[QUEUE] Bus ${busId} → Queue length: ${queue.length}`);
+
+  if (!isProcessing.get(busId)) {
+    processQueue(busId);
+  }
 }
+
+const TASK_TIMEOUT = 10000; // 10 seconds max per task
 
 function processQueue(busId) {
   if (isProcessing.get(busId)) return;
@@ -165,84 +177,99 @@ function processQueue(busId) {
   const queue = taskQueues.get(busId);
   if (!queue || queue.length === 0) return;
 
-  if (availableWorkers.length > 0) {
-    const task = queue.shift();
-    const worker = availableWorkers.shift();
-    const now = new Date();
-    const start = Date.now();
+  if (availableWorkers.length === 0) return;
 
-    if (
-      !lastEvaluated[busId] ||
-      now - lastEvaluated[busId].lastEvaluations >= locationEvaluationCooldown
-    ) {
-      if (!lastEvaluated[busId]) {
-        lastEvaluated[busId] = {
-          busId,
-          reachedStops: {},
-          lastEvaluations: 0,
-        };
+  const task = queue.shift();
+  const worker = availableWorkers.shift();
+  const now = new Date();
+  const start = Date.now();
+
+  const cooldownPassed =
+    !lastEvaluated[busId] ||
+    now - lastEvaluated[busId].lastEvaluations >= locationEvaluationCooldown;
+
+  if (!cooldownPassed) {
+    console.log("⏱️ Cooldown . Skipping...");
+    availableWorkers.push(worker);
+    isProcessing.set(busId, false); // ✅ Add this
+    return;
+  }
+
+  if (!lastEvaluated[busId]) {
+    lastEvaluated[busId] = {
+      busId,
+      reachedStops: {},
+      lastEvaluations: 0,
+    };
+  }
+
+  lastEvaluated[busId].lastEvaluations = now;
+  const busObject = lastEvaluated[busId];
+
+  isProcessing.set(busId, true);
+
+  let resolved = false;
+
+  const clearEverything = () => {
+    resolved = true;
+    clearTimeout(timeout);
+    worker.removeAllListeners();
+    isProcessing.set(busId, false);
+    availableWorkers.push(worker);
+    processQueue(busId);
+  };
+
+  const timeout = setTimeout(() => {
+    if (!resolved) {
+      console.warn(`⏰ Timeout: Task for bus ${busId} took too long.`);
+      try {
+        worker.terminate(); // 🔥 Kill rogue worker
+      } catch (e) {
+        console.error("Worker termination failed:", e);
+      }
+      clearEverything();
+    }
+  }, TASK_TIMEOUT);
+
+  // 🔄 Start task
+  worker.postMessage({ task, busObject });
+
+  worker.once("message", (msg) => {
+    if (resolved) return;
+
+    if (msg?.updatedBusObject && msg?.busId) {
+      lastEvaluated[msg.busId] = msg.updatedBusObject;
+
+      if (adminConnectionsBus[msg.busId]) {
+        adminConnectionsBus[msg.busId].forEach((socketId) => {
+          io.to(socketId).emit("busUpdate", {
+            busObject: lastEvaluated[msg.busId],
+          });
+        });
       }
 
-      lastEvaluated[busId].lastEvaluations = now;
-      const busObject = lastEvaluated[busId];
-      isProcessing.set(busId, true);
-
-      worker.postMessage({ task, busObject });
-
-      worker.once("message", (msg) => {
-        if (msg?.updatedBusObject && msg?.busId) {
-          isProcessing.set(msg.busId, false);
-          lastEvaluated[msg.busId] = msg.updatedBusObject;
-          if (adminConnectionsBus[msg.busId]) {
-            // Iterate through each connected admin socket
-            adminConnectionsBus[msg.busId].forEach((socketId) => {
-              io.to(socketId).emit("busUpdate", {
-                busObject: lastEvaluated[msg.busId],
-              });
-            });
-          }
-
-          availableWorkers.push(worker);
-          const timeTaken = Date.now() - start;
-          console.log(`✅ Worker done in ${timeTaken}ms`);
-          processQueue(msg.busId);
-        } else {
-          console.warn("❌ Malformed message from worker:", msg);
-          isProcessing.set(busId, false);
-          availableWorkers.push(worker);
-          processQueue(busId);
-        }
-        // Remove listeners to prevent memory leak
-        worker.removeAllListeners();
-      });
-
-      worker.once("error", (err) => {
-        console.error("Worker crashed:", err);
-        isProcessing.set(busId, false);
-        availableWorkers.push(worker);
-        processQueue(busId);
-        // Remove listeners to prevent memory leak
-        worker.removeAllListeners();
-      });
-
-      worker.once("exit", (code) => {
-        if (code !== 0) {
-          console.warn(`Worker exited abnormally with code ${code}`);
-        }
-        isProcessing.set(busId, false);
-        availableWorkers.push(worker);
-        processQueue(busId);
-
-        // Remove listeners to prevent memory leak
-        worker.removeAllListeners();
-      });
+      const timeTaken = Date.now() - start;
+      console.log(`✅ Worker completed in ${timeTaken}ms`);
     } else {
-      // Cooldown not passed, skip this round
-      console.log("Skipping frequent Evulatating proximiy");
-      availableWorkers.push(worker);
-      processQueue(busId);
+      console.warn("⚠️ Malformed worker message:", msg);
     }
-  }
+
+    clearEverything();
+  });
+
+  worker.once("error", (err) => {
+    if (resolved) return;
+    console.error("💥 Worker crashed:", err);
+    clearEverything();
+  });
+
+  worker.once("exit", (code) => {
+    if (resolved) return;
+    if (code !== 0) {
+      console.warn(`❌ Worker exited abnormally with code ${code}`);
+    }
+    clearEverything();
+  });
 }
 
 io.use((socket, next) => {
@@ -283,103 +310,103 @@ io.use((socket, next) => {
   }
 });
 
+// Helper to safely register a socket connection under a mapping
+function registerSocket(map, key, socket, label = "") {
+  map[key] = map[key] || [];
+  map[key].push(socket.id);
+
+  console.log(
+    `✅ New connection${label ? ` (${label})` : ""} for ${key} with socketId: ${
+      socket.id
+    }`
+  );
+  console.log(`📡 Current connections for ${key}:`, map[key]);
+}
+
+// Helper to safely remove socket ID from all arrays
+function removeSocketFromMap(map, key, socketId, label = "") {
+  if (!map[key]) return;
+
+  map[key] = map[key].filter((id) => id !== socketId);
+  console.log(`❌ Removed socket ${socketId} from ${label} for ${key}.`);
+
+  if (map[key].length === 0) {
+    delete map[key];
+    console.log(`🗑️ Deleted empty ${label} array for ${key}.`);
+  }
+}
+
 io.on("connection", (socket) => {
-  if (socket.handshake.query.busId) {
-    // public Connection For locations
-    const busId = socket.handshake.query.busId;
+  const query = socket.handshake.query;
 
-    // Store busId in socket object so it can be accessed later in the disconnect event
+  // 🎯 Priority 1: Public Viewer (no auth)
+  if (query.busId) {
+    const busId = query.busId;
     socket.busId = busId;
-    // Check if the busId already has an array of socketIds
-    if (!busConnections[busId]) {
-      // If no array exists, create one
-      busConnections[busId] = [];
-    }
 
-    // Push the new socket.id into the array for the given busId
-    busConnections[busId].push(socket.id);
+    registerSocket(busConnections, busId, socket, "Viewer");
 
-    console.log(
-      `New connection (Viewer) from busId: ${busId} with socketId: ${socket.id}`
-    );
-    console.log(
-      `Current connections for bus ${busId}: `,
-      busConnections[busId]
-    );
-  } else if (socket.handshake.query.bus && socket.adminId) {
-    const busId = socket.handshake.query.bus;
-
+    // 🎯 Priority 2: Admin for specific bus
+  } else if (query.bus && socket.adminId) {
+    const busId = query.bus;
     socket.bus = busId;
 
-    if (!adminConnectionsBus[busId]) {
-      // If no array exists, create one
-      adminConnectionsBus[busId] = [];
-    }
+    registerSocket(adminConnectionsBus, busId, socket, "Admin (per bus)");
 
-    // Push the new socket.id into the array for the given busId
-    adminConnectionsBus[busId].push(socket.id);
-
-    console.log(
-      `New connection of admin  for busId: ${busId} with socketId: ${socket.id}`
-    );
-    console.log(
-      `Current connections  (admi) for bus ${busId}: `,
-      adminConnectionsBus[busId]
-    );
-  } else if (socket.handshake.query.bus && socket.administratorId) {
-    const busId = socket.handshake.query.bus;
-
+    // 🎯 Priority 3: Administrator for specific bus
+  } else if (query.bus && socket.administratorId) {
+    const busId = query.bus;
     socket.bus = busId;
 
-    if (!administratorConnectionsBus[busId]) {
-      // If no array exists, create one
-      administratorConnectionsBus[busId] = [];
-    }
-
-    // Push the new socket.id into the array for the given busId
-    administratorConnectionsBus[busId].push(socket.id);
-
-    console.log(
-      `New connection of administrator  for busId: ${busId} with socketId: ${socket.id}`
+    registerSocket(
+      administratorConnectionsBus,
+      busId,
+      socket,
+      "Administrator (per bus)"
     );
-    console.log(
-      `Current connections  (administrator) for bus ${busId}: `,
-      administratorConnectionsBus[busId]
-    );
+
+    // 🎯 Priority 4: Global Administrator
   } else if (socket.administratorId) {
-    console.log(`New administrator Connection: ${socket.id}`);
     administratorIds.push(socket.id);
-    console.log(administratorIds);
+    console.log(`✅ New global administrator connection: ${socket.id}`);
+    console.log(`📋 Current administrator IDs:`, administratorIds);
+
+    // 🎯 Priority 5: Global Admin
   } else if (socket.adminId) {
-    console.log(`New admin Connection: ${socket.id}`);
     allAdmins.push(socket.id);
-    console.log(allAdmins);
-  } else {
-    if (socket.liveBusId) {
-      // Bus(driver or conductor Connectiosn)
-      const busId = socket.liveBusId;
+    console.log(`✅ New global admin connection: ${socket.id}`);
+    console.log(`📋 Current admin IDs:`, allAdmins);
 
-      if (busId) {
-        if (liveBuses.includes(busId)) {
-          socket.disconnect(true); // 💥 Immediately close the connection
-          return;
-        } else {
-          // Register this socket as live
-          liveBuses.push(busId);
-          if (allAdmins.length) {
-            for (let i = 0; i < allAdmins.length; i++) {
-              io.to(allAdmins[i]).emit("add", busId);
-            }
-          }
+    // 🎯 Priority 6: Live Bus (driver/conductor)
+  } else if (socket.liveBusId) {
+    const busId = socket.liveBusId;
 
-          console.log(`Bus ${busId} is now live with socket ${socket.id}`);
-
-          socket.emit("connectionApproved", "You are now live.");
-        }
-      }
+    if (liveBuses.includes(busId)) {
+      console.warn(
+        `⚠️ Duplicate live bus connection attempt for bus ${busId}. Disconnecting.`
+      );
+      socket.disconnect(true);
+      return;
     }
+
+    liveBuses.push(busId);
+    console.log(`🟢 Bus ${busId} is now live with socket ${socket.id}`);
+
+    // Notify all admins
+    allAdmins.forEach((adminSocketId) => {
+      io.to(adminSocketId).emit("add", busId);
+    });
+
+    socket.emit("connectionApproved", "✅ You are now live.");
+
+    // ❌ Unrecognized Connection
+  } else {
+    console.warn("🚫 Unknown or malformed connection attempt:", query);
+    socket.disconnect(true);
+    return;
   }
 
+  //   |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||  all   socket handlers to handle events |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
   // asking about is ther ebus obejt exist
   socket.on("liveBuses", async (callback) => {
     try {
@@ -500,22 +527,55 @@ io.on("connection", (socket) => {
 
   socket.on("lastLocation", (busId, callback) => {
     if (!liveBuses.includes(busId)) {
+      const location = lastLocation.has(busId) ? lastLocation.get(busId) : null;
       callback({
-        status: "false",
-        data: lastLocation[busId] ? lastLocation[busId] : null,
+        status: "true",
+        data: location,
       });
     }
   });
 
-  socket.on("busLocationUpdate", (data) => {
-    addTask(data);
-    lastLocation.set(data.bus._id, data);
+  socket.on("lastLocationOfAllBuses", (callback) => {
+    try {
+      if (!lastLocation || lastLocation.size === 0) {
+        return callback(null); // ❌ No location data at all
+      }
 
+      const offlineLocations = [];
+
+      for (const [busId, data] of lastLocation.entries()) {
+        // Check if bus is offline
+        if (!liveBuses.includes(busId)) {
+          offlineLocations.push(data); // Add last known location
+        }
+      }
+
+      if (offlineLocations.length > 0) {
+        callback(offlineLocations); // ✅ Send offline bus locations
+      } else {
+        callback(null); // ❌ No offline bus locations available
+      }
+    } catch (err) {
+      console.error("❌ Error in lastLocationOfAllBuses:", err);
+      callback(null); // Fallback if error
+    }
+  });
+
+  socket.on("busLocationUpdate", (data) => {
     if (data.bus && busConnections[data.bus._id]) {
       for (let i = 0; i < busConnections[data.bus._id].length; i++) {
         io.to(busConnections[data.bus._id][i]).emit("receivelocation", data);
       }
     }
+
+    let cacheData = getBusCacheData(data.bus._id);
+    data["bus"].iconPhoto = cacheData.iconPhoto;
+    // 🔐 Store a cloned snapshot (before mutation)
+    const dataCopy = {
+      ...data,
+      bus: { ...data.bus },
+    };
+    lastLocation.set(data.bus._id, dataCopy);
 
     if (allAdmins.length) {
       for (let i = 0; i < allAdmins.length; i++) {
@@ -528,159 +588,111 @@ io.on("connection", (socket) => {
         io.to(administratorIds[i]).emit("allBusLocations", data);
       }
     }
+
+    data["bus"].routeStops = cacheData.routeStops;
+    console.log("routeStops has been populated in data.bus");
+
+    // addTask(data);
   });
 
+  //   |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||  all   socket handlers to handle events |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
   socket.on("disconnect", async () => {
-    if (socket.bus) {
-      const busId = socket.bus; // Now we can access busId from the socket object
+    console.log(`🔌 Disconnection: ${socket.id}`);
 
-      if (adminConnectionsBus[busId]) {
-        adminConnectionsBus[busId] = adminConnectionsBus[busId].filter(
-          (id) => id !== socket.id
-        );
-        console.log(
-          `Updated admin connections for bus ${busId}: `,
-          adminConnectionsBus[busId]
-        );
+    // 🟠 Viewer (public viewer)
+    if (socket.busId) {
+      const busId = socket.busId;
+      removeSocketFromMap(busConnections, busId, socket.id, "Viewer");
+    }
 
-        // Optionally, remove the busId key if no socket is connected to it
-        if (adminConnectionsBus[busId].length === 0) {
-          delete adminConnectionsBus[busId];
-          console.log(
-            `No more connections for bus of admin  ${busId}, deleting busId entry.`
-          );
-        }
-      }
-      if (administratorConnectionsBus[busId]) {
-        administratorConnectionsBus[busId] = administratorConnectionsBus[
-          busId
-        ].filter((id) => id !== socket.id);
-        console.log(
-          `Updated administrator connections for bus ${busId}: `,
-          administratorConnectionsBus[busId]
-        );
+    // 🔵 Admin (per-bus)
+    if (socket.bus && socket.adminId) {
+      const busId = socket.bus;
+      removeSocketFromMap(adminConnectionsBus, busId, socket.id, "Admin (bus)");
+    }
 
-        // Optionally, remove the busId key if no socket is connected to it
-        if (administratorConnectionsBus[busId].length === 0) {
-          delete administratorConnectionsBus[busId];
-          console.log(
-            `No more connections for bus of administrator  ${busId}, deleting busId entry.`
-          );
-        }
-      }
-    } else if (socket.adminId) {
-      if (allAdmins.includes(socket.id)) {
-        // 2. Remove the element from the array
-        let index = allAdmins.indexOf(socket.id);
-        allAdmins.splice(index, 1); // Removes the element at the specified index
-        console.log(`${socket.id} was removed (Admin).`, allAdmins);
-      }
-    } else if (socket.administratorId) {
-      if (administratorIds.includes(socket.id)) {
-        // 2. Remove the element from the array
-        let index = administratorIds.indexOf(socket.id);
-        administratorIds.splice(index, 1); // Removes the element at the specified index
-        console.log(
-          `${socket.id} was removed (administratorIds).`,
-          administratorIds
-        );
-      }
-
-      // const busId = socket.bus;
-    } else if (socket.busId) {
-      const busId = socket.busId; // Now we can access busId from the socket object
-
-      console.log(
-        `Socket ${socket.id} disconnected from busId (Viewer): ${busId}`
+    // 🟣 Administrator (per-bus)
+    if (socket.bus && socket.administratorId) {
+      const busId = socket.bus;
+      removeSocketFromMap(
+        administratorConnectionsBus,
+        busId,
+        socket.id,
+        "Administrator (bus)"
       );
+    }
 
-      // Remove the socketId from the busId array when the socket disconnects
-      if (busConnections[busId]) {
-        busConnections[busId] = busConnections[busId].filter(
-          (id) => id !== socket.id
-        );
-        console.log(
-          `Updated connections for bus ${busId}: `,
-          busConnections[busId]
-        );
+    // 🔴 Admin (global)
+    if (socket.adminId && allAdmins.includes(socket.id)) {
+      allAdmins = allAdmins.filter((id) => id !== socket.id);
+      console.log(`❌ Removed global admin: ${socket.id}`);
+    }
 
-        // Optionally, remove the busId key if no socket is connected to it
-        if (busConnections[busId].length === 0) {
-          delete busConnections[busId];
-          console.log(
-            `No more connections for bus ${busId}, deleting busId entry.`
-          );
-        }
+    // 🟢 Administrator (global)
+    if (socket.administratorId && administratorIds.includes(socket.id)) {
+      administratorIds = administratorIds.filter((id) => id !== socket.id);
+      console.log(`❌ Removed global administrator: ${socket.id}`);
+    }
+
+    // 🚌 Live Bus (driver/conductor)
+    if (socket.liveBusId) {
+      const busId = socket.liveBusId;
+
+      // Remove from live buses
+      const index = liveBuses.indexOf(busId);
+      if (index !== -1) {
+        liveBuses.splice(index, 1);
+        console.log(`🚫 Bus ${busId} went offline.`);
+        // Notify all global admins
+        allAdmins.forEach((id) => io.to(id).emit("remove", busId));
       }
-    } else {
-      if (socket.liveBusId) {
-        const busId = socket.liveBusId;
 
-        const index = liveBuses.indexOf(socket.liveBusId);
-        if (index !== -1) {
-          liveBuses.splice(index, 1);
-          if (allAdmins.length) {
-            for (let i = 0; i < allAdmins.length; i++) {
-              io.to(allAdmins[i]).emit("remove", busId);
-            }
-          }
-          console.log(
-            `Bus ${socket.liveBusId} was removed from live list.`,
-            liveBuses
-          );
-        }
-        if (busId && peers[busId]) {
-          if (administratorIds.length) {
-            for (let i = 0; i < administratorIds.length; i++) {
-              console.log("Emiitting the event to delte the connection");
-              io.to(administratorIds[i]).emit("deleteStream", busId);
-            }
-          }
+      // Inform all administrators to delete stream
+      administratorIds.forEach((id) => {
+        io.to(id).emit("deleteStream", busId);
+      });
 
-          if (administratorConnectionsBus[busId]?.length) {
-            // Iterate through each connected admin socket
-            for (
-              let i = 0;
-              i < administratorConnectionsBus[busId].length;
-              i++
-            ) {
-              io.to(administratorConnectionsBus[busId][i]).emit(
-                "deleteStream",
-                busId
-              );
-            }
-          }
-          delete peers[busId]; // Clean up offers and candidates
+      if (administratorConnectionsBus[busId]) {
+        administratorConnectionsBus[busId].forEach((id) => {
+          io.to(id).emit("deleteStream", busId);
+        });
+      }
 
-          console.log(`Cleaned up peers for bus: ${busId}`);
-        }
+      // Clean up peer-related data
+      if (peers[busId]) {
+        delete peers[busId];
+        console.log(`🧹 Cleaned peers for ${busId}`);
+      }
 
-        if (lastEvaluated[socket.liveBusId]) {
-          saveLogs(lastEvaluated[socket.liveBusId]);
-        }
+      if (lastEvaluated[busId]) {
+        await saveLogs(lastEvaluated[busId]); // async-safe
+
+        console.log(`📝 Saved logs for ${busId}`);
       }
     }
   });
 });
 
-// Starting the Server
-server.listen(PORT, () => {
-  // Convert UTC time to IST (Indian Standard Time)
-  const timeInIST = moment().tz("Asia/Kolkata").format("YYYY-MM-DD HH:mm:ss");
+const startServer = async () => {
+  try {
+    await ConnectDB(
+      "mongodb+srv://mohitsainisaini2680:misbaansari20@cluster0.wjx3j.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+    );
+    console.log("✅ MongoDB connected successfully.");
 
-  console.log("Time in IST:", timeInIST);
-  // const used = process.memoryUsage();
-  // console.log(`Memory Usage: ${used.heapUsed}`);
+    await setAllRouteStops();
+    console.log("✅ All routeStops loaded into memory.");
 
-  ConnectDB(
-    "mongodb+srv://mohitsainisaini2680:misbaansari20@cluster0.wjx3j.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-  );
-  // sendNotificationToClient(
-  //   "dlf0rTyD0ghxObSl6icyYd:APA91bHvI8bqTKzXDzl6oAdU8ns-J_CVxn7ZctjmQR4LahAw7_CuJw6k2M_P9oxKbbgGBXBiFAZMVY7gMlolSIYBrDxXt7DLYf24mEc6NfcLYLUs4n8443w",
-  //   "testing",
-  //   "Bus is approaching you be there"
-  // );
-  console.log(`✅ Server is running and listneing at the port ${PORT}`);
+    const timeInIST = moment().tz("Asia/Kolkata").format("YYYY-MM-DD HH:mm:ss");
+    console.log("🕐 Time in IST:", timeInIST);
 
-  // hey there how are you
-});
+    server.listen(PORT, () => {
+      console.log(`🚀 Server is running and listening at port ${PORT}`);
+    });
+  } catch (err) {
+    console.error("❌ Failed to start server:", err);
+  }
+};
+
+startServer();

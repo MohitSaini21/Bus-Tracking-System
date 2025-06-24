@@ -3,8 +3,8 @@ import mongoose from "mongoose";
 import BusActivityLog from "../model/busTrack.js";
 
 export default async function saveLogs(busObject) {
-  if (!busObject.reachedStops && !busObject.path) {
-    console.log("🛑 Neither stops nor path provided. Cannot save log.");
+  if (!busObject.reachedStops && !busObject.path && !busObject.eventTimeline) {
+    console.log("🛑 Nothing to save: no stops, path, or events.");
     return;
   }
 
@@ -15,7 +15,6 @@ export default async function saveLogs(busObject) {
     }
     const busId = new mongoose.Types.ObjectId(busObject.busId);
 
-    // Get start and end of the day in IST
     const todayStart = moment().tz("Asia/Kolkata").startOf("day").toDate();
     const todayEnd = moment().tz("Asia/Kolkata").endOf("day").toDate();
 
@@ -24,30 +23,38 @@ export default async function saveLogs(busObject) {
       createdAt: { $gte: todayStart, $lte: todayEnd },
     });
 
-    // Convert reachedStops into stop log array
+    // Convert stops
     const stopsData = [];
-    for (const stopId in busObject.reachedStops) {
+    for (const stopId in busObject.reachedStops || {}) {
       const stop = busObject.reachedStops[stopId];
-      const stopLog = {
+      stopsData.push({
         stop: stopId,
         stopName: stop.stopName || null,
-        morningTime: stop.morning || null,
-        eveningTime: stop.evening || null,
+        morningTime: stop.morningTime || null,
+        eveningTime: stop.eveningTime || null,
         eMorningTime: stop.eMorningTime || null,
         eEveningTime: stop.eEveningTime || null,
-      };
-      stopsData.push(stopLog);
+      });
+    }
+
+    // Convert eventTimeline → events (database format)
+    const eventsData = [];
+    for (const item of busObject.eventTimeline || []) {
+      if (item?.eventType && item?.time) {
+        eventsData.push({
+          event: item.eventType,
+          timestamp: new Date(item.time),
+        });
+      }
     }
 
     if (log) {
-      // 🚀 Update existing log
+      // ➕ Update existing log
       for (const newStop of stopsData) {
         const existingStop = log.stops.find(
           (s) => s.stop.toString() === newStop.stop
         );
-
         if (existingStop) {
-          // Update only if the new data exists and isn't already present
           if (newStop.morningTime && !existingStop.morningTime) {
             existingStop.morningTime = newStop.morningTime;
           }
@@ -64,29 +71,37 @@ export default async function saveLogs(busObject) {
             existingStop.stopName = newStop.stopName;
           }
         } else {
-          // New stop? Add to log
           log.stops.push(newStop);
         }
       }
 
-      // Append new path points if provided
-      if (busObject.path && Array.isArray(busObject.path)) {
-        log.path = log.path.concat(busObject.path);
+      if (Array.isArray(busObject.path)) {
+        log.path.push(...busObject.path);
+        busObject.path = []; // ✅ Clear after saving
+      }
+
+      if (Array.isArray(eventsData) && eventsData.length > 0) {
+        log.events.push(...eventsData);
+        busObject.eventTimeline = []; // ✅ Clear after saving
       }
 
       await log.save();
       console.log(`📝 Updated today's log for bus ${busObject.busId}`);
     } else {
-      // 🆕 Create new log entry
+      // 🆕 New log
       const newLog = new BusActivityLog({
         bus: busId,
-
         stops: stopsData,
         path: busObject.path || [],
+        events: eventsData,
       });
 
       await newLog.save();
       console.log(`🆕 Created new log for bus ${busObject.busId}`);
+
+      // ✅ Clear after saving
+      busObject.path = [];
+      busObject.eventTimeline = [];
     }
   } catch (err) {
     console.error("❌ Error saving bus logs:", err.message);

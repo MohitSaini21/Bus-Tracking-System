@@ -157,9 +157,7 @@
                         <thead class="thead-dark">
                           <tr>
                             <th>#</th>
-                            
 
-                            
                             <th>Stop Name</th>
                             <th>Morning</th>
                             <th>Evening</th>
@@ -390,6 +388,7 @@
       });
 
       socket.on("busUpdate", function (data) {
+        console.log(data);
         if (data && data.busObject) {
           updateStopsCoveredTable(data.busObject.reachedStops);
         }

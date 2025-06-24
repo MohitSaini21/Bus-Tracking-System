@@ -185,7 +185,10 @@ router.get("/goLive", checkUserExistenceAndRedirect, async (req, res) => {
     const bus = await getBusDetailsByRole(req.user.role, req.worker._id);
 
     if (bus) {
-      return res.render("DC/goLive.ejs", { bus, user: req.worker }); // Passing user as req.worker
+      return res.render("DC/goLive.ejs", {
+        bus: { _id: bus._id }, // ✅ Only sending the _id
+        user: req.worker,
+      });
     } else {
       return res.status(404).json({
         message: "No bus assigned to this user.",
