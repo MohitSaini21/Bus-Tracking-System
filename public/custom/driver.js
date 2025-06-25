@@ -172,21 +172,47 @@ setTimeout(() => {
       let locationData = saveLocation(position);
       locationData["bus"] = bus;
 
-      console.log("Emitting Live Location:", locationData);
+      console.log("✅ Emitting Live Location:", locationData);
       socket.emit("busLocationUpdate", locationData);
     },
     (error) => {
-      console.error("📡 GPS त्रुटि:", error.message);
+      let message = "";
+      let suggestion = "";
 
-      const errorMessage = `📡 GPS त्रुटि: कृपया सुनिश्चित करें कि आपने लोकेशन सेवा चालू की है और इस वेबसाइट को अनुमति दी है।`;
-      alert(errorMessage);
-      window.location.href = "/DC";
-      safeSpeakHindi("कृपया लोकेशन ऑन करें और वेबसाइट को अनुमति दें।");
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          message =
+            "❌ अनुमति अस्वीकृत: उपयोगकर्ता ने वेबसाइट को लोकेशन एक्सेस की अनुमति नहीं दी।";
+          suggestion = "कृपया वेबसाइट को लोकेशन अनुमति दें।";
+          break;
+
+        case error.POSITION_UNAVAILABLE:
+          message = "❌ स्थिति अनुपलब्ध: डिवाइस लोकेशन नहीं खोज सका।";
+          suggestion = "कृपया GPS ऑन करें या खुले स्थान पर जाएं।";
+          break;
+
+        case error.TIMEOUT:
+          message = "⌛ समय समाप्त: लोकेशन प्राप्त करने में अधिक समय लग गया।";
+          suggestion = "इंटरनेट या GPS की स्थिति जांचें।";
+          break;
+
+        default:
+          message = `⚠️ अज्ञात त्रुटि: ${error.message}`;
+          suggestion = "कृपया डिवाइस की सेटिंग्स जांचें।";
+          break;
+      }
+
+      console.error("📡 GPS Error Code:", error.code);
+      console.error("📡 Detailed Error:", error.message);
+
+      alert(`📡 GPS त्रुटि: ${message}\n\n📌 सुझाव: ${suggestion}`);
+      safeSpeakHindi(suggestion); // 🔊 Optional TTS
     },
     {
       enableHighAccuracy: true,
-      maximumAge: 5 * 60 * 1000, // Max 5 min purani location accept karega
-      timeout: 10000, // 10 sec tak fresh location ka wait karega
+      maximumAge: 5 * 60 * 1000, // 5 मिनट पुरानी लोकेशन तक मान्य
+      timeout: 10000, // 10 सेकंड तक इंतजार करेगा
     }
   );
+  
 }, 1000);

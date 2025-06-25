@@ -493,6 +493,7 @@ router.get("/logout", async (req, res) => {
       );
     }
 
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
     res.clearCookie("authToken");
     res.clearCookie("fcmTokenExpiry");
     return res.redirect("/driverConductorLogin");
