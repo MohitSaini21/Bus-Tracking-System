@@ -190,61 +190,53 @@ setTimeout(() => {
       return locationData;
     }
   };
-
   navigator.geolocation.watchPosition(
     (position) => {
       let locationData = saveLocation(position);
       locationData["bus"] = bus;
 
-      console.log("Emitting Live Location:", locationData);
+      console.log("✅ Emitting Live Location:", locationData);
       socket.emit("busLocationUpdate", locationData);
     },
     (error) => {
-      console.error("📡 GPS त्रुटि:", error.message);
+      let message = "";
+      let suggestion = "";
 
-      const errorMessage = `📡 GPS त्रुटि: कृपया सुनिश्चित करें कि आपने लोकेशन सेवा चालू की है और इस वेबसाइट को अनुमति दी है।`;
-      alert(errorMessage);
-      window.location.href = "/DC";
-      safeSpeakHindi("कृपया लोकेशन ऑन करें और वेबसाइट को अनुमति दें।");
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          message =
+            "❌ अनुमति अस्वीकृत: उपयोगकर्ता ने वेबसाइट को लोकेशन एक्सेस की अनुमति नहीं दी।";
+          suggestion = "कृपया वेबसाइट को लोकेशन अनुमति दें।";
+          break;
+
+        case error.POSITION_UNAVAILABLE:
+          message = "❌ स्थिति अनुपलब्ध: डिवाइस लोकेशन नहीं खोज सका।";
+          suggestion = "कृपया GPS ऑन करें या खुले स्थान पर जाएं।";
+          break;
+
+        case error.TIMEOUT:
+          message = "⌛ समय समाप्त: लोकेशन प्राप्त करने में अधिक समय लग गया।";
+          suggestion = "इंटरनेट या GPS की स्थिति जांचें।";
+          break;
+
+        default:
+          message = `⚠️ अज्ञात त्रुटि: ${error.message}`;
+          suggestion = "कृपया डिवाइस की सेटिंग्स जांचें।";
+          break;
+      }
+
+      console.error("📡 GPS Error Code:", error.code);
+      console.error("📡 Detailed Error:", error.message);
+
+      alert(`📡 GPS त्रुटि: ${message}\n\n📌 सुझाव: ${suggestion}`);
+      safeSpeakHindi(suggestion); // 🔊 Optional TTS
     },
     {
       enableHighAccuracy: true,
-      maximumAge: 5 * 60 * 1000, // Max 5 min purani location accept karega
-      timeout: 10000, // 10 sec tak fresh location ka wait karega
+      maximumAge: 5 * 60 * 1000, // 5 मिनट पुरानी लोकेशन तक मान्य
+      timeout: 10000, // 10 सेकंड तक इंतजार करेगा
     }
   );
-  // it will get get deleted soon
-  // Poll every 5 seconds
-
-  // it will get get deleted soon
-  // setInterval(async () => {
-  //     try {
-  //         const latestPoint = await getCurrentLocation();
-
-  //         if (!previousPoint) {
-  //             previousPoint = latestPoint;
-  //             return;
-  //           }
-
-  //     currentPoint = latestPoint;
-
-  //     // Send just lat & lng
-  //     const data = {
-  //       previousPoint,
-  //       currentPoint,
-
-  //       bus,
-  //     };
-
-  //     console.log("Sending only lat/lng:", data);
-  //     socket.emit("towPoints", data);
-
-  //     // Prepare for next run
-  //     previousPoint = currentPoint;
-  //   } catch (err) {
-  //     console.warn("Location fetch failed:", err.message);
-  //   }
-  // }, 5000);
 
   const iceConfig = {
     iceServers: [
@@ -294,6 +286,22 @@ setTimeout(() => {
       document.body.removeChild(a);
     };
 
+    // ✅ Stop recording ONLY when page is about to refresh or close
+    window.addEventListener("beforeunload", () => {
+      if (recorder && recorder.state === "recording") {
+        recorder.stop(); // this will trigger onstop
+      }
+    });
+
+    // OPTIONAL: Also stop if user switches tab or minimizes browser
+    document.addEventListener("visibilitychange", () => {
+      if (
+        document.visibilityState === "hidden" &&
+        recorder?.state === "recording"
+      ) {
+        recorder.stop();
+      }
+    });
     // Add video tracks to the peer connection
     stream
       .getTracks()
@@ -349,4 +357,4 @@ setTimeout(() => {
   });
 
   // Caputuring the media in chunks and sending  to ther server go tit
-}, 1000);
+}, 2000);
