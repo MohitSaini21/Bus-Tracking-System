@@ -11,29 +11,61 @@ setTimeout(() => {
   });
 
   socket.on("disconnect", (reason) => {
-    if (reason == "io server disconnect") {
-      connectionDenied();
-      return;
-    } else if (reason == "'io client disconnect") {
-      return;
-    } else if (reason == "ping timeout" || reason == "transport close") {
-      const col = `
-<div class="container">
-  <p>
-    कनेक्ट किया जा रहा है... कृपया प्रतीक्षा करें।
-  </p>
-</div>
-`;
+    const isHidden = document.visibilityState === "hidden";
 
-      const tempDiv = document.createElement("div");
-      tempDiv.innerHTML = col.trim();
-      const newCol = tempDiv.firstChild;
+    console.log("🔌 Disconnected. Reason:", reason, "| Tab Hidden?", isHidden);
 
-      const mainRow = document.getElementById("mainRow");
+    if (reason === "io server disconnect" && isHidden) {
+      showReconnectingUI();
+
+      // Try to reconnect manually when tab becomes visible
+      document.addEventListener(
+        "visibilitychange",
+        () => {
+          if (document.visibilityState === "visible") {
+            console.log("🔁 Tab active, reloading...");
+            window.location.reload();
+          }
+        },
+        { once: true }
+      );
+
+      return;
+    }
+
+    if (reason === "io server disconnect" && !isHidden) {
+      connectionDenied(); // server intentionally kicked
+      return;
+    }
+
+    if (reason === "io client disconnect") return;
+
+    if (reason === "ping timeout" || reason === "transport close") {
+      showReconnectingUI();
+    }
+  });
+
+  function showReconnectingUI() {
+    const col = `
+      <div class="container">
+        <p>कनेक्ट किया जा रहा है... कृपया प्रतीक्षा करें।</p>
+      </div>
+    `;
+
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = col.trim();
+    const newCol = tempDiv.firstChild;
+
+    const mainRow = document.getElementById("mainRow");
+    const rowMain = document.getElementById("rowMain");
+
+    if (mainRow && rowMain) {
+      rowMain.innerHTML = " ";
       mainRow.innerHTML = "";
       mainRow.appendChild(newCol);
     }
-  });
+  }
+  
 
   window.addEventListener("beforeunload", (e) => {
     if (socket && socket.connected) {
