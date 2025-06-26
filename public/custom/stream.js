@@ -24,41 +24,39 @@ setTimeout(() => {
   socket.on("disconnect", (reason) => {
     const isHidden = document.visibilityState === "hidden";
 
+    console.log("🔌 Disconnected. Reason:", reason, "| Tab Hidden?", isHidden);
+
     if (reason === "io server disconnect" && isHidden) {
       showReconnectingUI();
 
-      // 🧠 Try to reconnect manually after tab becomes visible again
+      // Try to reconnect manually when tab becomes visible
       document.addEventListener(
         "visibilitychange",
         () => {
           if (document.visibilityState === "visible") {
-            console.log("🔁 Reconnecting manually after tab became visible");
-
-            // 🔄 Option 1: Reload the page
+            console.log("🔁 Tab active, reloading...");
             window.location.reload();
-
-            // 🔄 Option 2: OR re-init socket manually (if you abstracted it)
-            // initSocketAgain(); // <- Your reconnect function
           }
         },
         { once: true }
-      ); // only once
+      );
 
       return;
     }
 
     if (reason === "io server disconnect" && !isHidden) {
-      connectionDenied(); // actual intentional kick
+      connectionDenied(); // server intentionally kicked
       return;
     }
 
-    if (reason === "'io client disconnect") return;
+    if (reason === "io client disconnect") return;
 
     if (reason === "ping timeout" || reason === "transport close") {
       showReconnectingUI();
     }
   });
-    
+  
+
 
 
   function showReconnectingUI() {
