@@ -195,6 +195,7 @@ router.get("/goLive", checkUserExistenceAndRedirect, async (req, res) => {
     }
 
     // If bus is operational, return normal data
+    res.set("Cache-Control", "no-store");
     return res.render("DC/goLive.ejs", { user: req.worker, bus });
   } catch (err) {
     console.error("❌ Error fetching bus:", err);
@@ -239,6 +240,7 @@ As an administrator, please monitor the stream.`;
         sendNotificationToClient(admin.notificationToken, title, message);
       }
 
+      res.set("Cache-Control", "no-store");
       return res.render("DC/stream.ejs", { bus, user: req.worker }); // Passing user as req.worker
     } else {
       return res.status(404).json({

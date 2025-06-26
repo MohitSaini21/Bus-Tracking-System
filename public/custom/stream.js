@@ -22,32 +22,69 @@ setTimeout(() => {
   });
 
   socket.on("disconnect", (reason) => {
-    if (reason == "io server disconnect") {
-      connectionDenied();
-      return;
-    } else if (reason == "'io client disconnect") {
-      return;
-    } else if (reason == "ping timeout" || reason == "transport close") {
-      const col = `
-<div class="container">
-  <p>
-    कनेक्ट किया जा रहा है... कृपया प्रतीक्षा करें।
-  </p>
-</div>
-`;
+    const isHidden = document.visibilityState === "hidden";
 
-      const tempDiv = document.createElement("div");
-      tempDiv.innerHTML = col.trim();
-      const newCol = tempDiv.firstChild;
+    if (reason === "io server disconnect" && isHidden) {
+      showReconnectingUI();
 
-      const mainRow = document.getElementById("mainRow");
-      const rowMain = document.getElementById("rowMain");
+      // 🧠 Try to reconnect manually after tab becomes visible again
+      document.addEventListener(
+        "visibilitychange",
+        () => {
+          if (document.visibilityState === "visible") {
+            console.log("🔁 Reconnecting manually after tab became visible");
+
+            // 🔄 Option 1: Reload the page
+            window.location.reload();
+
+            // 🔄 Option 2: OR re-init socket manually (if you abstracted it)
+            // initSocketAgain(); // <- Your reconnect function
+          }
+        },
+        { once: true }
+      ); // only once
+
+      return;
+    }
+
+    if (reason === "io server disconnect" && !isHidden) {
+      connectionDenied(); // actual intentional kick
+      return;
+    }
+
+    if (reason === "'io client disconnect") return;
+
+    if (reason === "ping timeout" || reason === "transport close") {
+      showReconnectingUI();
+    }
+  });
+    
+
+
+  function showReconnectingUI() {
+    const col = `
+      <div class="container">
+        <p>कनेक्ट किया जा रहा है... कृपया प्रतीक्षा करें।</p>
+      </div>
+    `;
+
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = col.trim();
+    const newCol = tempDiv.firstChild;
+
+    const mainRow = document.getElementById("mainRow");
+    const rowMain = document.getElementById("rowMain");
+
+    if (mainRow && rowMain) {
       rowMain.innerHTML = " ";
-
       mainRow.innerHTML = "";
       mainRow.appendChild(newCol);
     }
-  });
+  }
+  
+
+
+  
   function connectionDenied() {
     const col = `
 <div class="col-12 grid-margin stretch-card" id="goBack">
