@@ -119,7 +119,7 @@ let administratorConnectionsBus = {};
 
 let lastLocation = new Map();
 
-let locationEvaluationCooldown = 1000; // ms (5 seconds)
+let locationEvaluationCooldown = 5000; // ms (5 seconds)
 let lastEvaluated = {}; // { [busId]: timestamp }
 
 // Cron Jobs
@@ -147,64 +147,28 @@ for (let i = 0; i < MAX_WORKERS; i++) {
   availableWorkers.push(worker);
 }
 // ---- TASK & QUEUE MAPS ----
-const taskQueues = new Map(); // Map<busId, Queue<Task>>
+const taskQueues = []; // Map<busId, Queue<Task>>
 const isProcessing = new Map(); // Map<busId, Boolean>
 
 // ---- Add task to bus queue ----
-function addTask(task) {
+function addTask(task, busObject) {
   const busId = task.bus._id;
-
-  if (!taskQueues.has(busId)) {
-    taskQueues.set(busId, []);
-    isProcessing.set(busId, false);
-  }
-
-  const queue = taskQueues.get(busId);
-  queue.push(task);
-
-  console.log(`[QUEUE] Bus ${busId} → Queue length: ${queue.length}`);
-
-  if (!isProcessing.get(busId)) {
-    processQueue(busId);
-  }
-}
-
-const TASK_TIMEOUT = 10000; // 10 seconds max per task
-
-function processQueue(busId) {
-  if (isProcessing.get(busId)) return;
-
-  const queue = taskQueues.get(busId);
-  if (!queue || queue.length === 0) return;
-
-  if (availableWorkers.length === 0) return;
-
-  const task = queue.shift();
-  const worker = availableWorkers.shift();
-  const now = new Date();
-  const start = Date.now();
-
-  const cooldownPassed =
-    !lastEvaluated[busId] ||
-    now - lastEvaluated[busId].lastEvaluations >= locationEvaluationCooldown;
-
-  if (!cooldownPassed) {
-    console.log("⏱️ Cooldown . Skipping...");
-    availableWorkers.push(worker);
-    isProcessing.set(busId, false); // ✅ Add this
+  if (isProcessing.get(busId) || availableWorkers.length === 0) {
+    taskQueues.push({ task, busObject });
     return;
   }
 
-  if (!lastEvaluated[busId]) {
-    lastEvaluated[busId] = {
-      busId,
-      reachedStops: {},
-      lastEvaluations: 0,
-    };
-  }
+  isProcessing.set(busId, false);
+  processQueue(task, busObject);
+}
 
-  lastEvaluated[busId].lastEvaluations = now;
-  const busObject = lastEvaluated[busId];
+const TASK_TIMEOUT = 2500; // 10 seconds max per task
+  
+function processQueue(task, busObject) {
+  const busId = task.bus._id;
+  const worker = availableWorkers.shift();
+
+  const start = Date.now();
 
   isProcessing.set(busId, true);
 
@@ -216,7 +180,9 @@ function processQueue(busId) {
     worker.removeAllListeners();
     isProcessing.set(busId, false);
     availableWorkers.push(worker);
-    processQueue(busId);
+    if (taskQueues.shift()) {
+      processQueue({ ...taskQueues.shift() });
+    }
   };
 
   const timeout = setTimeout(() => {
@@ -271,7 +237,7 @@ function processQueue(busId) {
     clearEverything();
   });
 }
-  
+
 io.use((socket, next) => {
   try {
     const query = socket.handshake.query;
@@ -566,37 +532,67 @@ io.on("connection", (socket) => {
   });
 
   socket.on("busLocationUpdate", (data) => {
-    if (data.bus && busConnections[data.bus._id]) {
-      for (let i = 0; i < busConnections[data.bus._id].length; i++) {
-        io.to(busConnections[data.bus._id][i]).emit("receivelocation", data);
+    const { previousPoint, ...clone } = data;
+    const busId = data.bus?._id;
+    if (!busId) return;
+
+    // 1. Broadcast to clients (exclude previousPoint)
+    const sockets = busConnections[busId];
+    if (sockets?.length) {
+      for (let i = 0; i < sockets.length; i++) {
+        io.to(sockets[i]).emit("receivelocation", clone);
       }
     }
 
-    let cacheData = getBusCacheData(data.bus._id);
-    data["bus"].iconPhoto = cacheData.iconPhoto;
-    // 🔐 Store a cloned snapshot (before mutation)
-    const dataCopy = {
-      ...data,
-      bus: { ...data.bus },
-    };
-    lastLocation.set(data.bus._id, dataCopy);
+    // 2. Fetch cached data
+    const cacheData = getBusCacheData(busId);
+    clone.bus.iconPhoto = cacheData.iconPhoto;
 
-    if (allAdmins.length) {
-      for (let i = 0; i < allAdmins.length; i++) {
-        io.to(allAdmins[i]).emit("allBusLocations", data);
+    // 3. Cache the last safe location (immutable for logs/admins)
+    lastLocation.set(busId, {
+      ...clone,
+      bus: { ...clone.bus },
+    });
+
+    // 4. Notify all admin and super admin sockets
+    const adminTargets = [...allAdmins, ...administratorIds];
+    if (adminTargets.length) {
+      for (let i = 0; i < adminTargets.length; i++) {
+        io.to(adminTargets[i]).emit("allBusLocations", clone);
       }
     }
 
-    if (administratorIds.length) {
-      for (let i = 0; i < administratorIds.length; i++) {
-        io.to(administratorIds[i]).emit("allBusLocations", data);
-      }
+    // 5. Initialize cooldown data if not present
+    const now = Date.now();
+    let busEval = lastEvaluated[busId];
+    if (!busEval) {
+      busEval = lastEvaluated[busId] = {
+        busId,
+        reachedStops: {},
+        lastEvaluations: 0,
+      };
     }
 
-    data["bus"].routeStops = cacheData.routeStops;
-    console.log("routeStops has been populated in data.bus");
+    // 6. Check if cooldown passed
+    const cooldownPassed =
+      now - busEval.lastEvaluations >= locationEvaluationCooldown;
 
-    // addTask(data);
+    if (cooldownPassed) {
+      // 7. Update last evaluation time FIRST (to avoid overlaps)
+      busEval.lastEvaluations = now;
+
+      // 8. Build clean task input (safe clone)
+      const taskInput = {
+        ...data,
+        bus: {
+          ...data.bus,
+          routeStops: cacheData.routeStops,
+        },
+      };
+
+      // pertanning to offload
+      addTask(taskInput, busEval);
+    }
   });
 
   //   |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||  all   socket handlers to handle events |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||

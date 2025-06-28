@@ -1,10 +1,14 @@
 let socket = null;
+let lastSavedTime = 0;
+let previousPoint = null;
+
+
 
 function connectionDenied(
   message = "🚫 यह बस पहले से ही किसी अन्य डिवाइस से लाइव है।"
 ) {
   const html = `
-    <div class="col-12 grid-margin stretch-card" id="goBack">
+    <div class="col-12 gri43d-margin stretch-card" id="goBack">
       <div class="card">
         <div class="card-body">
           <h4 class="card-title">${user.name} (${user.role})</h4>
@@ -29,10 +33,8 @@ function connectionDenied(
     mainRow.appendChild(temp.firstChild);
   }
 
-  // Optional: Auto-redirect after 10 seconds
-  setTimeout(() => {
-    window.location.href = "/DC/goLive";
-  }, 10000);
+
+  
 }
 
 function saveLocation(position) {
@@ -63,8 +65,7 @@ function saveLocation(position) {
   return baseData;
 }
 
-let lastSavedTime = 0;
-let previousPoint = null;
+
 
 setTimeout(() => {
   navigator.geolocation.watchPosition(
@@ -74,7 +75,7 @@ setTimeout(() => {
 
       console.log("✅ Emitting Live Location:", locationData);
 
-      if (socket) {
+      if (socket && socket.connected) {
         socket.emit("busLocationUpdate", locationData);
       } else {
         buildConnection();
@@ -113,11 +114,11 @@ setTimeout(() => {
     },
     {
       enableHighAccuracy: true,
-      maximumAge: 5 * 60 * 1000,
+      maximumAge: 0,
       timeout: 15000,
     }
   );
-}, 3000);
+}, 5000);
 
 function buildConnection() {
   socket = io({
@@ -131,7 +132,6 @@ function buildConnection() {
 
   socket.on("connect_error", (err) => {
     console.error("❌ कनेक्शन त्रुटि:", err.message);
-    alert("⚠️ कनेक्शन असफल: " + err.message);
   });
 
   socket.on("disconnectReason", (msg) => {
