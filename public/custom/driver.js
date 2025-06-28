@@ -20,7 +20,7 @@ setTimeout(() => {
     } else if (err.message === "Invalid token") {
       alert("🚫 अधिकृत टोकन नहीं मिला। पहुँच अस्वीकृत।");
     } else {
-      console.log("❌ कनेक्शन विफल: " + err.message);
+      console.log("कनेक्शन विफल: " + err.message);
     }
   });
 
@@ -40,14 +40,16 @@ setTimeout(() => {
 
     // Case 1: Automatic network drop or ping timeout
     if (reason === "ping timeout" || reason === "transport close") {
-      console.log("showing  reconnection UI");
-      showReconnectingUI();
+      showReconnectingUI(
+        "नेटवर्क समस्या या लंबे समय तक निष्क्रियता के कारण कनेक्शन टूट गया।"
+      );
       return;
     }
 
-    // Case 2: You were manually kicked, but tab was in background
+    // Case 2: Server kicked you while tab was in background
     if (reason === "io server disconnect" && isHidden) {
-      showReconnectingUI();
+      showReconnectingUI("जब आप दूसरी टैब पर थे, तब कनेक्शन बंद कर दिया गया।");
+
       document.addEventListener(
         "visibilitychange",
         () => {
@@ -60,44 +62,66 @@ setTimeout(() => {
       return;
     }
 
-    // Case 3: Tab is active and server disconnected
+    // Case 3: Server kicked you manually while tab is active
     if (reason === "io server disconnect" && !isHidden) {
       if (window._wasManuallyRejected) {
-        connectionDenied(); // ❌ Show "you were rejected" UI
+        connectionDenied(); // Show UI: someone else already live
       } else {
-        // 🟢 Page was visible but kicked without a known reason — refresh to restart
-        showReconnectingUI();
+        showReconnectingUI(
+          "आपको सर्वर से डिस्कनेक्ट कर दिया गया। फिर से प्रयास किया जा रहा है..."
+        );
         setTimeout(() => {
           window.location.reload();
-        }, 3000); // Give a short delay before reloading
+        }, 3000);
       }
       return;
     }
 
-    // Case 4: Client itself disconnected intentionally
-    if (reason === "io client disconnect") return;
+    // Case 4: Client disconnected itself
+    if (reason === "io client disconnect") {
+      console.log("ℹ️ Client disconnected intentionally.");
+      return;
+    }
+
+    // Unknown reason (fallback)
+    showReconnectingUI("❓ अज्ञात कारण से कनेक्शन टूट गया।");
   });
+  
 
-  function showReconnectingUI() {
-    console.log("showing reconnection UI");
+  /**
+   * Displays a reconnection UI message to the user with a given error reason.
+   *
+   * @param {string} errorMesg - The error message to display under the reconnection notice.
+   */
+  function showReconnectingUI(errorMesg = "सर्वर से कनेक्शन टूट गया है।") {
+    console.log("🔁 Reconnection UI is being shown...");
 
+    // HTML content for reconnection message
     const col = `
-      <div class="container">
-        <p>🔄 कनेक्ट किया जा रहा है... कृपया प्रतीक्षा करें।</p>
+    <div class="container text-center" style="margin-top: 40px;">
+      <div class="alert alert-warning" role="alert" style="font-size: 1.1rem;">
+        🔄 कनेक्ट किया जा रहा है... कृपया प्रतीक्षा करें।
       </div>
-    `;
+      <div class="alert alert-danger" role="alert" style="font-size: 0.95rem;">
+        ❌ ${errorMesg}
+      </div>
+    </div>
+  `;
 
+    // Create the DOM node
     const tempDiv = document.createElement("div");
     tempDiv.innerHTML = col.trim();
     const newCol = tempDiv.firstChild;
 
+    // Find the main container
     const mainRow = document.getElementById("mainRow");
 
+    // Inject the content
     if (mainRow) {
       mainRow.innerHTML = "";
       mainRow.appendChild(newCol);
     } else {
-      console.warn("⚠️ mainRow element not found!");
+      console.warn("⚠️ 'mainRow' container not found in DOM.");
     }
   }
 
