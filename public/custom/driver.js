@@ -87,10 +87,8 @@ setTimeout(() => {
       console.error("📡 GPS Error Code:", error.code);
       console.error("📡 Detailed Error:", error.message);
 
-      alert(`📡 GPS त्रुटि: ${message}\n\n📌 सुझाव: ${suggestion}`);
-      setTimeout(() => {
-        window.location.reload(); // 🔄 Try again after a small delay
-      }, 3000);
+      connectionDenied(`📡 GPS त्रुटि: ${message}\n\n📌 सुझाव: ${suggestion}`);
+
       safeSpeakHindi(suggestion); // 🔊 Optional TTS
     },
     {
@@ -104,17 +102,13 @@ setTimeout(() => {
 let socket = null;
 function buildConnection() {
   socket = io({
-    reconnection: true,
-    reconnectionAttempts: Infinity, // Keep retrying forever
-    reconnectionDelay: 6000, // ⏱ Wait 6 seconds before first retry
-    reconnectionDelayMax: 15000, // ⏱ Maximum wait between retries
-    timeout: 20000, // 🕒 20 seconds to wait for connect before failing
+    reconnection: false, // ❌ Do not try to reconnect
+    timeout: 20000, // Optional: still wait 20s for initial connection
     query: {
       role: user.role,
       liveBusId: bus._id,
     },
   });
-
   socket.on("connect_error", (err) => {
     console.error("❌ कनेक्शन त्रुटि:", err.message);
 
@@ -143,57 +137,65 @@ function buildConnection() {
     const isHidden = document.visibilityState === "hidden";
     console.log("🔌 Disconnected. Reason:", reason, "| Tab Hidden?", isHidden);
 
-    // Case 1: Automatic network drop or ping timeout
-    if (reason === "ping timeout" || reason === "transport close") {
-      showReconnectingUI(
-        "नेटवर्क समस्या या लंबे समय तक निष्क्रियता के कारण कनेक्शन टूट गया।"
-      );
-      setTimeout(() => {
-        window.location.reload();
-      }, 3000);
-      return;
-    }
+    if (reason === "io client disconnect") {
+      console.log("ℹ️ Client disconnected intentionally.");
+    } else if (reason === "ping timeout" || reason === "transport close") {
+      const message = isHidden
+        ? "आपकी टैब पृष्ठभूमि में थी, जिससे कनेक्शन बंद हो गया।"
+        : "नेटवर्क समस्या या लंबे समय तक निष्क्रियता के कारण कनेक्शन टूट गया।";
 
-    // Case 2: Server kicked you while tab was in background
-    if (reason === "io server disconnect" && isHidden) {
-      showReconnectingUI("जब आप दूसरी टैब पर थे, तब कनेक्शन बंद कर दिया गया।");
+      showReconnectingUI(message);
 
-      document.addEventListener(
-        "visibilitychange",
-        () => {
-          if (document.visibilityState === "visible") {
-            window.location.reload();
-          }
-        },
-        { once: true }
-      );
-      return;
-    }
-
-    // Case 3: Server kicked you manually while tab is active
-    if (reason === "io server disconnect" && !isHidden) {
-      if (window._wasManuallyRejected) {
-        connectionDenied(); // Show UI: someone else already live
-      } else {
-        showReconnectingUI(
-          "आपको सर्वर से डिस्कनेक्ट कर दिया गया। फिर से प्रयास किया जा रहा है..."
+      // Reload immediately or on visibilitychange depending on context
+      if (isHidden) {
+        document.addEventListener(
+          "visibilitychange",
+          () => {
+            if (document.visibilityState === "visible") {
+              window.location.reload();
+            }
+          },
+          { once: true }
         );
+      } else {
         setTimeout(() => {
           window.location.reload();
         }, 3000);
       }
-      return;
-    }
+    } else if (reason === "io server disconnect") {
+      if (window._wasManuallyRejected) {
+        connectionDenied();
+      } else {
+        const msg = isHidden
+          ? "जब आप दूसरी टैब पर थे, तब कनेक्शन बंद कर दिया गया।"
+          : "आपको सर्वर से डिस्कनेक्ट कर दिया गया। फिर से प्रयास किया जा रहा है...";
 
-    // Case 4: Client disconnected itself
-    if (reason === "io client disconnect") {
-      console.log("ℹ️ Client disconnected intentionally.");
-      return;
-    }
+        showReconnectingUI(msg);
 
-    // Unknown reason (fallback)
-    showReconnectingUI("❓ अज्ञात कारण से कनेक्शन टूट गया।");
+        if (isHidden) {
+          document.addEventListener(
+            "visibilitychange",
+            () => {
+              if (document.visibilityState === "visible") {
+                window.location.reload();
+              }
+            },
+            { once: true }
+          );
+        } else {
+          setTimeout(() => {
+            window.location.reload();
+          }, 3000);
+        }
+      }
+    } else {
+      showReconnectingUI("❓ अज्ञात कारण से कनेक्शन टूट गया।");
+      setTimeout(() => {
+        window.location.reload();
+      }, 3000);
+    }
   });
+  
 
   /**
    * Displays a reconnection UI message to the user with a given error reason.
@@ -238,43 +240,37 @@ function buildConnection() {
     }
   });
 
-  function connectionDenied() {
+  function connectionDenied(
+    message = "🚫 यह बस पहले से ही किसी अन्य डिवाइस से लाइव है।<br /><br />संभवतः कोई और ड्राइवर या हेल्पर इस बस की लोकेशन पहले से भेज रहा है।<br /><br />👉 कृपया थोड़ी देर बाद फिर से प्रयास करें,<br />या सुनिश्चित करें कि कोई और इस समय लोकेशन शेयर नहीं कर रहा हो।"
+  ) {
     const col = `
-<div class="col-12 grid-margin stretch-card" id="goBack">
-  <div class="card">
-    <div class="card-body" id="cardBody">
-      <h4 class="card-title">
-        ${user.name} (${user.role})
-      </h4>
-<p class="card-description">
-  🚫 यह बस पहले से ही किसी अन्य डिवाइस से लाइव है।<br /><br />
-  संभवतः कोई और ड्राइवर या हेल्पर इस बस की लोकेशन पहले से भेज रहा है।<br /><br />
-  👉 कृपया थोड़ी देर बाद फिर से प्रयास करें,<br />
-  या सुनिश्चित करें कि कोई और इस समय लोकेशन शेयर नहीं कर रहा हो।
-</p>
-
-      <div class="template-demo">
-        <button type="button" class="btn btn-secondary btn-fw">
-          <a href="/DC" style="text-decoration: none; color: inherit;">वापस जाएँ</a>
-        </button>
-
-          <!-- Retry Button -->
-  <button type="button" class="btn btn-primary btn-fw" onclick="location.reload()">
-    🔁 फिर से प्रयास करें
-  </button>
+  <div class="col-12 grid-margin stretch-card" id="goBack">
+    <div class="card">
+      <div class="card-body" id="cardBody">
+        <h4 class="card-title">
+          ${user.name} (${user.role})
+        </h4>
+        <p class="card-description">
+          ${message}
+        </p>
+        <div class="template-demo">
+          <button type="button" class="btn btn-secondary btn-fw">
+            <a href="/DC" style="text-decoration: none; color: inherit;">वापस जाएँ</a>
+          </button>
+          <button type="button" class="btn btn-primary btn-fw" onclick="location.reload()">
+            🔁 फिर से प्रयास करें
+          </button>
+        </div>
       </div>
     </div>
   </div>
-</div>
-
-
-  `;
+    `;
 
     const tempDiv = document.createElement("div");
     tempDiv.innerHTML = col.trim();
     const newCol = tempDiv.firstChild;
     document.getElementById("mainRow").innerHTML = "";
-    document.getElementById("mainRow").appendChild(newCol); // ✅ This appends it at the end
+    document.getElementById("mainRow").appendChild(newCol);
   }
 
   socket.on("connectionApproved", (message) => {
