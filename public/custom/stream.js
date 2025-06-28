@@ -1,63 +1,84 @@
 var recorder;
 var chunks = [];
+
 setTimeout(() => {
   const socket = io({
     reconnection: true,
     reconnectionAttempts: Infinity, // Keep trying forever
     reconnectionDelay: 3000, // Start with 3s delay
     reconnectionDelayMax: 10000,
-
     query: {
       role: user.role,
       liveBusId: bus._id, // Convert the _id to a string (if it’s a MongoDB ObjectId)
     },
   });
 
-  window.addEventListener("beforeunload", (e) => {
-    // Always disconnect the socket first
-    if (socket && socket.connected) {
-      socket.disconnect();
-      console.log("Socket disconnected properly before leaving.");
+  socket.on("connect_error", (err) => {
+    console.error("❌ कनेक्शन त्रुटि:", err.message);
+
+    if (err.message === "Missing auth token") {
+      alert(
+        "⚠️ आपका सत्र समाप्त हो गया है या टोकन अमान्य है। कृपया दोबारा लॉगिन करें।"
+      );
+    } else if (err.message === "Invalid token") {
+      alert("🚫 अधिकृत टोकन नहीं मिला। पहुँच अस्वीकृत।");
+    } else {
+      alert("❌ कनेक्शन विफल: " + err.message);
+    }
+  });
+
+  // Disconnection Reason
+
+  socket.on("disconnectReason", (msg) => {
+    customDisconnectReason = msg;
+
+    if (msg === "duplicate_connection") {
+      window._wasManuallyRejected = true; // use this flag if needed
     }
   });
 
   socket.on("disconnect", (reason) => {
     const isHidden = document.visibilityState === "hidden";
-
     console.log("🔌 Disconnected. Reason:", reason, "| Tab Hidden?", isHidden);
 
+    // Case 1: Automatic network drop or ping timeout
+    if (reason === "ping timeout" || reason === "transport close") {
+      showReconnectingUI();
+      return;
+    }
+
+    // Case 2: You were manually kicked, but tab was in background
     if (reason === "io server disconnect" && isHidden) {
       showReconnectingUI();
-
-      // Try to reconnect manually when tab becomes visible
       document.addEventListener(
         "visibilitychange",
         () => {
           if (document.visibilityState === "visible") {
-            console.log("🔁 Tab active, reloading...");
             window.location.reload();
           }
         },
         { once: true }
       );
-
       return;
     }
 
+    // Case 3: Tab is active and server disconnected
     if (reason === "io server disconnect" && !isHidden) {
-      connectionDenied(); // server intentionally kicked
+      if (window._wasManuallyRejected) {
+        connectionDenied(); // ❌ Show "you were rejected" UI
+      } else {
+        // 🟢 Page was visible but kicked without a known reason — refresh to restart
+        showReconnectingUI();
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000); // Give a short delay before reloading
+      }
       return;
     }
 
+    // Case 4: Client itself disconnected intentionally
     if (reason === "io client disconnect") return;
-
-    if (reason === "ping timeout" || reason === "transport close") {
-      showReconnectingUI();
-    }
   });
-  
-
-
 
   function showReconnectingUI() {
     const col = `
@@ -79,10 +100,13 @@ setTimeout(() => {
       mainRow.appendChild(newCol);
     }
   }
-  
 
+  window.addEventListener("beforeunload", (e) => {
+    if (socket && socket.connected) {
+      socket.disconnect();
+    }
+  });
 
-  
   function connectionDenied() {
     const col = `
 <div class="col-12 grid-margin stretch-card" id="goBack">
@@ -92,16 +116,26 @@ setTimeout(() => {
         ${user.name} (${user.role})
       </h4>
 <p class="card-description">
-  या तो आपको अनुमति नहीं है, या फिर आपका हेल्पर पहले से ही इस बस की लोकेशन शेयर कर रहा है।
+  🚫 यह बस पहले से ही किसी अन्य डिवाइस से लाइव है।<br /><br />
+  संभवतः कोई और ड्राइवर या हेल्पर इस बस की लोकेशन पहले से भेज रहा है।<br /><br />
+  👉 कृपया थोड़ी देर बाद फिर से प्रयास करें,<br />
+  या सुनिश्चित करें कि कोई और इस समय लोकेशन शेयर नहीं कर रहा हो।
 </p>
+
       <div class="template-demo">
         <button type="button" class="btn btn-secondary btn-fw">
           <a href="/DC" style="text-decoration: none; color: inherit;">वापस जाएँ</a>
         </button>
+
+          <!-- Retry Button -->
+  <button type="button" class="btn btn-primary btn-fw" onclick="location.reload()">
+    🔁 फिर से प्रयास करें
+  </button>
       </div>
     </div>
   </div>
 </div>
+
 
   `;
 
@@ -111,7 +145,6 @@ setTimeout(() => {
     document.getElementById("mainRow").innerHTML = "";
     document.getElementById("mainRow").appendChild(newCol); // ✅ This appends it at the end
   }
-
   socket.on("connectionApproved", (message) => {
     const col = `
 <div class="col-12 grid-margin stretch-card" id="goAhead">
@@ -148,12 +181,12 @@ setTimeout(() => {
   </div>
 </div>`;
 
-    let thirdCloumn = `<div class="col-md-6 grid-margin stretch-card" id="videoTag">
-  <div class="card">
-    <div class="card-body p-0"> <!-- Remove padding for full container usage -->
+    let thirdCloumn = `<div class="col-md-12 grid-margin stretch-card" id="videoTag" style="height: 70vh;">
+  <div class="card h-100">
+    <div class="card-body p-0" style="height: 100%;">
       <iframe
         id="videoIframe"
-        src="/locationBus/${bus._id}"  <!-- Replace with actual source -->
+        src="/locationBus/${bus._id}"
         frameborder="0"
         style="width: 100%; height: 100%;"
         allow="autoplay; fullscreen"></iframe>
@@ -168,13 +201,14 @@ setTimeout(() => {
     document.getElementById("mainRow").innerHTML = "";
 
     document.getElementById("mainRow").appendChild(newCol); // ✅ This appends it at the end
-    // For the second section (video column)
-    tempDiv.innerHTML = newColumn.trim();
-    const newVideoCol = tempDiv.firstChild;
-    document.getElementById("rowMain").appendChild(newVideoCol);
+
     tempDiv.innerHTML = thirdCloumn.trim();
     const newIframeCol = tempDiv.firstChild;
     document.getElementById("rowMain").appendChild(newIframeCol);
+    // For the third section (video column)
+    tempDiv.innerHTML = newColumn.trim();
+    const newVideoCol = tempDiv.firstChild;
+    document.getElementById("rowMain").appendChild(newVideoCol);
 
     // Call additional function for ICE candidates (if needed)
     collectionIceCandidateInfo();

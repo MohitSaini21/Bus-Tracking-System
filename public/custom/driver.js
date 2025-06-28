@@ -10,45 +10,80 @@ setTimeout(() => {
     },
   });
 
+  socket.on("connect_error", (err) => {
+    console.error("❌ कनेक्शन त्रुटि:", err.message);
+
+    if (err.message === "Missing auth token") {
+      alert(
+        "⚠️ आपका सत्र समाप्त हो गया है या टोकन अमान्य है। कृपया दोबारा लॉगिन करें।"
+      );
+    } else if (err.message === "Invalid token") {
+      alert("🚫 अधिकृत टोकन नहीं मिला। पहुँच अस्वीकृत।");
+    } else {
+      console.log("❌ कनेक्शन विफल: " + err.message);
+    }
+  });
+
+  // Disconnection Reason
+
+  socket.on("disconnectReason", (msg) => {
+    customDisconnectReason = msg;
+
+    if (msg === "duplicate_connection") {
+      window._wasManuallyRejected = true; // use this flag if needed
+    }
+  });
+
   socket.on("disconnect", (reason) => {
     const isHidden = document.visibilityState === "hidden";
-
     console.log("🔌 Disconnected. Reason:", reason, "| Tab Hidden?", isHidden);
 
+    // Case 1: Automatic network drop or ping timeout
+    if (reason === "ping timeout" || reason === "transport close") {
+      console.log("showing  reconnection UI");
+      showReconnectingUI();
+      return;
+    }
+
+    // Case 2: You were manually kicked, but tab was in background
     if (reason === "io server disconnect" && isHidden) {
       showReconnectingUI();
-
-      // Try to reconnect manually when tab becomes visible
       document.addEventListener(
         "visibilitychange",
         () => {
           if (document.visibilityState === "visible") {
-            console.log("🔁 Tab active, reloading...");
             window.location.reload();
           }
         },
         { once: true }
       );
-
       return;
     }
 
+    // Case 3: Tab is active and server disconnected
     if (reason === "io server disconnect" && !isHidden) {
-      connectionDenied(); // server intentionally kicked
+      if (window._wasManuallyRejected) {
+        connectionDenied(); // ❌ Show "you were rejected" UI
+      } else {
+        // 🟢 Page was visible but kicked without a known reason — refresh to restart
+        showReconnectingUI();
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000); // Give a short delay before reloading
+      }
       return;
     }
 
+    // Case 4: Client itself disconnected intentionally
     if (reason === "io client disconnect") return;
-
-    if (reason === "ping timeout" || reason === "transport close") {
-      showReconnectingUI();
-    }
   });
 
   function showReconnectingUI() {
+    console.log("showing reconnection UI");
+
     const col = `
-      <div class="container">
-        <p>कनेक्ट किया जा रहा है... कृपया प्रतीक्षा करें।</p>
+      <div class="container" style="text-align: center; margin-top: 20px;">
+        <p>🔄 कनेक्ट किया जा रहा है... कृपया प्रतीक्षा करें।</p>
       </div>
     `;
 
@@ -57,15 +92,14 @@ setTimeout(() => {
     const newCol = tempDiv.firstChild;
 
     const mainRow = document.getElementById("mainRow");
-    const rowMain = document.getElementById("rowMain");
 
-    if (mainRow && rowMain) {
-      rowMain.innerHTML = " ";
+    if (mainRow) {
       mainRow.innerHTML = "";
       mainRow.appendChild(newCol);
+    } else {
+      console.warn("⚠️ mainRow element not found!");
     }
   }
-  
 
   window.addEventListener("beforeunload", (e) => {
     if (socket && socket.connected) {
@@ -82,12 +116,21 @@ setTimeout(() => {
         ${user.name} (${user.role})
       </h4>
 <p class="card-description">
-  या तो आपको अनुमति नहीं है, या फिर आपका हेल्पर पहले से ही इस बस की लोकेशन शेयर कर रहा है।
+  🚫 यह बस पहले से ही किसी अन्य डिवाइस से लाइव है।<br /><br />
+  संभवतः कोई और ड्राइवर या हेल्पर इस बस की लोकेशन पहले से भेज रहा है।<br /><br />
+  👉 कृपया थोड़ी देर बाद फिर से प्रयास करें,<br />
+  या सुनिश्चित करें कि कोई और इस समय लोकेशन शेयर नहीं कर रहा हो।
 </p>
+
       <div class="template-demo">
         <button type="button" class="btn btn-secondary btn-fw">
           <a href="/DC" style="text-decoration: none; color: inherit;">वापस जाएँ</a>
         </button>
+
+          <!-- Retry Button -->
+  <button type="button" class="btn btn-primary btn-fw" onclick="location.reload()">
+    🔁 फिर से प्रयास करें
+  </button>
       </div>
     </div>
   </div>
@@ -246,5 +289,4 @@ setTimeout(() => {
       timeout: 10000, // 10 सेकंड तक इंतजार करेगा
     }
   );
-  
 }, 2000);

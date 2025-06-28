@@ -271,7 +271,7 @@ function processQueue(busId) {
     clearEverything();
   });
 }
-
+  
 io.use((socket, next) => {
   try {
     const query = socket.handshake.query;
@@ -385,6 +385,10 @@ io.on("connection", (socket) => {
       console.warn(
         `⚠️ Duplicate live bus connection attempt for bus ${busId}. Disconnecting.`
       );
+
+      // 👇 Send custom disconnect reason BEFORE disconnecting
+      socket.emit("disconnectReason", "duplicate_connection");
+
       socket.disconnect(true);
       return;
     }

@@ -595,7 +595,8 @@ router.post("/meterReading", upload.single("meterPhoto"), async (req, res) => {
       activity.morningSnap = {
         image: imagePath,
         reading: Number(odometer),
-        takenAt: currentIST.toDate(),
+        takenAt: moment().tz("Asia/Kolkata").format("DD MMM YYYY, hh:mm A")
+
       };
     } else {
       activity.eveningSnap = {

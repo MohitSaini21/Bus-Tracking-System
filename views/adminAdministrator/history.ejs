@@ -127,8 +127,7 @@
                 <h6>
                   <p>
                     Bus Record for <%= bus.busNumber %> on <%=
-                    moment(busLog.createdAt).format("DD-MM-YYYY [at] hh:mm A")
-                    %>
+                    moment(busLog.createdAt).format("DD-MM-YYYY") %>
                   </p>
                 </h6>
                 <br />
@@ -436,11 +435,8 @@
                                     </p>
                                     <p>
                                       <strong>Captured At:</strong>
-                                      <%= new
-                                      Date(busLog.eveningSnap.takenAt).toLocaleString("en-IN",
-                                      { day: "2-digit", month: "short", year:
-                                      "numeric", hour: "2-digit", minute:
-                                      "2-digit" }) %>
+                                      <%= busLog.eveningSnap.formattedTakenAt %>
+
                                     </p>
                                     <% if (busLog.eveningSnap.image) { %>
                                     <button
