@@ -114,7 +114,7 @@ setTimeout(() => {
     {
       enableHighAccuracy: true,
       maximumAge: 5 * 60 * 1000,
-      timeout: 10000,
+      timeout: 15000,
     }
   );
 }, 3000);
