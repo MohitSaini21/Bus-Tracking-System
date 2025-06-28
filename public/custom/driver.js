@@ -114,7 +114,6 @@ function buildConnection() {
       liveBusId: bus._id,
     },
   });
-  
 
   socket.on("connect_error", (err) => {
     console.error("❌ कनेक्शन त्रुटि:", err.message);
@@ -149,6 +148,9 @@ function buildConnection() {
       showReconnectingUI(
         "नेटवर्क समस्या या लंबे समय तक निष्क्रियता के कारण कनेक्शन टूट गया।"
       );
+      setTimeout(() => {
+        window.location.reload();
+      }, 3000);
       return;
     }
 
