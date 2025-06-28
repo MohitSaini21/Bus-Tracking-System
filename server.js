@@ -163,7 +163,7 @@ function addTask(task, busObject) {
 }
 
 const TASK_TIMEOUT = 2500; // 10 seconds max per task
-  
+
 function processQueue(task, busObject) {
   const busId = task.bus._id;
   const worker = availableWorkers.shift();
@@ -591,7 +591,7 @@ io.on("connection", (socket) => {
       };
 
       // pertanning to offload
-      addTask(taskInput, busEval);
+      // addTask(taskInput, busEval);
     }
   });
 
