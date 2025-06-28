@@ -23,7 +23,7 @@ setTimeout(() => {
     } else if (err.message === "Invalid token") {
       alert("🚫 अधिकृत टोकन नहीं मिला। पहुँच अस्वीकृत।");
     } else {
-      alert("❌ कनेक्शन विफल: " + err.message);
+      console.log("❌ कनेक्शन विफल: " + err.message);
     }
   });
 
@@ -143,6 +143,7 @@ setTimeout(() => {
     tempDiv.innerHTML = col.trim();
     const newCol = tempDiv.firstChild;
     document.getElementById("mainRow").innerHTML = "";
+
     document.getElementById("mainRow").appendChild(newCol); // ✅ This appends it at the end
   }
   socket.on("connectionApproved", (message) => {

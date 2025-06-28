@@ -287,7 +287,8 @@ router.post(
       const trimmedPassword = password.trim();
 
       let driver = await Driver.findOne({ driverId: trimmedUserId });
-      if (driver.isLogged) {
+      
+      if (driver?.isLogged) {
         return res.status(400).json({
           message:
             "आपका खाता पहले से एक डिवाइस में लॉगिन है। कृपया पहले वहाँ से लॉगआउट करें।",
@@ -313,7 +314,9 @@ router.post(
         }
       } else {
         let conductor = await Conductor.findOne({ conductorId: trimmedUserId });
-        if (conductor.isLogged) {
+ 
+        
+        if (conductor?.isLogged) {
           return res.status(400).json({
             message:
               "आपका खाता पहले से एक डिवाइस में लॉगिन है। कृपया पहले वहाँ से लॉगआउट करें।",

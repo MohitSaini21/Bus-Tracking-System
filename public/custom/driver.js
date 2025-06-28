@@ -82,7 +82,7 @@ setTimeout(() => {
     console.log("showing reconnection UI");
 
     const col = `
-      <div class="container" style="text-align: center; margin-top: 20px;">
+      <div class="container">
         <p>🔄 कनेक्ट किया जा रहा है... कृपया प्रतीक्षा करें।</p>
       </div>
     `;
