@@ -88,6 +88,9 @@ setTimeout(() => {
       console.error("📡 Detailed Error:", error.message);
 
       alert(`📡 GPS त्रुटि: ${message}\n\n📌 सुझाव: ${suggestion}`);
+      setTimeout(() => {
+        window.location.reload(); // 🔄 Try again after a small delay
+      }, 3000);
       safeSpeakHindi(suggestion); // 🔊 Optional TTS
     },
     {
