@@ -19,64 +19,59 @@ function connectionDenied(
       </div>
     </div>
   `;
-  const temp = document.createElement("div");
-  temp.innerHTML = html.trim();
-  document.getElementById("mainRow").innerHTML = "";
-  document.getElementById("mainRow").appendChild(temp.firstChild);
-}
 
-function showReconnectingUI(message = "सर्वर से कनेक्शन टूट गया है।") {
-  const html = `
-    <div class="container text-center" style="margin-top: 40px;">
-      <div class="alert alert-warning" style="font-size: 1.1rem;">🔄 कनेक्ट किया जा रहा है... कृपया प्रतीक्षा करें।</div>
-      <div class="alert alert-danger" style="font-size: 0.95rem;">❌ ${message}</div>
-    </div>
-  `;
   const temp = document.createElement("div");
   temp.innerHTML = html.trim();
+
   const mainRow = document.getElementById("mainRow");
   if (mainRow) {
     mainRow.innerHTML = "";
     mainRow.appendChild(temp.firstChild);
   }
+
+  // Optional: Auto-redirect after 10 seconds
+  setTimeout(() => {
+    window.location.href = "/DC/goLive";
+  }, 10000);
 }
 
-setTimeout(() => {
-  let lastSavedTime = 0;
-  let previousPoint = null;
+function saveLocation(position) {
+  const currentTime = Date.now();
 
-  const saveLocation = (position) => {
-    const currentTime = Date.now();
-
-    const baseData = {
-      latitude: position.coords.latitude,
-      longitude: position.coords.longitude,
-      accuracy: position.coords.accuracy,
-      timestamp: currentTime,
-    };
-
-    if (currentTime - lastSavedTime > 5000 && previousPoint !== null) {
-      baseData.previousPoint = previousPoint;
-      previousPoint = {
-        latitude: baseData.latitude,
-        longitude: baseData.longitude,
-      };
-      lastSavedTime = currentTime;
-    } else if (previousPoint === null) {
-      previousPoint = {
-        latitude: baseData.latitude,
-        longitude: baseData.longitude,
-      };
-      lastSavedTime = currentTime;
-    }
-
-    return baseData;
+  const baseData = {
+    latitude: position.coords.latitude,
+    longitude: position.coords.longitude,
+    accuracy: position.coords.accuracy,
+    timestamp: currentTime,
   };
 
+  if (currentTime - lastSavedTime > 5000 && previousPoint !== null) {
+    baseData.previousPoint = previousPoint;
+    previousPoint = {
+      latitude: baseData.latitude,
+      longitude: baseData.longitude,
+    };
+    lastSavedTime = currentTime;
+  } else if (previousPoint === null) {
+    previousPoint = {
+      latitude: baseData.latitude,
+      longitude: baseData.longitude,
+    };
+    lastSavedTime = currentTime;
+  }
+
+  return baseData;
+}
+
+let lastSavedTime = 0;
+let previousPoint = null;
+
+setTimeout(() => {
   navigator.geolocation.watchPosition(
     (position) => {
       const locationData = saveLocation(position);
       locationData.bus = bus;
+
       console.log("✅ Emitting Live Location:", locationData);
 
       if (socket) {
@@ -114,7 +109,7 @@ setTimeout(() => {
       connectionDenied(
         `📡 GPS त्रुटि: ${message}<br /><br />📌 सुझाव: ${suggestion}`
       );
-      safeSpeakHindi(suggestion);
+      if (typeof safeSpeakHindi === "function") safeSpeakHindi(suggestion);
     },
     {
       enableHighAccuracy: true,
@@ -149,35 +144,13 @@ function buildConnection() {
     const isHidden = document.visibilityState === "hidden";
     console.log("🔌 Disconnected:", reason, "| Hidden?", isHidden);
 
-    const redirectToGoLive = () => {
-      window.location.href = "/DC/goLive";
-    };
-
-    const handleReconnectUI = (message) => {
-      showReconnectingUI(message);
-      if (isHidden) {
-        document.addEventListener(
-          "visibilitychange",
-          () => {
-            if (document.visibilityState === "visible") redirectToGoLive();
-          },
-          { once: true }
-        );
-      } else {
-        setTimeout(redirectToGoLive, 3000);
-      }
-    };
-
-    if (reason === "io client disconnect") {
-      console.log("ℹ️ Client disconnected intentionally.");
-      return;
-    }
+    if (reason === "io client disconnect") return;
 
     if (reason === "ping timeout" || reason === "transport close") {
       const msg = isHidden
         ? "आपकी टैब पृष्ठभूमि में थी, जिससे कनेक्शन बंद हो गया।"
         : "नेटवर्क समस्या या लंबे समय तक निष्क्रियता के कारण कनेक्शन टूट गया।";
-      return handleReconnectUI(msg);
+      return connectionDenied(msg);
     }
 
     if (reason === "io server disconnect") {
@@ -185,17 +158,17 @@ function buildConnection() {
       const msg = isHidden
         ? "जब आप दूसरी टैब पर थे, तब कनेक्शन बंद कर दिया गया।"
         : "आपको सर्वर से डिस्कनेक्ट कर दिया गया। फिर से प्रयास किया जा रहा है...";
-      return handleReconnectUI(msg);
+      return connectionDenied(msg);
     }
 
-    handleReconnectUI("❓ अज्ञात कारण से कनेक्शन टूट गया।");
+    connectionDenied("❓ अज्ञात कारण से कनेक्शन टूट गया।");
   });
 
   window.addEventListener("beforeunload", () => {
     if (socket?.connected) socket.disconnect();
   });
 
-  socket.on("connectionApproved", (message) => {
+  socket.on("connectionApproved", () => {
     const uiHTML = `
       <div class="col-12 grid-margin stretch-card" id="goAhead">
         <div class="card">
@@ -218,10 +191,10 @@ function buildConnection() {
 
     const tempDiv = document.createElement("div");
     tempDiv.innerHTML = uiHTML.trim();
-    document.getElementById("mainRow").innerHTML = "";
-    tempDiv.childNodes.forEach((el) =>
-      document.getElementById("mainRow").appendChild(el)
-    );
+    const mainRow = document.getElementById("mainRow");
+    if (mainRow) {
+      mainRow.innerHTML = "";
+      tempDiv.childNodes.forEach((el) => mainRow.appendChild(el));
+    }
   });
 }
-
