@@ -1,14 +1,117 @@
 setTimeout(() => {
-  const socket = io({
+  let lastSavedTime = 0;
+  let previousPoint = null;
+
+  const saveLocation = (position) => {
+    const currentTime = Date.now();
+
+    if (currentTime - lastSavedTime > 5000 && previousPoint !== null) {
+      // 5 second ho gaye, aur previousPoint available hai
+      const locationData = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+        timestamp: currentTime,
+        previousPoint,
+      };
+
+      // Update previousPoint for next call
+      previousPoint = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      };
+
+      lastSavedTime = currentTime;
+      return locationData;
+    } else {
+      // Pehli baar ya 5 second se kam, bina previousPoint ke
+      const locationData = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+        timestamp: currentTime,
+      };
+
+      // Pehli baar yahan pe previousPoint ko set kar rahe hain
+      if (previousPoint === null) {
+        previousPoint = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+        lastSavedTime = currentTime; // also set lastSavedTime first time
+      }
+
+      return locationData;
+    }
+  };
+
+  navigator.geolocation.watchPosition(
+    (position) => {
+      let locationData = saveLocation(position);
+      locationData["bus"] = bus;
+
+      console.log("✅ Emitting Live Location:", locationData);
+      if (socket) {
+        socket.emit("busLocationUpdate", locationData);
+      } else {
+        buildConnection();
+      }
+    },
+    (error) => {
+      let message = "";
+      let suggestion = "";
+
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          message =
+            "❌ अनुमति अस्वीकृत: उपयोगकर्ता ने वेबसाइट को लोकेशन एक्सेस की अनुमति नहीं दी।";
+          suggestion = "कृपया वेबसाइट को लोकेशन अनुमति दें।";
+          break;
+
+        case error.POSITION_UNAVAILABLE:
+          message = "❌ स्थिति अनुपलब्ध: डिवाइस लोकेशन नहीं खोज सका।";
+          suggestion = "कृपया GPS ऑन करें या खुले स्थान पर जाएं।";
+          break;
+
+        case error.TIMEOUT:
+          message = "⌛ समय समाप्त: लोकेशन प्राप्त करने में अधिक समय लग गया।";
+          suggestion = "इंटरनेट या GPS की स्थिति जांचें।";
+          break;
+
+        default:
+          message = `⚠️ अज्ञात त्रुटि: ${error.message}`;
+          suggestion = "कृपया डिवाइस की सेटिंग्स जांचें।";
+          break;
+      }
+
+      console.error("📡 GPS Error Code:", error.code);
+      console.error("📡 Detailed Error:", error.message);
+
+      alert(`📡 GPS त्रुटि: ${message}\n\n📌 सुझाव: ${suggestion}`);
+      safeSpeakHindi(suggestion); // 🔊 Optional TTS
+    },
+    {
+      enableHighAccuracy: true,
+      maximumAge: 5 * 60 * 1000, // 5 मिनट पुरानी लोकेशन तक मान्य
+      timeout: 10000, // 10 सेकंड तक इंतजार करेगा
+    }
+  );
+}, 3000);
+
+let socket = null;
+function buildConnection() {
+  socket = io({
     reconnection: true,
-    reconnectionAttempts: Infinity, // Keep trying forever
-    reconnectionDelay: 3000, // Start with 3s delay
-    reconnectionDelayMax: 10000,
+    reconnectionAttempts: Infinity, // Keep retrying forever
+    reconnectionDelay: 6000, // ⏱ Wait 6 seconds before first retry
+    reconnectionDelayMax: 15000, // ⏱ Maximum wait between retries
+    timeout: 20000, // 🕒 20 seconds to wait for connect before failing
     query: {
       role: user.role,
-      liveBusId: bus._id, // Convert the _id to a string (if it’s a MongoDB ObjectId)
+      liveBusId: bus._id,
     },
   });
+  
 
   socket.on("connect_error", (err) => {
     console.error("❌ कनेक्शन त्रुटि:", err.message);
@@ -86,7 +189,6 @@ setTimeout(() => {
     // Unknown reason (fallback)
     showReconnectingUI("❓ अज्ञात कारण से कनेक्शन टूट गया।");
   });
-  
 
   /**
    * Displays a reconnection UI message to the user with a given error reason.
@@ -219,98 +321,4 @@ setTimeout(() => {
     const newIframeCol = tempDiv.firstChild;
     document.getElementById("mainRow").appendChild(newIframeCol);
   });
-
-  let lastSavedTime = 0;
-  let previousPoint = null;
-
-  const saveLocation = (position) => {
-    const currentTime = Date.now();
-
-    if (currentTime - lastSavedTime > 5000 && previousPoint !== null) {
-      // 5 second ho gaye, aur previousPoint available hai
-      const locationData = {
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-        accuracy: position.coords.accuracy,
-        timestamp: currentTime,
-        previousPoint,
-      };
-
-      // Update previousPoint for next call
-      previousPoint = {
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-      };
-
-      lastSavedTime = currentTime;
-      return locationData;
-    } else {
-      // Pehli baar ya 5 second se kam, bina previousPoint ke
-      const locationData = {
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-        accuracy: position.coords.accuracy,
-        timestamp: currentTime,
-      };
-
-      // Pehli baar yahan pe previousPoint ko set kar rahe hain
-      if (previousPoint === null) {
-        previousPoint = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-        };
-        lastSavedTime = currentTime; // also set lastSavedTime first time
-      }
-
-      return locationData;
-    }
-  };
-
-  navigator.geolocation.watchPosition(
-    (position) => {
-      let locationData = saveLocation(position);
-      locationData["bus"] = bus;
-
-      console.log("✅ Emitting Live Location:", locationData);
-      socket.emit("busLocationUpdate", locationData);
-    },
-    (error) => {
-      let message = "";
-      let suggestion = "";
-
-      switch (error.code) {
-        case error.PERMISSION_DENIED:
-          message =
-            "❌ अनुमति अस्वीकृत: उपयोगकर्ता ने वेबसाइट को लोकेशन एक्सेस की अनुमति नहीं दी।";
-          suggestion = "कृपया वेबसाइट को लोकेशन अनुमति दें।";
-          break;
-
-        case error.POSITION_UNAVAILABLE:
-          message = "❌ स्थिति अनुपलब्ध: डिवाइस लोकेशन नहीं खोज सका।";
-          suggestion = "कृपया GPS ऑन करें या खुले स्थान पर जाएं।";
-          break;
-
-        case error.TIMEOUT:
-          message = "⌛ समय समाप्त: लोकेशन प्राप्त करने में अधिक समय लग गया।";
-          suggestion = "इंटरनेट या GPS की स्थिति जांचें।";
-          break;
-
-        default:
-          message = `⚠️ अज्ञात त्रुटि: ${error.message}`;
-          suggestion = "कृपया डिवाइस की सेटिंग्स जांचें।";
-          break;
-      }
-
-      console.error("📡 GPS Error Code:", error.code);
-      console.error("📡 Detailed Error:", error.message);
-
-      alert(`📡 GPS त्रुटि: ${message}\n\n📌 सुझाव: ${suggestion}`);
-      safeSpeakHindi(suggestion); // 🔊 Optional TTS
-    },
-    {
-      enableHighAccuracy: true,
-      maximumAge: 5 * 60 * 1000, // 5 मिनट पुरानी लोकेशन तक मान्य
-      timeout: 10000, // 10 सेकंड तक इंतजार करेगा
-    }
-  );
-}, 2000);
+}
