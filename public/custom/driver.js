@@ -68,7 +68,7 @@ setTimeout(() => {
 
       console.log("✅ Emitting Live Location:", locationData);
 
-      if (socket && socket.connected) {
+      if (socket) {
         socket.emit("busLocationUpdate", locationData);
       } else {
         buildConnection();
