@@ -24,10 +24,13 @@ const busActivityLogSchema = new Schema(
     ],
     events: [
       {
+        campus: {
+          type: String,
+          rquired: true,
+        },
         event: { type: String, enum: ["Entered", "Exited"], required: true },
 
         timestamp: { type: Date, required: true },
-        coordinates: { type: [Number], required: true }, // [longitude, latitude]
       },
     ],
     morningSnap: {

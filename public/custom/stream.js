@@ -38,6 +38,10 @@ function connectionDenied(
   temp.innerHTML = html.trim();
 
   const mainRow = document.getElementById("mainRow");
+  const rowMain = document.getElementById("rowMain");
+  if (rowMain) {
+    rowMain.innerHTML = "";
+  }
   if (mainRow) {
     mainRow.innerHTML = "";
     mainRow.appendChild(temp.firstChild);
@@ -159,6 +163,11 @@ function buildConnection() {
   });
 
   socket.on("disconnect", (reason) => {
+    // disconnecting peerConnection whenever disoncnection occur
+    if (peerConnection) {
+      peerConnection.close();
+      peerConnection = null;
+    }
     const isHidden = document.visibilityState === "hidden";
     console.log("🔌 Disconnected:", reason, "| Hidden?", isHidden);
 

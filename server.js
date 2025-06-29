@@ -138,7 +138,9 @@ cron.schedule("0 0 * * *", () => {
 //  NewArch Based Code
 
 const MAX_WORKERS = os.cpus().length - 1; // 8 in your case
+const waitingArea = new Set(); // 👈 No duplicates
 const workers = [];
+
 const availableWorkers = [];
 
 for (let i = 0; i < MAX_WORKERS; i++) {
@@ -147,28 +149,79 @@ for (let i = 0; i < MAX_WORKERS; i++) {
   availableWorkers.push(worker);
 }
 // ---- TASK & QUEUE MAPS ----
-const taskQueues = []; // Map<busId, Queue<Task>>
+const taskQueues = new Map(); // Map<busId, Queue<Task>>
 const isProcessing = new Map(); // Map<busId, Boolean>
 
 // ---- Add task to bus queue ----
-function addTask(task, busObject) {
+// ---- Add task to bus queue ----
+function addTask(task) {
   const busId = task.bus._id;
-  if (isProcessing.get(busId) || availableWorkers.length === 0) {
-    taskQueues.push({ task, busObject });
-    return;
+
+  if (!taskQueues.has(busId)) {
+    taskQueues.set(busId, []);
+    isProcessing.set(busId, false);
   }
 
-  isProcessing.set(busId, false);
-  processQueue(task, busObject);
+  const queue = taskQueues.get(busId);
+  queue.push(task);
+
+  console.log(`[QUEUE] Bus ${busId} → Queue length: ${queue.length}`);
+
+  if (!isProcessing.get(busId)) {
+    processQueue(busId);
+  }
 }
 
 const TASK_TIMEOUT = 2500; // 10 seconds max per task
 
-function processQueue(task, busObject) {
-  const busId = task.bus._id;
+// Ineterval to Provess Watitign Area
+setInterval(() => {
+  if (availableWorkers.length === 0) return;
+
+  const busId = [...waitingArea][0];
+  if (busId) {
+    waitingArea.delete(busId);
+    processQueue(busId);
+  }
+}, 500); // Every 500ms
+
+// To improve Memeory
+setInterval(() => {
+  for (const [busId, queue] of taskQueues) {
+    if (queue.length === 0 && !isProcessing.get(busId)) {
+      taskQueues.delete(busId);
+      isProcessing.delete(busId);
+      waitingArea.delete(busId);
+    }
+  }
+}, 10 * 60 * 1000); // Every 10 mins
+
+function processQueue(busId) {
+  if (isProcessing.get(busId)) return;
+
+  const queue = taskQueues.get(busId);
+  if (!queue || queue.length === 0) {
+    // When retrying:
+    let busId = [...waitingArea][0];
+    if (busId) {
+      waitingArea.delete(busId); // 👈 remove from set
+      processQueue(busId);
+    }
+
+    return;
+  }
+
+  if (availableWorkers.length === 0) {
+    waitingArea.add(busId); // 👈 No repeat entries
+    return;
+  }
+
+  const task = queue.shift();
   const worker = availableWorkers.shift();
 
   const start = Date.now();
+
+  const busObject = lastEvaluated[busId];
 
   isProcessing.set(busId, true);
 
@@ -180,20 +233,25 @@ function processQueue(task, busObject) {
     worker.removeAllListeners();
     isProcessing.set(busId, false);
     availableWorkers.push(worker);
-    if (taskQueues.shift()) {
-      processQueue({ ...taskQueues.shift() });
-    }
+    processQueue(busId);
   };
 
   const timeout = setTimeout(() => {
     if (!resolved) {
       console.warn(`⏰ Timeout: Task for bus ${busId} took too long.`);
       try {
-        worker.terminate(); // 🔥 Kill rogue worker
+        worker.removeAllListeners();
+        isProcessing.set(busId, false);
+        worker.terminate().then(() => {
+          // DON'T push it back, instead:
+          const newWorker = new Worker("./workerTask.js");
+          workers.push(newWorker);
+          availableWorkers.push(newWorker);
+          processQueue(busId);
+        });
       } catch (e) {
         console.error("Worker termination failed:", e);
       }
-      clearEverything();
     }
   }, TASK_TIMEOUT);
 
@@ -222,10 +280,16 @@ function processQueue(task, busObject) {
 
     clearEverything();
   });
+  if (!task._retries) task._retries = 0;
 
   worker.once("error", (err) => {
     if (resolved) return;
     console.error("💥 Worker crashed:", err);
+    if (task._retries < 1) {
+      task._retries++;
+      taskQueues.get(busId)?.unshift(task); // Retry it
+    }
+
     clearEverything();
   });
 
@@ -348,15 +412,26 @@ io.on("connection", (socket) => {
     const busId = socket.liveBusId;
 
     if (liveBuses.includes(busId)) {
-      console.warn(
-        `⚠️ Duplicate live bus connection attempt for bus ${busId}. Disconnecting.`
-      );
+      for (const [socketId, ExistingSocket] of io.sockets.sockets) {
+        const socketBusId = ExistingSocket.liveBusId;
 
-      // 👇 Send custom disconnect reason BEFORE disconnecting
-      socket.emit("disconnectReason", "duplicate_connection");
+        // ✅ Skip if it's not a live bus
+        if (!socketBusId) {
+          continue;
+        }
 
-      socket.disconnect(true);
-      return;
+        // ✅ Match found: Same bus is already connected
+        if (socketBusId === busId) {
+          // Notify old connection
+          ExistingSocket.emit("disconnectReason", "duplicate_connection");
+
+          // Disconnect it (this will trigger the cleanup logic in .on('disconnect'))
+          ExistingSocket.disconnect(true);
+
+          console.warn(`⚠️ Overriding connection for bus ${busId}`);
+          break; // Stop after finding the match
+        }
+      }
     }
 
     liveBuses.push(busId);
@@ -532,7 +607,7 @@ io.on("connection", (socket) => {
   });
 
   socket.on("busLocationUpdate", (data) => {
-    const { previousPoint, ...clone } = data;
+    const clone = data;
     const busId = data.bus?._id;
     if (!busId) return;
 
@@ -570,6 +645,7 @@ io.on("connection", (socket) => {
         busId,
         reachedStops: {},
         lastEvaluations: 0,
+        previousPoint: { latitude: data.latitude, longitude: data.longitude },
       };
     }
 
@@ -591,7 +667,7 @@ io.on("connection", (socket) => {
       };
 
       // pertanning to offload
-      // addTask(taskInput, busEval);
+      // addTask(taskInput);
     }
   });
 
@@ -615,6 +691,7 @@ io.on("connection", (socket) => {
     // 🟣 Administrator (per-bus)
     if (socket.bus && socket.administratorId) {
       const busId = socket.bus;
+
       removeSocketFromMap(
         administratorConnectionsBus,
         busId,

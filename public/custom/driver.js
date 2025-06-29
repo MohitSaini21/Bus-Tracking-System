@@ -2,8 +2,6 @@ let socket = null;
 let lastSavedTime = 0;
 let previousPoint = null;
 
-
-
 function connectionDenied(
   message = "🚫 यह बस पहले से ही किसी अन्य डिवाइस से लाइव है।"
 ) {
@@ -32,9 +30,6 @@ function connectionDenied(
     mainRow.innerHTML = "";
     mainRow.appendChild(temp.firstChild);
   }
-
-
-  
 }
 
 function saveLocation(position) {
@@ -48,7 +43,7 @@ function saveLocation(position) {
   };
 
   if (currentTime - lastSavedTime > 5000 && previousPoint !== null) {
-    baseData.previousPoint = previousPoint;
+    // baseData.previousPoint = previousPoint;
     previousPoint = {
       latitude: baseData.latitude,
       longitude: baseData.longitude,
@@ -64,8 +59,6 @@ function saveLocation(position) {
 
   return baseData;
 }
-
-
 
 setTimeout(() => {
   navigator.geolocation.watchPosition(
@@ -154,11 +147,15 @@ function buildConnection() {
     }
 
     if (reason === "io server disconnect") {
-      if (window._wasManuallyRejected) return connectionDenied();
+      if (window._wasManuallyRejected) {
+        connectionDenied();
+        return;
+      }
       const msg = isHidden
         ? "जब आप दूसरी टैब पर थे, तब कनेक्शन बंद कर दिया गया।"
         : "आपको सर्वर से डिस्कनेक्ट कर दिया गया। फिर से प्रयास किया जा रहा है...";
-      return connectionDenied(msg);
+      connectionDenied(msg);
+      return;
     }
 
     connectionDenied("❓ अज्ञात कारण से कनेक्शन टूट गया।");

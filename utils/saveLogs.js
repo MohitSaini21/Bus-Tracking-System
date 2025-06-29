@@ -42,8 +42,9 @@ export default async function saveLogs(busObject) {
     for (const item of busObject.eventTimeline || []) {
       if (item?.eventType && item?.time) {
         eventsData.push({
+          campus: item.campus,
           event: item.eventType,
-          timestamp: new Date(item.time),
+          timestamp: item.time,
         });
       }
     }

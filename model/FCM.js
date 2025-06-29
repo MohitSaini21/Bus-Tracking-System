@@ -40,6 +40,7 @@ const fcmSchema = new mongoose.Schema({
 
   isActive: {
     type: Boolean,
+    index: true,
     default: true, // Can be used to soft-disable tokens
   },
 });
