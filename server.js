@@ -302,6 +302,8 @@ function processQueue(busId) {
   });
 }
 
+const pendingBusOverrides = {}; // store busId => socket.id
+
 io.use((socket, next) => {
   try {
     const query = socket.handshake.query;
@@ -412,39 +414,55 @@ io.on("connection", (socket) => {
     const busId = socket.liveBusId;
 
     if (liveBuses.includes(busId)) {
+      // 📝 Mark this new socket as the override attempt
+      pendingBusOverrides[busId] = socket.id;
+
       for (const [socketId, ExistingSocket] of io.sockets.sockets) {
         const socketBusId = ExistingSocket.liveBusId;
 
-        // ✅ Skip if it's not a live bus
-        if (!socketBusId) {
-          continue;
-        }
+        if (!socketBusId) continue;
 
-        // ✅ Match found: Same bus is already connected
         if (socketBusId === busId) {
-          // Notify old connection
           ExistingSocket.emit("disconnectReason", "duplicate_connection");
-
-          // Disconnect it (this will trigger the cleanup logic in .on('disconnect'))
           ExistingSocket.disconnect(true);
-
           console.warn(`⚠️ Overriding connection for bus ${busId}`);
-          break; // Stop after finding the match
+          break;
         }
       }
+      setTimeout(() => {
+        const isAlreadyLive = liveBuses.includes(busId);
+        const isStillPending = pendingBusOverrides[busId] === socket.id;
+
+        if (!isAlreadyLive && isStillPending) {
+          liveBuses.push(busId);
+          console.log(`🟢 Bus ${busId} is now live with socket ${socket.id}`);
+
+          allAdmins.forEach((adminSocketId) => {
+            io.to(adminSocketId).emit("add", busId);
+          });
+
+          socket.emit("connectionApproved", "✅ You are now live.");
+        } else if (isAlreadyLive && isStillPending) {
+          // Old connection hasn't been cleaned up in time
+          console.log(
+            `⛔ Conflict still exists. Forcing disconnect of pending override`
+          );
+          socket.emit("disconnectReason", "duplicate_connection");
+          socket.disconnect(true);
+        }
+
+        delete pendingBusOverrides[busId]; // cleanup
+      }, 1000);
+    } else {
+      liveBuses.push(busId);
+      console.log(`🟢 Bus ${busId} is now live with socket ${socket.id}`);
+
+      allAdmins.forEach((adminSocketId) => {
+        io.to(adminSocketId).emit("add", busId);
+      });
+
+      socket.emit("connectionApproved", "✅ You are now live.");
     }
-
-    liveBuses.push(busId);
-    console.log(`🟢 Bus ${busId} is now live with socket ${socket.id}`);
-
-    // Notify all admins
-    allAdmins.forEach((adminSocketId) => {
-      io.to(adminSocketId).emit("add", busId);
-    });
-
-    socket.emit("connectionApproved", "✅ You are now live.");
-
-    // ❌ Unrecognized Connection
   } else {
     console.warn("🚫 Unknown or malformed connection attempt:", query);
     socket.disconnect(true);
