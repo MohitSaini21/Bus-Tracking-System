@@ -415,9 +415,8 @@ async function startStreaming(button) {
 <div
   id="zoomControls"
   style="
-  style="
     position: absolute;
-   bottom: 48px; /* 👈 moved slightly up from bottom */
+    bottom: 60px;
     right: 12px;
     z-index: 999;
     display: flex;
