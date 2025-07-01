@@ -260,8 +260,7 @@ function buildConnection() {
     const newVideoCol = tempDiv.firstChild;
     document.getElementById("rowMain").appendChild(newVideoCol);
 
-    // Call additional function for ICE candidates (if needed)
-    collectionIceCandidateInfo();
+
   });
 
   async function collectionIceCandidateInfo() {

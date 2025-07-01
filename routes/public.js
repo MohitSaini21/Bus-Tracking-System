@@ -462,4 +462,71 @@ router.post("/complaints", async (req, res) => {
   }
 });
 
+router.get("/routingMachine", async (req, res) => {
+  try {
+
+    
+
+    const { logId, busId } = req.query;
+
+    if (logId) {
+      // Case: BusActivityLog route rendering
+      const log = await BusActivityLog.findById(logId).populate(
+        "bus",
+        "iconPhoto"
+      );
+      if (!log) {
+        return res
+          .status(404)
+          .json({ message: "❌ No log found with this ID." });
+      }
+
+      const path = log.path.map((point) => ({
+        lat: point.lat,
+        lng: point.lon, // lon → lng for Leaflet
+      }));
+
+      return res.render("adminAdministrator/machine.ejs", {
+        coordinates: path,
+        iconUrl: log.bus.iconPhoto,
+      });
+    } else if (busId) {
+      // Case: Bus route rendering
+      const bus = await Bus.findById(busId);
+      if (!bus) {
+        return res
+          .status(404)
+          .json({ message: "❌ No bus found with this ID." });
+      }
+
+      const route = bus.routeStops
+        .map((stop) => ({
+          order: parseInt(stop.stopOrder),
+          lat: parseFloat(stop.latitude),
+          lng: parseFloat(stop.longitude),
+        }))
+        .filter(
+          (point) =>
+            !isNaN(point.lat) && !isNaN(point.lng) && !isNaN(point.order)
+        )
+        .sort((a, b) => a.order - b.order)
+        .map(({ lat, lng }) => ({ lat, lng })); // ✅ Remove `order`
+
+      console.log(route);
+
+      return res.render("adminAdministrator/machine.ejs", {
+        coordinates: route,
+        iconUrl: bus.iconPhoto,
+      });
+    } else {
+      return res.status(400).json({
+        message: "❌ Invalid URL: Provide either logId or busId in query.",
+      });
+    }
+  } catch (error) {
+    console.error("Error in /routingMachine:", error);
+    res.status(500).json({ message: "❌ Internal server error" });
+  }
+});
+
 export { router as publicRouter };

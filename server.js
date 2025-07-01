@@ -3,7 +3,9 @@ import express from "express"; // Core framework for building the server
 import { config } from "dotenv"; // For environment variable management
 import updateDistance from "./utils/distance.js";
 import evaluateBusProximityToStops from "./utils/stopsProximity.js";
+import FCM from "./model/FCM.js";
 import { dcRouter } from "./routes/DC.js";
+import CORE from "./model/admin.js";
 import { sendNotificationToClient } from "./utils/notify.js";
 import { Worker } from "worker_threads";
 import os from "os";
@@ -47,7 +49,7 @@ const app = express();
 
 app.use(cookieParser());
 // Enable trust proxy
-app.set("trust proxy", true);
+// app.set("trust proxy", true);
 
 // Middleware and Settings
 // Set EJS as the view engine (Corrected 'view engine' typo)
@@ -104,6 +106,7 @@ app.use(
 );
 // Handler if user want's to communicate over webScoket protocols
 import { Server } from "socket.io";
+import Bus from "./model/bus.js";
 const io = new Server(server);
 app.set("io", io); // <-- shared shelf mein rakh diy
 // Object to store busId -> array of socketIds
@@ -447,7 +450,7 @@ io.on("connection", (socket) => {
           console.log(
             `⛔ Conflict still exists. Forcing disconnect of pending override`
           );
-          socket.emit("disconnectReason", "duplicate_connection");
+
           socket.disconnect(true);
         }
 
@@ -686,6 +689,118 @@ io.on("connection", (socket) => {
 
       // pertanning to offload
       // addTask(taskInput);
+    }
+  });
+
+  socket.on("stopStreaming", ({ busId }) => {
+    administratorIds.forEach((id) => {
+      io.to(id).emit("deleteStream", busId);
+    });
+
+    if (administratorConnectionsBus[busId]) {
+      administratorConnectionsBus[busId].forEach((id) => {
+        io.to(id).emit("deleteStream", busId);
+      });
+    }
+
+    if (peers[busId]) {
+      delete peers[busId];
+      console.log(`🧹 Cleaned peers for ${busId}`);
+    }
+
+    console.log(`📡 stopStreaming received for bus: ${busId}`);
+  });
+  // notificton event
+  socket.on("sendNotificiation", async ({ stopId, status }, callback) => {
+    console.log("we have recieved an event got it ");
+    try {
+      const activeTokens = await FCM.find({
+        stopId,
+        isActive: true,
+      }).select("fcmToken stop stopId");
+
+      if (!activeTokens.length) {
+        return callback(true); // No one to notify
+      }
+
+      const title = "Bus Stop Update";
+
+      // Status to formal English message mapping
+      const statusMessages = {
+        arriving: "The bus is arriving shortly at your stop.",
+        arrived: "The bus has just arrived at your stop.",
+        departing: "The bus will be departing from your stop soon.",
+        departed: "The bus has departed from your stop.",
+      };
+
+      const formalMessage =
+        statusMessages[status] || `New status at your stop: ${status}`;
+
+      for (const entry of activeTokens) {
+        const stopName = entry.stop?.stopName || "your stop";
+        const message = `Update for "${stopName}": ${formalMessage}`;
+        await sendNotificationToClient(entry.fcmToken, title, message);
+      }
+
+      callback(true);
+    } catch (err) {
+      console.error("Error while sending notification:", err);
+      callback(false);
+    }
+  });
+  socket.on("streamNotification", async ({ busId, about }) => {
+    try {
+      const bus = await Bus.findById(busId)
+        .select("busNumber route _id")
+        .populate("driver", "name phone")
+        .populate("conductor", "name phone");
+
+      if (!bus) return;
+
+      const admins = await CORE.find({
+        role: { $in: ["admin", "administrator"] },
+        isLogged: true,
+        notificationToken: { $exists: true, $ne: "" },
+      });
+
+      const route = bus.route || "N/A";
+      const busNumber = bus.busNumber || "Unknown";
+
+      // Safely get driver and conductor details
+      const driverInfo =
+        bus.driver?.name && bus.driver?.phone
+          ? `Driver: ${bus.driver.name} (${bus.driver.phone})`
+          : null;
+
+      const conductorInfo =
+        bus.conductor?.name && bus.conductor?.phone
+          ? `Conductor: ${bus.conductor.name} (${bus.conductor.phone})`
+          : null;
+      console.log(conductorInfo);
+
+      const additionalInfo = [conductorInfo, driverInfo]
+        .filter(Boolean)
+        .join("\n");
+      console.log(additionalInfo);
+
+      for (const admin of admins) {
+        const title = "📡 Live Stream Alert";
+        let message = `Bus number ${busNumber} on route "${route}" has ${about} live streaming.`;
+
+        if (additionalInfo) {
+          message += `\n\n${additionalInfo}`;
+        }
+
+        if (admin.role === "admin") {
+          message += `\n\nPlease confirm the situation and take necessary actions.`;
+        } else {
+          message += `\n\nAs an administrator, please monitor the stream.`;
+        }
+
+        await sendNotificationToClient(admin.notificationToken, title, message);
+      }
+    } catch (err) {
+      console.error("Error sending stream notification:", err);
     }
   });
 

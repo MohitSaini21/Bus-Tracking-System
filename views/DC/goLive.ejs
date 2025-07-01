@@ -35,16 +35,82 @@
 
 
 .fullscreen-map {
-  position: fixed;
+  position: fixed !important;
   top: 0;
   left: 0;
   width: 100vw !important;
   height: 100vh !important;
-  z-index: 9999;
-  background-color: white; /* Optional: add a white background */
+  z-index: 5000; /* Highest safe z-index */
+  background-color: white;
+  animation: fadeInMap 0.4s ease-in-out forwards;
+  overflow: hidden;
   margin: 0;
   padding: 0;
 }
+
+@keyframes fadeInMap {
+  0% {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.shrink-map {
+  animation: fadeOutMap 0.4s ease-in-out forwards;
+}
+
+@keyframes fadeOutMap {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0.7;
+    transform: scale(0.98); /* Slight shrink for realism */
+  }
+}
+
+
+#driverVideo {
+  width: 100%;      /* Makes the video take the full width of the parent */
+  height: 100%;     /* Makes the video take the full height of the parent */
+  object-fit: cover; /* Ensures the aspect ratio is maintained, and it covers the parent container */
+}
+
+
+ /* Light transparent backdrop */
+ .modal-backdrop {
+    background-color: rgba(255, 255, 255, 0.6) !important;
+    z-index: 2147483646 !important;
+  }
+
+  .modal {
+    z-index: 2147483647 !important;
+  }
+
+  .modal-content {
+    background-color: #fefefe; /* Lightest white tone */
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  }
+
+  .modal-header, .modal-footer {
+    border: none;
+  }
+
+  .dropdown-menu {
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  }
+
+  .dropdown-item:hover {
+    background-color: #f1f1f1;
+  }
+
 
 </style>
 
@@ -65,6 +131,9 @@
         <!-- partial -->
         <div class="main-panel">
           <div class="content-wrapper">
+          
+            
+            
          <div class="row" id="mainRow">
           <div class="container">
             <p>
@@ -78,7 +147,11 @@
               
 
             </div>
-            
+            <div class="row" id="rowMain">
+
+
+            </div>
+      
      
               
        
@@ -97,6 +170,45 @@
       </div>
       <!-- page-body-wrapper ends -->
     </div>
+
+    <!-- Modal -->
+     <!-- Modal -->
+     <div class="modal fade" id="staticBackdrop" data-backdrop="static" data-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+    
+          <div class="modal-header bg-white">
+            <h5 class="modal-title font-weight-bold text-dark" id="staticBackdropLabel">स्टॉप नोटिफिकेशन</h5>
+            <button type="button" class="close text-dark" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+    
+          <div class="modal-body py-3">
+            <% bus.routeStops.forEach(function(stop) { %>
+              <div class="dropdown mb-3">
+  <button type="button" class="btn btn-outline-primary dropdown-toggle w-100 text-left" id="dropdownMenu-<%=stop._id  %>" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-stop-name="<%=stop.stopName  %>">
+                  <i class="mdi mdi-bell mr-2"></i> <%= stop.stopName %>
+                </button>
+    
+                <div class="dropdown-menu w-100" aria-labelledby="dropdownMenu-<%= stop._id %>">
+                  <h6 class="dropdown-header text-muted">नोटिफिकेशन भेजें</h6>
+                  <a class="dropdown-item" href="#" onclick="notifyStatus('<%= stop._id %>', 'arriving')">आने वाले हैं</a>
+                  <a class="dropdown-item" href="#" onclick="notifyStatus('<%= stop._id %>', 'arrived')">आ गए हैं</a>
+                  <a class="dropdown-item" href="#" onclick="notifyStatus('<%= stop._id %>', 'departing')">निकलने वाले हैं</a>
+                  <a class="dropdown-item" href="#" onclick="notifyStatus('<%= stop._id %>', 'departed')">निकल गए हैं</a>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+    
+   
+          
+    
+        </div>
+      </div>
+    </div>
+    <!-- Modal -->
     <!-- container-scroller -->
     <!-- plugins:js -->
     <script src="/assets/vendors/js/vendor.bundle.base.js"></script>
@@ -109,6 +221,8 @@
     <script src="/assets/js/misc.js"></script>
     <script src="/assets/js/settings.js"></script>
     <script src="/assets/js/todolist.js"></script>
+    <link href="https://cdn.materialdesignicons.com/7.2.96/css/materialdesignicons.min.css" rel="stylesheet">
+
 
         <script src="/socket.io/socket.io.js"></script>
         <script type="module" src="/foreground.js"></script>
