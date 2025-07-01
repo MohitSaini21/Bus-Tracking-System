@@ -15,6 +15,9 @@ const iceConfig = {
 
 function connectionDenied(message) {
   cleanupConnection();
+  if (socket) {
+    socket.disconnect();
+  }
   const html = `
     <div class="col-12 grid-margin stretch-card" id="goBack">
       <div class="card">
@@ -224,67 +227,72 @@ function renderStreamingUI() {
         </div>
       </div>
     </div>
- <div class="col-md-12 grid-margin stretch-card" id="videoTag" style="height: 60vh; position: relative;">
-  <div class="card h-100">
-    <div class="card-body p-0" style="height: 100%; position: relative;">
-      <iframe
-        id="videoIframe"
-        src="/locationBus/${bus._id}"
-        frameborder="0"
-        style="width: 100%; height: 100%;"
-        allow="autoplay; fullscreen">
-      </iframe>
+ <!-- 🟦 Video + Controls Container -->
+<div class="col-md-12 grid-margin stretch-card" style="position: relative; height: 60vh;" id="videoTag">
+  <div class="card h-100 d-flex flex-column">
+    <div class="card-body p-0 d-flex flex-row" style="height: 100%; position: relative;">
 
-   <!-- Zoom/Control Panel -->
-<div
-  id="zoomControls"
-  style="
-    position: absolute;
-    bottom: 12px;
-    right: 12px;
-    z-index: 999;
-    display: flex;
-    gap: 12px;
-    background-color: transparent;
-    padding: 6px 12px;
-    border-radius: 8px;
-    align-items: center;
-  ">
+      <!-- ✅ IFRAME SECTION -->
+      <div style="flex: 1; height: 100%; position: relative;">
+        <iframe
+          id="videoIframe"
+          src="/locationBus/${bus._id}"
+          frameborder="0"
+          allow="autoplay; fullscreen"
+          style="width: 100%; height: 100%; border: none;">
+        </iframe>
+      </div>
 
-  <!-- Zoom In -->
-  <button onclick="zoomInIframe()" title="Zoom In"
-    style="background: none; border: none; color: black; font-size: 22px; cursor: pointer;">
-    <i class="mdi mdi-magnify-plus-outline"></i>
-  </button>
+      <!-- ✅ ZOOM / CONTROL PANEL (OUTSIDE iframe) -->
+      <div id="zoomControls"
+        style="
+          position: absolute;
+          bottom: 12px;
+          right: 12px;
+          z-index: 99999;
+          display: flex;
+          gap: 12px;
+          background-color: rgba(255, 255, 255, 0.9);
+          padding: 6px 12px;
+          border-radius: 8px;
+          align-items: center;
+        ">
 
-  <!-- Zoom Out -->
-  <button onclick="zoomOutIframe()" title="Zoom Out"
-    style="background: none; border: none; color: black; font-size: 22px; cursor: pointer;">
-    <i class="mdi mdi-magnify-minus-outline"></i>
-  </button>
+        <!-- Zoom In -->
+        <button onclick="zoomInIframe()" title="Zoom In"
+          style="background: none; border: none; color: black; font-size: 22px; cursor: pointer;">
+          <i class="mdi mdi-magnify-plus-outline"></i>
+        </button>
 
-  <!-- Fly to Bus Location -->
-  <button onclick="flyToBusLocation()" title="Fly to Bus Location"
-    style="background: none; border: none; color: black; font-size: 22px; cursor: pointer;">
-    <i class="mdi mdi-crosshairs-gps"></i>
-  </button>
+        <!-- Zoom Out -->
+        <button onclick="zoomOutIframe()" title="Zoom Out"
+          style="background: none; border: none; color: black; font-size: 22px; cursor: pointer;">
+          <i class="mdi mdi-magnify-minus-outline"></i>
+        </button>
 
-  <!-- Show Stops -->
-  <button onclick="toggleStopsVisibility()" title="Toggle Stops"
-    style="background: none; border: none; color: black; font-size: 22px; cursor: pointer;">
-    <i class="mdi mdi-map-marker-multiple-outline"></i>
-  </button>
+        <!-- Fly to Bus Location -->
+        <button onclick="flyToBusLocation()" title="Fly to Bus Location"
+          style="background: none; border: none; color: black; font-size: 22px; cursor: pointer;">
+          <i class="mdi mdi-crosshairs-gps"></i>
+        </button>
 
-  <!-- Show Route -->
-  <button onclick="toggleRouteVisibility()" title="Toggle Route"
-    style="background: none; border: none; color: black; font-size: 22px; cursor: pointer;">
-    <i class="mdi mdi-vector-line"></i>
-  </button>
-</div>
+        <!-- Show Stops -->
+        <button onclick="toggleStopsVisibility()" title="Toggle Stops"
+          style="background: none; border: none; color: black; font-size: 22px; cursor: pointer;">
+          <i class="mdi mdi-map-marker-multiple-outline"></i>
+        </button>
+
+        <!-- Show Route -->
+        <button onclick="toggleRouteVisibility()" title="Toggle Route"
+          style="background: none; border: none; color: black; font-size: 22px; cursor: pointer;">
+          <i class="mdi mdi-vector-line"></i>
+        </button>
+      </div>
 
     </div>
   </div>
 </div>
+
 
   `;
 
@@ -403,46 +411,49 @@ async function startStreaming(button) {
   socket.emit("streamNotification", { busId: bus._id, about: "started" });
 
   const previewHTML = `
-    <div class="col-md-6 grid-margin stretch-card" id="tagVideo" style="height: 60vh; position: relative;">
-  <div class="card h-100">
-    <div class="card-body p-0" style="height: 100%; position: relative;">
-      <video id="driverVideo" autoplay></video>
-
-         <!-- Zoom/Control Panel -->
-<div
-  id="zoomControls"
-  style="
-    position: absolute;
-    bottom: 12px;
-    right: 12px;
-    z-index: 999;
-    display: flex;
-    gap: 12px;
-    background-color: transparent;
-    padding: 6px 12px;
-    border-radius: 8px;
-    align-items: center;
-  ">
-
-  <!-- Zoom In -->
-  <button onclick="zoomInVframe()" title="Zoom In"
-    style="background: none; border: none; color: black; font-size: 22px; cursor: pointer;">
-    <i class="mdi mdi-magnify-plus-outline"></i>
-  </button>
-
-  <!-- Zoom Out -->
-  <button onclick="zoomOutVframe()" title="Zoom Out"
-    style="background: none; border: none; color: black; font-size: 22px; cursor: pointer;">
-    <i class="mdi mdi-magnify-minus-outline"></i>
-  </button>
-
+  <div class="col-md-6 grid-margin stretch-card" style="height: 60vh; position: relative;" id="tagVideo">
+    <div class="card h-100 d-flex flex-column">
+      <div class="card-body p-0 d-flex flex-row" style="height: 100%; position: relative;">
   
-</div>
-
+        <!-- ✅ Video Container -->
+        <div style="flex: 1; height: 100%; position: relative;">
+          <video id="driverVideo" autoplay style="width: 100%; height: 100%; object-fit: cover;"></video>
+        </div>
+  
+        <!-- ✅ Zoom Controls (outside video) -->
+        <div
+          id="zoomControls"
+          style="
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            z-index: 99999;
+            display: flex;
+            gap: 12px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 6px 12px;
+            border-radius: 8px;
+            align-items: center;
+          ">
+  
+          <!-- Zoom In -->
+          <button onclick="zoomInVframe()" title="Zoom In"
+            style="background: none; border: none; color: black; font-size: 22px; cursor: pointer;">
+            <i class="mdi mdi-magnify-plus-outline"></i>
+          </button>
+  
+          <!-- Zoom Out -->
+          <button onclick="zoomOutVframe()" title="Zoom Out"
+            style="background: none; border: none; color: black; font-size: 22px; cursor: pointer;">
+            <i class="mdi mdi-magnify-minus-outline"></i>
+          </button>
+  
+        </div>
+      </div>
     </div>
   </div>
-</div>
   `;
+  
 
   const tempDiv = document.createElement("div");
   tempDiv.innerHTML = previewHTML.trim();
