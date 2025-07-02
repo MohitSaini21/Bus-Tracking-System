@@ -23,12 +23,7 @@
       href="https://fonts.googleapis.com/css?family=Open+Sans:400,700|Poppins:400,600,700&display=swap"
       rel="stylesheet"
     />
-    <style>
-       .timeline {
-    position: relative;
-    padding-left: 20px;
-  }
-    </style>
+ 
 
     <!-- Custom styles for this template -->
     <link href="/public/css/style.css" rel="stylesheet" />
@@ -53,6 +48,13 @@
         height: 400px;
       }
     </style>
+
+<style>
+  .timeline {
+position: relative;
+padding-left: 20px;
+}
+</style>
 
     <title>Tracking <%=bus.busNumber %></title>
   </head>
@@ -95,12 +97,19 @@
           </nav>
         </div>
       </header>
+
+      
       <!-- end header section -->
       <!-- slider section -->
       <section class="slider_section position-relative">
+        
         <div class="slider_container">
           <div class="img-box">
+
+            
             <div class="embed-responsive embed-responsive-16by9">
+
+              
               <iframe
                 src="/locationBus/<%=bus._id  %>"
                 class="embed-responsive-item"
@@ -108,6 +117,8 @@
                 loading="lazy"
               >
               </iframe>
+
+              
             </div>
           </div>
           <div class="detail_container">
@@ -322,6 +333,12 @@
     <script src="https://unpkg.com/leaflet.marker.slideto/leaflet.marker.slideto.js"></script>
 
     <script>
+        function openNav() {
+        document.getElementById("myNav").classList.toggle("menu_width");
+        document
+          .querySelector(".custom_menu-btn")
+          .classList.toggle("menu_btn-style");
+      }
 
 
                             const bus = <%- JSON.stringify(bus) %>;

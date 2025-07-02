@@ -58,10 +58,15 @@ router.post("/", async (req, res) => {
     const bus = await Bus.findOne({
       busNumber: { $regex: new RegExp(`^${busNumber}$`, "i") },
     })
-      .select("_id busNumber routeStops busImages status")
+      .select("_id busNumber routeStops busImages status route")
       .lean();
 
     if (bus) {
+      // Sort routeStops by stopOrder (convert string to number for sorting)
+      bus.routeStops = bus.routeStops.sort(
+        (a, b) => parseInt(a.stopOrder) - parseInt(b.stopOrder)
+      );
+
       return res.json({
         success: true,
         data: bus,
@@ -80,6 +85,7 @@ router.post("/", async (req, res) => {
     });
   }
 });
+
 
 router.patch("/toggleFCM/:id", async (req, res) => {
   try {

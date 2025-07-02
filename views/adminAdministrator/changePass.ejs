@@ -192,6 +192,7 @@
         try {
           const response = await fetch("/admin/changePass", {
             method: "POST",
+            
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ currentPassword, newPassword }),
           });
@@ -208,7 +209,7 @@
           showMessage(cleanMsg, !isSuccess);
         } catch (error) {
           console.error("❌ Network error:", error);
-          showMessage("❌ Could not connect to the server.");
+          showMessage(`❌ Could not connect to the server.${error.message}`);
         }
       });
 

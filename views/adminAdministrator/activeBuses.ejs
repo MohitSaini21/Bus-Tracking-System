@@ -56,50 +56,53 @@
         <div class="main-panel">
           <div class="content-wrapper">
             <h3>InActive Vehicles</h3>
-            <br>
+            <br />
             <div class="row">
-                <% buses.forEach(bus => { %>
-                    <div 
-                    class="col-12 col-md-6 col-lg-4 grid-margin stretch-card bus-col" 
-                    id="<%= bus._id %>" 
-                    onclick="handleBusClick('<%= bus._id %>')" 
-                    style="cursor: pointer; display: none;"
-                  >
-                      <div class="card bg-dark text-white">
-                        <div class="card-body">
-                          <h4 class="card-title text-warning font-weight-bold mb-3">
-                            🚌 <%= bus.busNumber %>
-                          </h4>
-                          <p class="mb-2"><strong>📍 Route:</strong> <%= bus.route %></p>
-                          <p class="mb-2">
-                            <strong>👨‍✈️ Driver:</strong> 
-                            <%= bus.driver?.name || "N/A" %> <br>
-                            <% if (bus.driver?.phone) { %>
-                              <a href="tel:<%= bus.driver.phone %>"  class="text-info" style="text-decoration: none;">
-                           (<%= bus.driver.phone %>)
-                              </a>
-                            <% } else { %>
-                              N/A
-                            <% } %>
-                          </p>
-                          <p class="mb-0">
-                            <strong>👨‍💼 Conductor:</strong> 
-                            <%= bus.conductor?.name || "N/A" %> <br>
-                            <% if (bus.conductor?.phone) { %>
-                              <a href="tel:<%= bus.conductor.phone %>" class="text-info" style="text-decoration: none;">
-                          (<%= bus.conductor.phone %>)
-                              </a>
-                            <% } else { %>
-                              N/A
-                            <% } %>
-                          </p>
-                          
-                        </div>
-                      </div>
-                    </div>
-                  <% }) %>
-                  
-            
+              <% buses.forEach(bus => { %>
+              <div
+                class="col-12 col-md-6 col-lg-4 grid-margin stretch-card bus-col"
+                id="<%= bus._id %>"
+                onclick="handleBusClick('<%= bus._id %>')"
+                style="cursor: pointer; display: none"
+              >
+                <div class="card bg-dark text-white">
+                  <div class="card-body">
+                    <h4 class="card-title text-warning font-weight-bold mb-3">
+                      🚌 <%= bus.busNumber %>
+                    </h4>
+                    <p class="mb-2">
+                      <strong>📍 Route:</strong> <%= bus.route %>
+                    </p>
+                    <p class="mb-2">
+                      <strong>👨‍✈️ Driver:</strong>
+                      <%= bus.driver?.name || "N/A" %> <br />
+                      <% if (bus.driver?.phone) { %>
+                      <a
+                        href="tel:<%= bus.driver.phone %>"
+                        class="text-info"
+                        style="text-decoration: none"
+                      >
+                        (<%= bus.driver.phone %>)
+                      </a>
+                      <% } else { %> N/A <% } %>
+                    </p>
+                    <p class="mb-0">
+                      <strong>👨‍💼 Conductor:</strong>
+                      <%= bus.conductor?.name || "N/A" %> <br />
+                      <% if (bus.conductor?.phone) { %>
+                      <a
+                        href="tel:<%= bus.conductor.phone %>"
+                        class="text-info"
+                        style="text-decoration: none"
+                      >
+                        (<%= bus.conductor.phone %>)
+                      </a>
+                      <% } else { %> N/A <% } %>
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <% }) %>
             </div>
           </div>
 
@@ -144,58 +147,57 @@
         document.getElementById("loader").style.display = "none";
       };
 
-      function handleBusClick(busNumber) {
-    // Replace this with modal or redirect
-    alert("🚌 You clicked on Bus " + busNumber);
-  }
+      function handleBusClick(busId) {
+        window.location.href = `/admin/CDB/${busId}`;
+      }
     </script>
 
-<script>
-    const user = <%- JSON.stringify(user) %>;
-    const socket = io({
-      query: {
-        adminId: user._id
-      }
-    });
-  
-    // Hide all live buses from DOM
-    socket.emit("liveBuses", function (response) {
-      if (response.success) {
-        const liveBusIds = response.data || [];
-  
-        // First show all buses
-        const allBusCards = document.querySelectorAll(".bus-col");
-        allBusCards.forEach((card) => {
-          card.style.display = "block";
-        });
-  
-        // Then hide the live ones
-        liveBusIds.forEach((busId) => {
-          const el = document.getElementById(busId);
-          if (el) {
-            el.style.display = "none";
-          }
-        });
-  
-        console.log("🚍 Inactive buses are now visible.");
-      } else {
-        console.warn("⚠️ Could not fetch live buses.");
-      }
-    });
-  
-    // Optional: update when a new bus goes online/offline in real time
-    socket.on("add", (busId) => {
-      const el = document.getElementById(busId);
-      if (el) el.style.display = "none"; // hide when bus goes live
-    });
-  
-    socket.on("remove", (busId) => {
-      const el = document.getElementById(busId);
-      if (el) el.style.display = "block"; // show when bus goes offline
-    });
-  </script>
-      <script type="module" src="/foreground.js"></script>
-  
+    <script>
+      const user = <%- JSON.stringify(user) %>;
+      const socket = io({
+        query: {
+          adminId: user._id
+        }
+      });
+
+      // Hide all live buses from DOM
+      socket.emit("liveBuses", function (response) {
+        if (response.success) {
+          const liveBusIds = response.data || [];
+
+          // First show all buses
+          const allBusCards = document.querySelectorAll(".bus-col");
+          allBusCards.forEach((card) => {
+            card.style.display = "block";
+          });
+
+          // Then hide the live ones
+          liveBusIds.forEach((busId) => {
+            const el = document.getElementById(busId);
+            if (el) {
+              el.style.display = "none";
+            }
+          });
+
+          console.log("🚍 Inactive buses are now visible.");
+        } else {
+          console.warn("⚠️ Could not fetch live buses.");
+        }
+      });
+
+      // Optional: update when a new bus goes online/offline in real time
+      socket.on("add", (busId) => {
+        const el = document.getElementById(busId);
+        if (el) el.style.display = "none"; // hide when bus goes live
+      });
+
+      socket.on("remove", (busId) => {
+        const el = document.getElementById(busId);
+        if (el) el.style.display = "block"; // show when bus goes offline
+      });
+    </script>
+    <script type="module" src="/foreground.js"></script>
+
     <!-- End custom js for this page -->
   </body>
 </html>

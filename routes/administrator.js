@@ -51,9 +51,14 @@ const upload = multer({ storage: storage });
 
 // checked
 router.get("/addBus", async (req, res) => {
-  const user = await CORE.findById(req.user.id);
+  try {
+    const user = await CORE.findById(req.user.id);
 
-  res.render("administrator/addBus.ejs", { user });
+    res.render("administrator/addBus.ejs", { user });
+  } catch (error) {
+    console.log(error.message);
+    return res.json({ message: error.message });
+  }
 });
 
 // checked
@@ -233,7 +238,6 @@ router.get("/conductorDriver", async (req, res) => {
   }
 });
 
-
 // Conductor Related End paths
 
 router.post("/conductorDocuments/:id", upload.any(), async (req, res) => {
@@ -370,7 +374,19 @@ router.post("/conductorRow/:id", async (req, res) => {
         code: "INVALID_ID",
       });
     }
+    // 1. Fetch the existing document
+    const oldConductor = await Conductor.findById(id);
+    if (!oldConductor) {
+      return res.status(404).json({ message: "Conductor not found" });
+    }
 
+    // 2. Check if conductorId is being updated AND is different
+    if (
+      updateData.conductorId &&
+      updateData.conductorId !== oldConductor.conductorId
+    ) {
+      updateData.isLogged = false; // Mark as not logged
+    }
     // Fetch conductor by ID and update
     const conductor = await Conductor.findByIdAndUpdate(id, updateData, {
       new: true, // Returns updated document
@@ -533,6 +549,19 @@ router.post("/driverRow/:id", async (req, res) => {
 
     console.log("📥 Update request received for driver ID:", id);
     console.log("🛠️ Update data:", updateData);
+    // 1. Fetch the existing document
+    const oldConductor = await Driver.findById(id);
+    if (!oldConductor) {
+      return res.status(404).json({ message: "Conductor not found" });
+    }
+
+    // 2. Check if conductorId is being updated AND is different
+    if (
+      updateData.driverId &&
+      updateData.driverId !== oldConductor.driverId
+    ) {
+      updateData.isLogged = false; // Mark as not logged
+    }
 
     // Update driver
     const driver = await Driver.findByIdAndUpdate(id, updateData, {

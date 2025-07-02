@@ -1,5 +1,6 @@
 body {
-  font-family: "Poppins", sans-serif;
+  font-family: "Poppins",
+ sans-serif;
   color: #0c0c0c;
   background-color: #ffffff;
 }
@@ -85,7 +86,8 @@ body {
   padding: 0px 25px;
   color: #fefeff;
   text-align: center;
-  font-family: "Roboto", sans-serif;
+  font-family: "Roboto",
+ sans-serif;
 }
 
 .custom_menu-btn {
@@ -300,7 +302,8 @@ a:focus {
 }
 
 .slider_section .slider_container .detail_container .detail-box h1 {
-  font-family: "Open Sans", sans-serif;
+  font-family: "Open Sans",
+ sans-serif;
   text-transform: uppercase;
   font-weight: bold;
   color: #fefdfc;
@@ -339,13 +342,15 @@ a:focus {
 
 .slider_section .carousel-control-prev {
   top: 15%;
-  background-image: url(../images/prev.png);
+
+  
 }
 
 .slider_section .carousel-control-next {
   top: initial;
   bottom: 15%;
-  background-image: url(../images/next.png);
+ 
+  
 }
 
 .book_section {
@@ -873,7 +878,8 @@ a:focus {
 }
 
 .client_section {
-  font-family: "Open Sans", sans-serif;
+  font-family: "Open Sans",
+ sans-serif;
 }
 
 .client_section .heading_container {

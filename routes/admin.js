@@ -45,29 +45,37 @@ router.post("/api/save-fcm-token", async (req, res) => {
 
 // checked
 router.get("/", async (req, res) => {
-  const user = await CORE.findById(req.user.id);
+  try {
+    const user = await CORE.findById(req.user.id);
 
-  if (!user) {
-    res.clearCookie("authToken");
-    return res.redirect("/coreLogin");
+    if (!user) {
+      res.clearCookie("authToken");
+      res.clearCookie("fcmTokenExpiry");
+      return res.redirect("/coreLogin");
+    }
+
+    const totalCount = await Bus.countDocuments({});
+    const operationalCount = await Bus.countDocuments({
+      status: "Operational",
+    });
+    const adminCount = await CORE.countDocuments({ role: "admin" });
+    const Complaints = await Complaint.countDocuments({});
+    const parentsComplaints = await Complaint.countDocuments({
+      submittedBy: "parent",
+    });
+
+    res.render("adminAdministrator/index.ejs", {
+      user,
+      totalCount,
+      operationalCount,
+      adminCount,
+      Complaints,
+      parentsComplaints,
+    });
+  } catch (error) {
+    console.log(error.message);
+    return res.json({ messaging: "Internal Server Error" });
   }
-
-  const totalCount = await Bus.countDocuments({});
-  const operationalCount = await Bus.countDocuments({ status: "Operational" });
-  const adminCount = await CORE.countDocuments({ role: "admin" });
-  const Complaints = await Complaint.countDocuments({});
-  const parentsComplaints = await Complaint.countDocuments({
-    submittedBy: "parent",
-  });
-
-  res.render("adminAdministrator/index.ejs", {
-    user,
-    totalCount,
-    operationalCount,
-    adminCount,
-    Complaints,
-    parentsComplaints,
-  });
 });
 
 // checked
@@ -83,6 +91,8 @@ router.get("/garrage", async (req, res) => {
 
     if (!user) {
       res.clearCookie("authToken");
+
+      res.clearCookie("fcmTokenExpiry");
       return res.redirect("/coreLogin");
     }
 
@@ -118,8 +128,12 @@ router.post("/changeStatus", async (req, res) => {
   const user = await CORE.findById(req.user.id);
 
   if (!user) {
-    res.clearCookie("authToken");
-    return res.redirect("/coreLogin");
+    if (!user) {
+      res.clearCookie("authToken");
+
+      res.clearCookie("fcmTokenExpiry");
+      return res.redirect("/coreLogin");
+    }
   }
 
   const { selectedIds, status } = req.body;
@@ -170,8 +184,8 @@ router.get("/CDB/:busId", async (req, res) => {
   }
 
   const bus = await Bus.findById(busId) // ❌ Problem here
-    .populate("driver")
-    .populate("conductor")
+    .populate("driver", "-notificationToken")
+    .populate("conductor", "-notificationToken")
     .lean();
   if (!bus) {
     return res.json({ message: "bus not found" });
@@ -183,6 +197,7 @@ router.get("/CDB/:busId", async (req, res) => {
     return res.render("adminAdministrator/CDB.ejs", { user, bus });
   } else {
     res.clearCookie("authToken");
+    res.clearCookie("fcmTokenExpiry");
     return res.redirect("/coreLogin");
   }
 });
@@ -198,6 +213,7 @@ router.get("/mapView", async (req, res) => {
     }
   } else {
     res.clearCookie("authToken"); // clear the correct cookie
+    res.clearCookie("fcmTokenExpiry");
     return res.redirect("/coreLogin");
   }
 });
@@ -209,6 +225,7 @@ router.get("/gridView", async (req, res) => {
     return res.render("adminAdministrator/gridView.ejs", { user });
   } else {
     res.clearCookie("authToken"); // clear the correct cookie
+    res.clearCookie("fcmTokenExpiry");
     return res.redirect("/coreLogin");
   }
 });
@@ -237,8 +254,6 @@ router.get("/particularBusLive/:id", async (req, res) => {
     },
   });
 
-  console.log(busLog);
-
   if (user) {
     return res.render("adminAdministrator/pTracking.ejs", {
       bus,
@@ -247,6 +262,7 @@ router.get("/particularBusLive/:id", async (req, res) => {
     });
   } else {
     res.clearCookie("authToken"); // clear the correct cookie
+    res.clearCookie("fcmTokenExpiry");
     return res.redirect("/coreLogin");
   }
 });
@@ -258,6 +274,7 @@ router.get("/complaints", async (req, res) => {
 
     if (!user) {
       res.clearCookie("authToken");
+      res.clearCookie("fcmTokenExpiry");
       return res.redirect("/coreLogin");
     }
 
@@ -272,6 +289,7 @@ router.get("/complaints", async (req, res) => {
       submitterType,
     });
   } catch (err) {
+    console.log(err.message);
     return res.status(500).send("Internal Server Error");
   }
 });
@@ -371,7 +389,6 @@ router.get("/particularHistory/:id", async (req, res) => {
 });
 
 // Regardin Routing machines
-
 router.get("/routingMachine", async (req, res) => {
   try {
     const user = await CORE.findById(req.user.id);
@@ -470,22 +487,25 @@ router.get("/inActiveVehicles", async (req, res) => {
 
     if (!user) {
       res.clearCookie("authToken");
+      res.clearCookie("fcmTokenExpiry");
       return res.redirect("/coreLogin");
     }
     const buses = await Bus.find({}, { busNumber: 1, route: 1, _id: 1 })
       .populate("driver", "name phone")
       .populate("conductor", "name phone");
 
-    console.log(buses);
-
     res.render("adminAdministrator/activeBuses.ejs", { user, buses });
-  } catch (error) {}
+  } catch (error) {
+    console.error("GET /inActiveVechiles error:", err.message);
+    return res.status(500).send("Internal Server Error");
+  }
 });
 router.get("/changePass", async (req, res) => {
   const user = await CORE.findById(req.user.id);
 
   if (!user) {
     res.clearCookie("authToken");
+    res.clearCookie("fcmTokenExpiry");
     return res.redirect("/coreLogin");
   }
 

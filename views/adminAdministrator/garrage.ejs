@@ -292,6 +292,7 @@
     <!-- End plugin js for this page -->
     <!-- inject:js -->
     <script src="/assets/js/off-canvas.js"></script>
+    <script type="module" src="/foreground.js"></script>
     <script src="/assets/js/hoverable-collapse.js"></script>
     <script src="/assets/js/misc.js"></script>
     <script src="/assets/js/settings.js"></script>
@@ -457,6 +458,14 @@ if (searchElement) {
         
       })
       .catch((error) => {
+
+        if (
+                error.message.includes("Unexpected token '<'") ||
+                error.message.includes("position 0") // Firefox/Edge sometimes
+              ) {
+                window.location.href = "/coreLogin";
+                return;
+              }
         document.getElementById("loader").style.display = "none";
          alert(error.message)
       });
@@ -474,7 +483,7 @@ window.onload = function () {
 
 
  </script>
-     <script type="module" src="/foreground.js"></script>
+  
     
 
     <!-- custom Script -->

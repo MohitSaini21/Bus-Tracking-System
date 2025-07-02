@@ -1,8 +1,7 @@
 // Importing Required Modules
 import express from "express"; // Core framework for building the server
 import { config } from "dotenv"; // For environment variable management
-import updateDistance from "./utils/distance.js";
-import evaluateBusProximityToStops from "./utils/stopsProximity.js";
+
 import FCM from "./model/FCM.js";
 import { dcRouter } from "./routes/DC.js";
 import CORE from "./model/admin.js";
@@ -11,13 +10,14 @@ import { Worker } from "worker_threads";
 import os from "os";
 import { setAllRouteStops } from "./utils/busRouteStops.js";
 import { getBusCacheData } from "./utils/busRouteStops.js";
-import rfdc from "rfdc";
+import BusActivityLog from "./model/busTrack.js";
+
 import jwt from "jsonwebtoken";
 
 import { administratorRouter } from "./routes/administrator.js";
 import { adminRouter } from "./routes/admin.js";
 import { publicRouter } from "./routes/public.js";
-import { Socket } from "socket.io";
+
 import cron from "node-cron"; // or const cron = require('node-cron');
 
 import saveLogs from "./utils/saveLogs.js";
@@ -25,17 +25,20 @@ import saveLogs from "./utils/saveLogs.js";
 import { checkAuth } from "./middlware/rootCheckAuth.js";
 import cookie from "cookie"; // 🔥 NOT 'cookie-parser'
 
-import { checkEntryExit } from "./utils/polygon.js";
-
 import ejs from "ejs";
 
 import http from "http";
+import fs from "fs";
+import path from "path";
 
 import moment from "moment-timezone";
 
 import cookieParser from "cookie-parser";
 
 import { ConnectDB } from "./config/db.js";
+// Handler if user want's to communicate over webScoket protocols
+import { Server } from "socket.io";
+import Bus from "./model/bus.js";
 
 // Load Environment Variables
 config();
@@ -105,9 +108,7 @@ app.use(
   },
   dcRouter
 );
-// Handler if user want's to communicate over webScoket protocols
-import { Server } from "socket.io";
-import Bus from "./model/bus.js";
+
 const io = new Server(server);
 app.set("io", io); // <-- shared shelf mein rakh diy
 // Object to store busId -> array of socketIds
@@ -127,7 +128,24 @@ let locationEvaluationCooldown = 10000; // ms (5 seconds)
 let lastEvaluated = {}; // { [busId]: timestamp }
 
 // Cron Jobs
-cron.schedule("0 0 * * *", () => {
+
+const MEDIA_ROOT = path.join(process.cwd(), "public"); // Adjust if needed
+
+function deleteFileIfExists(relativePath, label = "") {
+  if (!relativePath) return;
+
+  const fullPath = path.join(MEDIA_ROOT, relativePath);
+
+  if (fs.existsSync(fullPath)) {
+    try {
+      fs.unlinkSync(fullPath);
+      console.log(`🗑️ Deleted ${label}: ${relativePath}`);
+    } catch (err) {
+      console.error(`❗ Error deleting ${label}: ${relativePath}`, err);
+    }
+  }
+}
+cron.schedule("0 0 * * *", async () => {
   console.log("🕛 12:00 AM: Clearing lastEvaluated memory...");
 
   for (const busId in lastEvaluated) {
@@ -135,6 +153,22 @@ cron.schedule("0 0 * * *", () => {
   }
 
   console.log("🧹 Cleared all entries from lastEvaluated");
+
+  console.log("🧹 Running cleanup for old BusActivityLogs");
+
+  const cutoffDate = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000); // 10 days ago
+
+  const oldLogs = await BusActivityLog.find({ createdAt: { $lt: cutoffDate } });
+
+  for (const log of oldLogs) {
+    deleteFileIfExists(log.morningSnap?.image, "Morning Snap");
+    deleteFileIfExists(log.eveningSnap?.image, "Evening Snap");
+
+    await log.deleteOne();
+    console.log(`✅ Deleted BusActivityLog: ${log._id}`);
+  }
+
+  console.log("✅ Cleanup finished.");
 });
 
 // Cron Jobs
@@ -690,7 +724,8 @@ io.on("connection", (socket) => {
       }
 
       // 7. Cooldown check
-      const cooldownPassed = now - busEval.lastEvaluations >= 10000;
+      const cooldownPassed =
+        now - busEval.lastEvaluations >= locationEvaluationCooldown;
       if (!cooldownPassed) {
         console.log("skipping addTask");
         return;

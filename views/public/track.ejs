@@ -104,7 +104,7 @@
       <section class="slider_section position-relative">
         <div class="slider_container">
           <div class="img-box">
-            <img src="/public/images/buses.jpg" alt="" />
+            <img src="/public/Wavy_Tsp-03_Single-02.jpg" alt="" />
           </div>
           <div class="detail_container">
             <div
@@ -256,6 +256,13 @@
     <!-- footer section -->
 
     <script>
+           function openNav() {
+        document.getElementById("myNav").classList.toggle("menu_width");
+        document
+          .querySelector(".custom_menu-btn")
+          .classList.toggle("menu_btn-style");
+      }
+
       function Redirect() {
         const fcmToken = localStorage.getItem("fcmToken");
         if (fcmToken) {

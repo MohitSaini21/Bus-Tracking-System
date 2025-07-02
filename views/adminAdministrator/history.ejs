@@ -313,9 +313,9 @@
                                 <thead class="thead-dark">
                                   <tr>
                                     <th>#</th>
+                                    <th>campus</th>
                                     <th>Event Type</th>
                                     <th>Timestamp</th>
-                                    <th>Coordinates</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -324,6 +324,7 @@
                                   busLog.events.forEach((ev, index) => { %>
                                   <tr>
                                     <td><%= index + 1 %></td>
+                                    <td><%=ev.campus %></td>
                                     <td>
                                       <span
                                         class="badge <%= ev.event === 'Entered' ? 'bg-success' : 'bg-danger' %>"
@@ -334,10 +335,6 @@
                                     <td>
                                       <%= new
                                       Date(ev.timestamp).toLocaleString() %>
-                                    </td>
-                                    <td>
-                                      Lat: <%= ev.coordinates[1] %>, Long: <%=
-                                      ev.coordinates[0] %>
                                     </td>
                                   </tr>
                                   <% }) %> <% } else { %>
@@ -436,7 +433,6 @@
                                     <p>
                                       <strong>Captured At:</strong>
                                       <%= busLog.eveningSnap.formattedTakenAt %>
-
                                     </p>
                                     <% if (busLog.eveningSnap.image) { %>
                                     <button
