@@ -312,60 +312,67 @@
 
       // fucntiom to update the row
 
-      function updateStopsCoveredTable(reachedStops) {
+  function updateStopsCoveredTable(reachedStops) {
   const tbody = document.querySelector("#stops-covered tbody");
+  if (!tbody) {
+    console.error("❌ tbody not found inside #stops-covered");
+    return;
+  }
 
-  console.log("Received reachedStops:", reachedStops); // 🧪 Debug
+  console.log("✅ Received reachedStops:", reachedStops); // Debug
 
   Object.entries(reachedStops).forEach(([stopId, info], index) => {
-    const rowId = String(stopId); // normalize
+    const rowId = String(stopId);
     const existingRow = document.getElementById(rowId);
 
     const stopName = info.stopName || "Unknown";
 
+    // Safely parse time fields
     const eMorningTime = info.eMorningTime ? new Date(info.eMorningTime) : null;
     const morningTime = info.morningTime ? new Date(info.morningTime) : null;
 
     const eEveningTime = info.eEveningTime ? new Date(info.eEveningTime) : null;
     const eveningTime = info.eveningTime ? new Date(info.eveningTime) : null;
 
-    const formatTime = (d) => (d ? d.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : "__");
+    const formatTime = (d) =>
+      d instanceof Date && !isNaN(d)
+        ? d.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })
+        : "__";
 
-    const newRowHTML = `
-      <tr id="${rowId}">
-        <td></td>
-        <td>${stopName}</td>
-        <td>
-          <div><strong>Expected:</strong> ${formatTime(eMorningTime)}</div>
-          <div><strong>Actual:</strong> ${formatTime(morningTime)}</div>
-        </td>
-        <td>
-          <div><strong>Expected:</strong> ${formatTime(eEveningTime)}</div>
-          <div><strong>Actual:</strong> ${formatTime(eveningTime)}</div>
-        </td>
-      </tr>
+    // 🧪 Logging
+    console.log(`📄 Rendering row for stop: ${stopName}`, {
+      eMorningTime, morningTime, eEveningTime, eveningTime
+    });
+
+    // Build the row
+    const newRow = document.createElement("tr");
+    newRow.id = rowId;
+    newRow.innerHTML = `
+      <td></td>
+      <td>${stopName}</td>
+      <td>
+        <div><strong>Expected:</strong> ${formatTime(eMorningTime)}</div>
+        <div><strong>Actual:</strong> ${formatTime(morningTime)}</div>
+      </td>
+      <td>
+        <div><strong>Expected:</strong> ${formatTime(eEveningTime)}</div>
+        <div><strong>Actual:</strong> ${formatTime(eveningTime)}</div>
+      </td>
     `;
 
+    // Replace or insert
     if (existingRow) {
-      const tempDiv = document.createElement("div");
-      tempDiv.innerHTML = newRowHTML.trim();
-      const newRow = tempDiv.firstChild;
-
       tbody.replaceChild(newRow, existingRow);
-
-      // ✨ Add blinking effect
-      newRow.classList.add("row-updated");
-
-      // 🧹 Remove after 3 seconds
-      setTimeout(() => {
-        newRow.classList.remove("row-updated");
-      }, 3000);
     } else {
-      tbody.insertAdjacentHTML("beforeend", newRowHTML);
+      tbody.appendChild(newRow);
     }
+
+    // ✨ Blinking effect
+    newRow.classList.add("row-updated");
+    setTimeout(() => newRow.classList.remove("row-updated"), 3000);
   });
 
-  // Renumber all rows
+  // 🔢 Renumber all rows
   Array.from(tbody.querySelectorAll("tr")).forEach((row, i) => {
     const indexCell = row.querySelector("td:first-child");
     if (indexCell) indexCell.textContent = i + 1;
