@@ -164,47 +164,53 @@
                           </tr>
                         </thead>
                         <tbody>
-                          <% if (busLog && busLog.stops && busLog.stops.length >
-                          0) { %> <% busLog.stops.forEach((stopLog, index) => {
-                          %>
-                          <tr id="<%= stopLog.stop._id%>">
-                            <td><%= index + 1 %></td>
-                            <td><%= stopLog.stopName || '__' %></td>
-
-                            <!-- Morning Times -->
-                            <td>
-                              <div>
-                                <strong>Expected:</strong> <%=
-                                stopLog.eMorningTime ? new
-                                Date(stopLog.eMorningTime).toLocaleTimeString()
-                                : '__' %>
-                              </div>
-                              <div>
-                                <strong>Actual:</strong> <%= stopLog.morningTime
-                                ? new
-                                Date(stopLog.morningTime).toLocaleTimeString() :
-                                '__' %>
-                              </div>
-                            </td>
-
-                            <!-- Evening Times -->
-                            <td>
-                              <div>
-                                <strong>Expected:</strong> <%=
-                                stopLog.eEveningTime ? new
-                                Date(stopLog.eEveningTime).toLocaleTimeString()
-                                : '__' %>
-                              </div>
-                              <div>
-                                <strong>Actual:</strong> <%= stopLog.eveningTime
-                                ? new
-                                Date(stopLog.eveningTime).toLocaleTimeString() :
-                                '__' %>
-                              </div>
-                            </td>
-                          </tr>
-                          <% }) %> <% } else { %> <% } %>
+                          <% if (busLog && busLog.stops && busLog.stops.length > 0) { %>
+                            <% busLog.stops.forEach((stopLog, index) => { %>
+                              <tr id="<%= stopLog.stop._id %>">
+                                <td><%= index + 1 %></td>
+                                <td><%= stopLog.stopName || '__' %></td>
+                        
+                                <!-- Morning Times -->
+                                <td>
+                                  <div>
+                                    <div>
+                                      <strong>Expected:</strong>
+                                      <%= stopLog.eMorningTime
+                                        ? moment(new Date(stopLog.eMorningTime)).tz('Asia/Kolkata').format('hh:mm A')
+                                        : '__' %>
+                                    </div>
+                                    <div>
+                                      <strong>Actual:</strong>
+                                      <%= stopLog.morningTime
+                                        ? moment(new Date(stopLog.morning)).tz('Asia/Kolkata').format('hh:mm A')
+                                        : '__' %>
+                                    </div>
+                                  </td>
+                                  
+                                </td>
+                        
+                                <!-- Evening Times -->
+                                <td>
+                                  <div>
+                                    <strong>Expected:</strong>
+                                    <%= stopLog.eEveningTime
+                                      ? moment(new Date(stopLog.eEveningTime)).tz('Asia/Kolkata').format('hh:mm A')
+                                      : '__' %>
+                                  </div>
+                                  <div>
+                                    <strong>Actual:</strong>
+                                    <%= stopLog.eveningTime
+                                      ? moment(new Date(stopLog.eveningTime)).tz('Asia/Kolkata').format('hh:mm A')
+                                      : '__' %>
+                                  </div>
+                                </td>
+                                
+                                
+                              </tr>
+                            <% }) %>
+                          <% } %>
                         </tbody>
+                        
                       </table>
                     </div>
                   </div>
@@ -231,7 +237,7 @@
                           > 0) { %> <% busLog.events.forEach((ev, index) => { %>
                           <tr>
                             <td><%= index + 1 %></td>
-                            <td><%=ev.campus %></td>
+                                 <td><%=ev.campus %></td>
                             <td>
                               <span
                                 class="badge <%= ev.event === 'Entered' ? 'bg-success' : 'bg-danger' %>"
@@ -307,75 +313,64 @@
       // fucntiom to update the row
 
       function updateStopsCoveredTable(reachedStops) {
-        const tbody = document.querySelector("#stops-covered tbody");
+  const tbody = document.querySelector("#stops-covered tbody");
 
-        Object.entries(reachedStops).forEach(([stopId, info], index) => {
-          const rowId = `${stopId}`;
-          const existingRow = document.getElementById(rowId);
+  console.log("Received reachedStops:", reachedStops); // 🧪 Debug
 
-          const stopName = info.stopName || "Unknown";
+  Object.entries(reachedStops).forEach(([stopId, info], index) => {
+    const rowId = String(stopId); // normalize
+    const existingRow = document.getElementById(rowId);
 
-          const eMorningTime = info.eMorningTime ? new Date(info.eMorningTime) : null;
-          const morningTime = info.morning ? new Date(info.morning) : null;
+    const stopName = info.stopName || "Unknown";
 
-          const eEveningTime = info.eEveningTime ? new Date(info.eveningTime) : null;
-          const eveningTime = info.evening ? new Date(info.evening) : null;
+    const eMorningTime = info.eMorningTime ? new Date(info.eMorningTime) : null;
+    const morningTime = info.morningTime ? new Date(info.morningTime) : null;
 
-          const formatTime = (d) => (d ? d.toLocaleTimeString() : "__");
+    const eEveningTime = info.eEveningTime ? new Date(info.eEveningTime) : null;
+    const eveningTime = info.eveningTime ? new Date(info.eveningTime) : null;
 
+    const formatTime = (d) => (d ? d.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : "__");
 
+    const newRowHTML = `
+      <tr id="${rowId}">
+        <td></td>
+        <td>${stopName}</td>
+        <td>
+          <div><strong>Expected:</strong> ${formatTime(eMorningTime)}</div>
+          <div><strong>Actual:</strong> ${formatTime(morningTime)}</div>
+        </td>
+        <td>
+          <div><strong>Expected:</strong> ${formatTime(eEveningTime)}</div>
+          <div><strong>Actual:</strong> ${formatTime(eveningTime)}</div>
+        </td>
+      </tr>
+    `;
 
+    if (existingRow) {
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = newRowHTML.trim();
+      const newRow = tempDiv.firstChild;
 
-          const newRowHTML = `
-            <tr id="${rowId}">
-              <td></td>
-              <td>${stopName}</td>
+      tbody.replaceChild(newRow, existingRow);
 
+      // ✨ Add blinking effect
+      newRow.classList.add("row-updated");
 
+      // 🧹 Remove after 3 seconds
+      setTimeout(() => {
+        newRow.classList.remove("row-updated");
+      }, 3000);
+    } else {
+      tbody.insertAdjacentHTML("beforeend", newRowHTML);
+    }
+  });
 
-              <td>
-                <div><strong>Expected:</strong> ${formatTime(eMorningTime)}</div>
-                <div><strong>Actual:</strong> ${formatTime(morningTime)}</div>
-              </td>
-
-              <td>
-                <div><strong>Expected:</strong> ${formatTime(eEveningTime)}</div>
-                <div><strong>Actual:</strong> ${formatTime(eveningTime)}</div>
-              </td>
-
-
-
-            </tr>
-          `;
-
-          if (existingRow) {
-            const tempDiv = document.createElement("div");
-            tempDiv.innerHTML = newRowHTML.trim();
-            const newRow = tempDiv.firstChild;
-
-            tbody.replaceChild(newRow, existingRow);
-
-            // ✨ Add blinking effect
-            newRow.classList.add("row-updated");
-
-            // 🧹 Remove after 3 seconds
-            setTimeout(() => {
-              newRow.classList.remove("row-updated");
-            }, 3000);
-          } else {
-            tbody.insertAdjacentHTML("beforeend", newRowHTML);
-          }
-        });
-
-        // Renumber all rows
-        Array.from(tbody.querySelectorAll("tr")).forEach((row, i) => {
-          const indexCell = row.querySelector("td:first-child");
-          if (indexCell) indexCell.textContent = i + 1;
-        });
-      }
-
-
-
+  // Renumber all rows
+  Array.from(tbody.querySelectorAll("tr")).forEach((row, i) => {
+    const indexCell = row.querySelector("td:first-child");
+    if (indexCell) indexCell.textContent = i + 1;
+  });
+}
 
 
 

@@ -94,14 +94,20 @@ parentPort.on("message", ({ task, busObject }) => {
             "Asia/Kolkata"
           );
           busObject.reachedStops[stopId].eMorningTime = expectedTime.toDate();
-          busObject.reachedStops[stopId].morningTime = timestamp;
+          busObject.reachedStops[stopId].eveningTime = moment()
+            .tz("Asia/Kolkata")
+            .toDate();
+
         } else {
           const expectedTime = moment.tz(
             `1970-01-01T${stop.eveningTime}`,
             "Asia/Kolkata"
           );
           busObject.reachedStops[stopId].eEveningTime = expectedTime.toDate();
-          busObject.reachedStops[stopId].eveningTime = timestamp;
+          busObject.reachedStops[stopId].eveningTime = moment()
+            .tz("Asia/Kolkata")
+            .toDate();
+
         }
 
         console.log(

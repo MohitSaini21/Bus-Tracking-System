@@ -259,6 +259,7 @@ router.get("/particularBusLive/:id", async (req, res) => {
       bus,
       user,
       busLog,
+      moment,
     });
   } else {
     res.clearCookie("authToken"); // clear the correct cookie
