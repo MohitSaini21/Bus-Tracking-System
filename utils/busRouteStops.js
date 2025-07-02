@@ -8,12 +8,13 @@ const routeStopMap = new Map();
  */
 export async function setAllRouteStops() {
   try {
-    const buses = await Bus.find().select("_id routeStops iconPhoto");
+    const buses = await Bus.find().select("_id routeStops iconPhoto busNumber");
 
     buses.forEach((bus) => {
       routeStopMap.set(bus._id.toString(), {
         routeStops: bus.routeStops,
         iconPhoto: bus.iconPhoto,
+        busNumber: busNumber,
       });
     });
 

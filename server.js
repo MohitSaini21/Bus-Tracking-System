@@ -705,9 +705,11 @@ io.on("connection", (socket) => {
         longitude: data.longitude,
         timestamp: data.timestamp,
         accuracy: data.accuracy,
+
         bus: {
           _id: busId,
           routeStops: cacheData.routeStops,
+          busNumber: cacheData.busNumber,
         },
       };
 
