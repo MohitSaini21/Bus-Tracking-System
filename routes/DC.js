@@ -19,13 +19,9 @@ import path from "path";
 import BusActivityLog from "../model/busTrack.js";
 
 import moment from "moment-timezone";
-import { convertSpeed } from "geolib";
-import { runInContext } from "vm";
 
 let router = express.Router();
 
-// Configure Multer
-// Configure Multer
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     // Resolve the absolute path to 'public/uploads' directory
@@ -44,39 +40,49 @@ const storage = multer.diskStorage({
     cb(null, FileName);
   },
 });
+
 const upload = multer({ storage: storage });
-async function checkUserExistenceAndRedirect(req, res, next) {
-  try {
-    let worker;
 
-    // Check if the user is a driver or conductor
-    if (req.user.role === "driver") {
-      worker = await Driver.findOne({ driverId: req.user.id })
-        .populate("assignedBus", "busNumber route distanceTravelled status")
-        .lean(); // Check for driver in the database
-    } else if (req.user.role === "conductor") {
-      worker = await Conductor.findOne({ conductorId: req.user.id })
-        .populate("assignedBus", "busNumber route distanceTravelled status")
-        .lean();
+function checkUserExistenceAndRedirect(excludeFields = []) {
+  return async function (req, res, next) {
+    try {
+      let worker;
+      const excludeString = excludeFields.map((field) => `-${field}`).join(" ");
+
+      const populationFields = "assignedBus";
+      const selectFields = "busNumber route distanceTravelled status";
+
+      if (req.user.role === "driver") {
+        worker = await Driver.findOne({ driverId: req.user.id })
+          .select(excludeString)
+          .populate(populationFields, selectFields)
+          .lean();
+      } else if (req.user.role === "conductor") {
+        worker = await Conductor.findOne({ conductorId: req.user.id })
+          .select(excludeString)
+          .populate(populationFields, selectFields)
+          .lean();
+      }
+
+      if (!worker) {
+        res.clearCookie("authToken");
+        res.clearCookie("fcmTokenExpiry");
+        return res.redirect("/driverConductorLogin");
+      }
+
+      req.worker = worker;
+      next();
+    } catch (error) {
+      console.error("Error checking user existence:", error);
+      res.clearCookie("authToken");
+      res.clearCookie("fcmTokenExpiry");
+      return res.redirect("/driverConductorLogin");
     }
-
-    // If worker doesn't exist, clear cookies and redirect to login page
-    if (!worker) {
-      res.clearCookie("authToken"); // Clear the auth token cookie in case of error
-      return res.redirect("/driverConductorLogin"); // Redirect to login page in case of error
-    }
-    req.worker = worker; // Store worker information in req.worker
-
-    // If worker exists, proceed with the next middleware or route
-    next();
-  } catch (error) {
-    console.error("Error checking user existence:", error);
-    res.clearCookie("authToken"); // Clear the auth token cookie in case of error
-    return res.redirect("/driverConductorLogin"); // Redirect to login page in case of error
-  }
+  };
 }
 
-// Reusable function to fetch bus details based on user role
+
+
 async function getBusDetailsByRole(role, userId) {
   try {
     let busQuery = {};
@@ -88,6 +94,9 @@ async function getBusDetailsByRole(role, userId) {
     }
 
     const bus = await Bus.findOne(busQuery)
+      .select(
+        "-_id -busNumber -route -capacity -status -fuelType -lastServiced -iconPhoto -busImages -live -routeStops -busDocuments -distanceTravelled -averageSpeed -createdAt -updatedAt -__v"
+      )
       .populate("driver")
       .populate("conductor");
 
@@ -98,11 +107,27 @@ async function getBusDetailsByRole(role, userId) {
   }
 }
 
-router.get("/", checkUserExistenceAndRedirect, async (req, res) => {
-  return res.render("DC/index.ejs", { user: req.worker }); // Passing user as req.worker
-});
+router.get(
+  "/",
+  checkUserExistenceAndRedirect([
+    "notificationToken",
+    "conductorDocuments",
+    "driverDocuments",
+    "conductorId",
+    "driverId",
+    "password",
+    "address",
+    "joiningDate",
+    "isLogged",
+    "_id",
+  ]),
+  async (req, res) => {
+    return res.render("DC/index.ejs", { user: req.worker }); // Passing user as req.worker
+  }
+);
 
-// api to save token
+
+
 router.post("/api/save-fcm-token", async (req, res) => {
   try {
     const { token } = req.body;
@@ -150,135 +175,185 @@ router.post("/api/save-fcm-token", async (req, res) => {
   }
 });
 
-router.post("/odometer", async (req, res) => {
-  const { odometerReading, busId } = req.body;
+router.post(
+  "/odometer",
+  checkUserExistenceAndRedirect([
+    "notificationToken",
+    "conductorDocuments",
+    "driverDocuments",
+    "conductorId",
+    "driverId",
+    "password",
+    "address",
+    "joiningDate",
+    "isLogged",
+    "_id",
+    "name",
+    "phone",
+    "licenseNumber",
+    "status",
+  ]),
+  async (req, res) => {
+    const { odometerReading, busId } = req.body;
 
-  try {
-    // 1. बस को ढूंढो
-    const bus = await Bus.findById(busId);
+    try {
+      // 1. बस को ढूंढो
+      const bus = await Bus.findById(busId);
 
-    if (!bus) {
-      return res.status(404).json({
-        message: "❌ बस नहीं मिली। कृपया सही जानकारी भरें।",
-      });
-    }
-
-    // 2. ओडोमीटर रीडिंग को अपडेट करो
-    bus.distanceTravelled = Number(odometerReading);
-    await bus.save();
-
-    // 3. सफलता का संदेश
-    return res.status(200).json({
-      message: "✅ ओडोमीटर रीडिंग सफलतापूर्वक अपडेट कर दी गई है। धन्यवाद!",
-      updatedReading: bus.distanceTravelled,
-    });
-  } catch (error) {
-    console.error("🚨 ओडोमीटर अपडेट करते समय त्रुटि:", error);
-    return res.status(500).json({
-      message: "❌ कुछ गलत हो गया। कृपया बाद में पुनः प्रयास करें।",
-    });
-  }
-});
-
-router.get("/goLive", checkUserExistenceAndRedirect, async (req, res) => {
-  try {
-    const bus = await getBusDetailsByRole(req.user.role, req.worker._id);
-
-    if (!bus) {
-      return res.status(404).json({ message: "बस की जानकारी नहीं मिली।" });
-    }
-    if (bus.status === "Out of Service") {
-      return res.status(403).json({
-        message: "यह बस इस समय सेवा में नहीं है। कृपया प्रशासक से संपर्क करें।",
-        status: "out_of_service",
-      });
-    }
-
-    // If bus is operational, return normal data
-    res.set("Cache-Control", "no-store");
-    return res.render("DC/goLive.ejs", { user: req.worker, bus });
-  } catch (err) {
-    console.error("❌ Error fetching bus:", err);
-    return res
-      .status(500)
-      .json({ message: "सर्वर त्रुटि। कृपया बाद में पुनः प्रयास करें।" });
-  }
-});
-
-router.get("/startStream", checkUserExistenceAndRedirect, async (req, res) => {
-  try {
-    // Checking the user role and fetching bus details accordingly
-    const bus = await getBusDetailsByRole(req.user.role, req.worker._id);
-    const driverMobile = bus.driver.phone;
-    const conductorMobile = bus.conductor.phone;
-
-    // 👥 Fetch admins and superadmins
-    const admins = await CORE.find({
-      role: { $in: ["admin", "administrator"] },
-      isLogged: true, // ✅ Only logged-in users
-      notificationToken: { $exists: true, $ne: "" }, // ✅ Token must exist and not be empty
-    });
-
-    if (bus) {
-      // 🚀 Send notification to each
-      for (const admin of admins) {
-        const title = "📡 Live Stream Alert";
-        let message;
-
-        if (admin.role === "admin") {
-          message = `Bus number ${bus.busNumber} has started live streaming.
-Driver: ${driverMobile}, Conductor: ${conductorMobile}.
-
-Please confirm the situation and take necessary actions.`;
-        } else {
-          message = `Bus number ${bus.busNumber} has started live streaming.
-Driver: ${driverMobile}, Conductor: ${conductorMobile}.
-
-As an administrator, please monitor the stream.`;
-        }
-
-        sendNotificationToClient(admin.notificationToken, title, message);
+      if (!bus) {
+        return res.status(404).json({
+          message: "❌ बस नहीं मिली। कृपया सही जानकारी भरें।",
+        });
       }
 
-      res.set("Cache-Control", "no-store");
-      return res.render("DC/stream.ejs", { bus, user: req.worker }); // Passing user as req.worker
-    } else {
-      return res.status(404).json({
-        message: "No bus assigned to this user.",
+      // 2. ओडोमीटर रीडिंग को अपडेट करो
+      bus.distanceTravelled = Number(odometerReading);
+      await bus.save();
+
+      // 3. सफलता का संदेश
+      return res.status(200).json({
+        message: "✅ ओडोमीटर रीडिंग सफलतापूर्वक अपडेट कर दी गई है। धन्यवाद!",
+        updatedReading: bus.distanceTravelled,
+      });
+    } catch (error) {
+      console.error("🚨 ओडोमीटर अपडेट करते समय त्रुटि:", error);
+      return res.status(500).json({
+        message: "❌ कुछ गलत हो गया। कृपया बाद में पुनः प्रयास करें।",
       });
     }
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
   }
-});
+);
+
+router.get(
+  "/goLive",
+  checkUserExistenceAndRedirect([
+    "notificationToken",
+    "conductorDocuments",
+    "driverDocuments",
+    "conductorId",
+    "driverId",
+    "password",
+    "address",
+    "joiningDate",
+    "isLogged",
+  ]),
+  async (req, res) => {
+    try {
+      let role = req.user.role;
+      let userId = req.worker._id;
+      let busQuery = {};
+
+      if (role === "driver") {
+        busQuery.driver = userId;
+      } else if (role === "conductor") {
+        busQuery.conductor = userId;
+      }
+
+      const bus = await Bus.findOne(busQuery).select("_id routeStops").lean();
+
+      if (!bus) {
+        return res.status(404).json({ message: "बस की जानकारी नहीं मिली।" });
+      }
+      if (bus.status === "Out of Service") {
+        return res.status(403).json({
+          message:
+            "यह बस इस समय सेवा में नहीं है। कृपया प्रशासक से संपर्क करें।",
+          status: "out_of_service",
+        });
+      }
+
+      // If bus is operational, return normal data
+      res.set("Cache-Control", "no-store");
+      return res.render("DC/goLive.ejs", { user: req.worker, bus });
+    } catch (err) {
+      console.error("❌ Error fetching bus:", err);
+      return res
+        .status(500)
+        .json({ message: "सर्वर त्रुटि। कृपया बाद में पुनः प्रयास करें।" });
+    }
+  }
+);
+
 
 router.get(
   "/yourComplaints",
-  checkUserExistenceAndRedirect,
+  checkUserExistenceAndRedirect([
+    "notificationToken",
+    "conductorDocuments",
+    "driverDocuments",
+    "conductorId",
+    "driverId",
+    "password",
+    "address",
+    "joiningDate",
+    "isLogged",
+  ]),
   async (req, res) => {
-    const complaints = await Complaint.find({
-      busNumber: req.worker.assignedBus.busNumber,
-      submittedBy: "operator",
-    });
+    try {
+      const complaints = await Complaint.find({
+        busNumber: req.worker.assignedBus.busNumber,
+        submittedBy: "operator",
+      })
+        .select("_id complaintType createdAt")
+        .lean();
 
-    return res.render("DC/complaints.ejs", {
-      complaints: complaints,
-      user: req.worker,
-    });
+      return res.render("DC/complaints.ejs", {
+        complaints,
+        user: req.worker,
+      });
+    } catch (error) {
+      console.error("❌ Error fetching complaints:", error);
+
+      // Optional: send user-friendly error page
+      return res.status(500).render("error", {
+        message: "सर्वर में त्रुटि हुई। कृपया बाद में पुनः प्रयास करें।",
+        error,
+      });
+
+      // Or, fallback JSON (if used in API):
+      // return res.status(500).json({ error: "Server error while fetching complaints" });
+    }
   }
 );
+
 router.get(
   "/registerComplain",
-  checkUserExistenceAndRedirect,
+  checkUserExistenceAndRedirect([
+    "notificationToken",
+    "conductorDocuments",
+    "driverDocuments",
+    "conductorId",
+    "driverId",
+    "password",
+    "address",
+    "joiningDate",
+    "isLogged",
+  ]),
   async (req, res) => {
     return res.render("DC/registerComplain.ejs", {
       user: req.worker,
     });
   }
 );
+
 router.post(
   "/registerComplain",
-  checkUserExistenceAndRedirect,
+  checkUserExistenceAndRedirect([
+    "notificationToken",
+    "conductorDocuments",
+    "driverDocuments",
+    "conductorId",
+    "driverId",
+    "password",
+    "address",
+    "joiningDate",
+    "isLogged",
+    "_id",
+    "name",
+    "phone",
+    "licenseNumber",
+    "status",
+  ]),
   upload.single("media"),
   async (req, res) => {
     try {
@@ -344,136 +419,307 @@ router.post(
   }
 );
 
-router.get("/dairy", checkUserExistenceAndRedirect, (req, res) => {
-  return res.render("DC/dairy.ejs", { user: req.worker });
-});
-router.get("/history", checkUserExistenceAndRedirect, (req, res) => {
-  return res.render("DC/history.ejs", { user: req.worker });
-});
+router.get(
+  "/dairy",
+  checkUserExistenceAndRedirect([
+    "notificationToken",
+    "conductorDocuments",
+    "driverDocuments",
+    "conductorId",
+    "driverId",
+    "password",
+    "address",
+    "joiningDate",
+    "isLogged",
+  ]),
+  (req, res) => {
+    return res.render("DC/dairy.ejs", { user: req.worker });
+  }
+);
+router.get(
+  "/history",
+  checkUserExistenceAndRedirect([
+    "notificationToken",
+    "conductorDocuments",
+    "driverDocuments",
+    "conductorId",
+    "driverId",
+    "password",
+    "address",
+    "joiningDate",
+    "isLogged",
+  ]),
+  (req, res) => {
+    return res.render("DC/history.ejs", { user: req.worker });
+  }
+);
 
-router.post("/emergencyAlert", async (req, res) => {
-  try {
-    const { busId } = req.body;
+router.post(
+  "/emergencyAlert",
+  checkUserExistenceAndRedirect([
+    "notificationToken",
+    "conductorDocuments",
+    "driverDocuments",
+    "conductorId",
+    "driverId",
+    "password",
+    "address",
+    "joiningDate",
+    "isLogged",
+    "_id",
+    "name",
+    "phone",
+    "licenseNumber",
+    "status",
+  ]),
+  async (req, res) => {
+    try {
+      const { busId } = req.body;
 
-    if (!busId) {
-      return res.status(400).json({ message: "❌ Bus ID आवश्यक है।" });
+      if (!busId) {
+        return res.status(400).json({ message: "❌ Bus ID आवश्यक है।" });
+      }
+
+      // 🚌 Fetch bus details
+      const bus = await Bus.findById(busId)
+        .populate("driver")
+        .populate("conductor");
+
+      if (!bus) {
+        return res.status(404).json({ message: "❌ बस नहीं मिली।" });
+      }
+
+      // 🔍 Extract info
+      const busNumber = bus.busNumber || "अज्ञात";
+      const driverMobile = bus.driver?.phone || "नहीं मिला";
+      const conductorMobile = bus.conductor?.phone || "नहीं मिला";
+
+      const title = "🛑 Emergency Alert";
+      const message = `An emergency alert has been received from bus number ${busNumber}. Driver: ${driverMobile}, Conductor: ${conductorMobile}`;
+
+      // 👥 Fetch admins and superadmins
+      const admins = await CORE.find({
+        role: { $in: ["admin", "administrator"] },
+        isLogged: true, // ✅ Only logged-in users
+        notificationToken: { $exists: true, $ne: "" }, // ✅ Token must exist and not be empty
+      });
+
+      // 🚀 Send notification to each
+      for (const admin of admins) {
+        sendNotificationToClient(admin.notificationToken, title, message);
+      }
+
+      return res.status(200).json({ message: "✅ सूचना भेज दी गई है।" });
+    } catch (err) {
+      console.error("❌ Emergency Alert Error:", err);
+      return res.status(500).json({ message: "❌ सर्वर त्रुटि" });
     }
+  }
+);
 
-    // 🚌 Fetch bus details
-    const bus = await Bus.findById(busId)
-      .populate("driver")
-      .populate("conductor");
-
-    if (!bus) {
-      return res.status(404).json({ message: "❌ बस नहीं मिली।" });
+router.delete(
+  "/deleteComplaint/:id",
+  checkUserExistenceAndRedirect([
+    "notificationToken",
+    "conductorDocuments",
+    "driverDocuments",
+    "conductorId",
+    "driverId",
+    "password",
+    "address",
+    "joiningDate",
+    "isLogged",
+    "_id",
+    "name",
+    "phone",
+    "licenseNumber",
+    "status",
+  ]),
+  async (req, res) => {
+    try {
+      const complaint = await Complaint.findByIdAndDelete(req.params.id);
+      if (!complaint) {
+        return res.status(404).json({ message: "❌ शिकायत नहीं मिली" });
+      }
+      res.json({ done: true, message: "✅शिकायत सफलतापूर्वक हटाई गई" });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "❌ सर्वर में त्रुटि" });
     }
+  }
+);
 
-    // 🔍 Extract info
-    const busNumber = bus.busNumber || "अज्ञात";
-    const driverMobile = bus.driver?.phone || "नहीं मिला";
-    const conductorMobile = bus.conductor?.phone || "नहीं मिला";
-
-    const title = "🛑 Emergency Alert";
-    const message = `An emergency alert has been received from bus number ${busNumber}. Driver: ${driverMobile}, Conductor: ${conductorMobile}`;
-
-    // 👥 Fetch admins and superadmins
-    const admins = await CORE.find({
-      role: { $in: ["admin", "administrator"] },
-      isLogged: true, // ✅ Only logged-in users
-      notificationToken: { $exists: true, $ne: "" }, // ✅ Token must exist and not be empty
+router.get(
+  "/changePass",
+  checkUserExistenceAndRedirect([
+    "notificationToken",
+    "conductorDocuments",
+    "driverDocuments",
+    "conductorId",
+    "driverId",
+    "password",
+    "address",
+    "joiningDate",
+    "isLogged",
+  ]),
+  async (req, res) => {
+    return res.render("DC/password.ejs", {
+      user: req.worker,
     });
-
-    // 🚀 Send notification to each
-    for (const admin of admins) {
-      sendNotificationToClient(admin.notificationToken, title, message);
-    }
-
-    return res.status(200).json({ message: "✅ सूचना भेज दी गई है।" });
-  } catch (err) {
-    console.error("❌ Emergency Alert Error:", err);
-    return res.status(500).json({ message: "❌ सर्वर त्रुटि" });
   }
-});
+);
 
-router.delete("/deleteComplaint/:id", async (req, res) => {
-  try {
-    const complaint = await Complaint.findByIdAndDelete(req.params.id);
-    if (!complaint) {
-      return res.status(404).json({ message: "❌ शिकायत नहीं मिली" });
+router.post(
+  "/changePass",
+  checkUserExistenceAndRedirect([
+    "notificationToken",
+    "conductorDocuments",
+    "driverDocuments",
+    "conductorId",
+    "driverId",
+    "password",
+    "address",
+    "joiningDate",
+    "isLogged",
+    "_id",
+    "name",
+    "phone",
+    "licenseNumber",
+    "status",
+  ]),
+  async (req, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+
+      if (!currentPassword || !newPassword) {
+        return res.json({ message: "❌ कृपया दोनों पासवर्ड भरें।" });
+      }
+
+      const worker = req.worker;
+      let userModel;
+
+      if (worker.role === "driver") {
+        userModel = Driver;
+      } else if (worker.role === "conductor") {
+        userModel = Conductor;
+      } else {
+        return res.json({ message: "❌ अमान्य उपयोगकर्ता प्रकार।" });
+      }
+
+      const user = await userModel.findById(worker._id);
+
+      if (!user) {
+        return res.json({ message: "❌ उपयोगकर्ता नहीं मिला।" });
+      }
+
+      // पासवर्ड मिलान
+      if (user.password !== currentPassword) {
+        return res.json({ message: "❌ वर्तमान पासवर्ड गलत है।" });
+      }
+
+      // नया पासवर्ड सेट करें
+      user.password = newPassword;
+      await user.save();
+
+      return res.json({ message: "✅ पासवर्ड सफलतापूर्वक बदल दिया गया।" });
+    } catch (error) {
+      console.error("❌ पासवर्ड बदलने में त्रुटि:", error);
+      return res.json({
+        message: "❌ सर्वर त्रुटि, कृपया बाद में प्रयास करें।",
+      });
     }
-    res.json({ message: "✅शिकायत सफलतापूर्वक हटाई गई" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "❌ सर्वर में त्रुटि" });
   }
-});
+);
 
-router.get("/changePass", checkUserExistenceAndRedirect, async (req, res) => {
-  return res.render("DC/password.ejs", {
-    user: req.worker,
-  });
-});
-
-router.post("/changePass", checkUserExistenceAndRedirect, async (req, res) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
-
-    if (!currentPassword || !newPassword) {
-      return res.json({ message: "❌ कृपया दोनों पासवर्ड भरें।" });
-    }
-
-    const worker = req.worker;
-    let userModel;
-
-    if (worker.role === "driver") {
-      userModel = Driver;
-    } else if (worker.role === "conductor") {
-      userModel = Conductor;
-    } else {
-      return res.json({ message: "❌ अमान्य उपयोगकर्ता प्रकार।" });
-    }
-
-    const user = await userModel.findById(worker._id);
-
-    if (!user) {
-      return res.json({ message: "❌ उपयोगकर्ता नहीं मिला।" });
-    }
-
-    // पासवर्ड मिलान
-    if (user.password !== currentPassword) {
-      return res.json({ message: "❌ वर्तमान पासवर्ड गलत है।" });
-    }
-
-    // नया पासवर्ड सेट करें
-    user.password = newPassword;
-    await user.save();
-
-    return res.json({ message: "✅ पासवर्ड सफलतापूर्वक बदल दिया गया।" });
-  } catch (error) {
-    console.error("❌ पासवर्ड बदलने में त्रुटि:", error);
-    return res.json({ message: "❌ सर्वर त्रुटि, कृपया बाद में प्रयास करें।" });
-  }
-});
-
-router.get("/profile", checkUserExistenceAndRedirect, async (req, res) => {
-  return res.render("DC/profile.ejs", { user: req.worker, worker: req.worker });
-});
-router.get("/helper", checkUserExistenceAndRedirect, async (req, res) => {
-  const bus = await getBusDetailsByRole(req.user.role, req.worker._id);
-
-  if (req.user.role == "driver") {
+router.get(
+  "/profile",
+  checkUserExistenceAndRedirect([
+    "driverDocument",
+    "conductorDocument",
+    "joiningDate",
+    "isLogged",
+    "password",
+  ]),
+  async (req, res) => {
     return res.render("DC/profile.ejs", {
       user: req.worker,
-      worker: bus.conductor,
+      worker: req.worker,
     });
-  } else {
-    return res.render("DC/profile.ejs", { user: req.worker, user: bus.driver });
   }
-});
-router.get("/aboutBus", checkUserExistenceAndRedirect, async (req, res) => {
-  const bus = await getBusDetailsByRole(req.user.role, req.worker._id);
-  return res.render("DC/bus.ejs", { user: req.worker, bus: bus });
-});
+);
+router.get(
+  "/helper",
+  checkUserExistenceAndRedirect([
+    "notificationToken",
+    "conductorDocuments",
+    "driverDocuments",
+    "conductorId",
+    "driverId",
+    "password",
+    "address",
+    "joiningDate",
+    "isLogged",
+  ]),
+  async (req, res) => {
+    const bus = await getBusDetailsByRole(req.user.role, req.worker._id);
+
+    if (req.user.role == "driver") {
+      return res.render("DC/profile.ejs", {
+        user: req.worker,
+        worker: bus.conductor,
+      });
+    } else {
+      return res.render("DC/profile.ejs", {
+        user: req.worker,
+        worker: bus.driver,
+      });
+    }
+  }
+);
+router.get(
+  "/aboutBus",
+  checkUserExistenceAndRedirect([
+    "notificationToken",
+    "conductorDocuments",
+    "driverDocuments",
+    "conductorId",
+    "driverId",
+    "password",
+    "address",
+    "joiningDate",
+    "isLogged",
+  ]),
+  async (req, res) => {
+    try {
+      const userId = req.worker._id;
+      const role = req.user.role;
+
+      const busQuery =
+        role === "driver" ? { driver: userId } : { conductor: userId };
+
+      const bus = await Bus.findOne(busQuery).select(
+        "-busDocuments -busImages -driver -conductor -live"
+      );
+
+      if (!bus) {
+        return res.status(404).render("404", {
+          message: "आपके खाते से जुड़ी कोई बस नहीं मिली।",
+        });
+      }
+
+      console.log(bus);
+      return res.render("DC/bus.ejs", {
+        user: req.worker,
+        bus: bus,
+      });
+    } catch (err) {
+      console.error("❌ बस जानकारी लाने में त्रुटि:", err.message);
+      return res.status(500).json({
+        message: "कुछ गलत हो गया। कृपया बाद में प्रयास करें।",
+      });
+    }
+  }
+);
 
 router.get("/logout", async (req, res) => {
   try {
@@ -505,123 +751,154 @@ router.get("/logout", async (req, res) => {
   }
 });
 
-router.get("/meterReading", checkUserExistenceAndRedirect, async (req, res) => {
-  try {
-    const busId = req.worker.assignedBus;
+router.get(
+  "/meterReading",
+  checkUserExistenceAndRedirect([
+    "notificationToken",
+    "conductorDocuments",
+    "driverDocuments",
+    "conductorId",
+    "driverId",
+    "password",
+    "address",
+    "joiningDate",
+    "isLogged",
+  ]),
+  async (req, res) => {
+    try {
+      const busId = req.worker.assignedBus;
 
-    const currentIST = moment().tz("Asia/Kolkata");
+      const currentIST = moment().tz("Asia/Kolkata");
 
-    const todayStart = currentIST.clone().startOf("day").toDate(); // Start of the day in IST
-    const todayEnd = currentIST.clone().endOf("day").toDate(); // End of the day in IST
+      const todayStart = currentIST.clone().startOf("day").toDate(); // Start of the day in IST
+      const todayEnd = currentIST.clone().endOf("day").toDate(); // End of the day in IST
 
-    const targetTime = currentIST.clone().startOf("day").add(14, "hours"); // 2 PM IST
-    const isMorning = currentIST.hour() < 14;
+      const targetTime = currentIST.clone().startOf("day").add(14, "hours"); // 2 PM IST
+      const isMorning = currentIST.hour() < 14;
 
-    let remainingTime = null;
+      let remainingTime = null;
 
-    // ✅ Updated: Use createdAt instead of `date` field
-    const activity = await BusActivityLog.findOne({
-      bus: busId,
-      createdAt: { $gte: todayStart, $lte: todayEnd },
-    });
+      // ✅ Updated: Use createdAt instead of `date` field
+      const activity = await BusActivityLog.findOne({
+        bus: busId,
+        createdAt: { $gte: todayStart, $lte: todayEnd },
+      });
 
-    if (
-      activity &&
-      activity.morningSnap &&
-      activity.morningSnap.image &&
-      activity.morningSnap.reading
-    ) {
-      const diffMs = targetTime.diff(currentIST);
+      if (
+        activity &&
+        activity.morningSnap &&
+        activity.morningSnap.image &&
+        activity.morningSnap.reading
+      ) {
+        const diffMs = targetTime.diff(currentIST);
 
-      if (diffMs > 0) {
-        const duration = moment.duration(diffMs);
-        remainingTime = {
-          hours: Math.floor(duration.asHours()),
-          minutes: duration.minutes(),
-          seconds: duration.seconds(),
+        if (diffMs > 0) {
+          const duration = moment.duration(diffMs);
+          remainingTime = {
+            hours: Math.floor(duration.asHours()),
+            minutes: duration.minutes(),
+            seconds: duration.seconds(),
+          };
+        } else {
+          remainingTime = { hours: 0, minutes: 0, seconds: 0 };
+        }
+      }
+
+      return res.render("DC/meterReading.ejs", {
+        user: req.worker,
+        activity,
+        remainingTime,
+        isMorning,
+      });
+    } catch (err) {
+      console.error("Error in /meterReading GET:", err);
+      return res.status(500).send("Server Error");
+    }
+  }
+);
+
+router.post(
+  "/meterReading",
+  upload.single("meterPhoto"),
+  checkUserExistenceAndRedirect([
+    "notificationToken",
+    "conductorDocuments",
+    "driverDocuments",
+    "conductorId",
+    "driverId",
+    "password",
+    "address",
+    "joiningDate",
+    "isLogged",
+    "_id",
+    "name",
+    "phone",
+    "licenseNumber",
+    "status",
+  ]),
+  async (req, res) => {
+    try {
+      const file = req.file;
+      const { busId, odometer } = req.body;
+
+      if (!file || !busId || !odometer) {
+        return res
+          .status(400)
+          .json({ message: "कृपया सभी आवश्यक जानकारी भरें।" });
+      }
+
+      // Get start and end of the day in IST
+
+      const currentIST = moment().tz("Asia/Kolkata");
+      const todayStart = moment().tz("Asia/Kolkata").startOf("day").toDate();
+      const todayEnd = moment().tz("Asia/Kolkata").endOf("day").toDate();
+
+      const isMorning = currentIST.hour() < 14;
+      console.log("Current hour:", currentIST.hour());
+      console.log("isMorning:", isMorning);
+
+      // एक्टिविटी लॉग ढूँढो या नया बनाओ
+      let activity = await BusActivityLog.findOne({
+        bus: busId,
+        createdAt: { $gte: todayStart, $lte: todayEnd },
+      });
+
+      if (!activity) {
+        activity = new BusActivityLog({ bus: busId });
+      }
+
+      // इमेज का सिर्फ रिलेटिव पाथ स्टोर करो
+      const imagePath = file.path.split("public")[1];
+
+      if (isMorning) {
+        activity.morningSnap = {
+          image: imagePath,
+          reading: Number(odometer),
+          takenAt: moment().tz("Asia/Kolkata").format("DD MMM YYYY, hh:mm A"),
         };
       } else {
-        remainingTime = { hours: 0, minutes: 0, seconds: 0 };
+        activity.eveningSnap = {
+          image: imagePath,
+          reading: Number(odometer),
+          takenAt: moment().tz("Asia/Kolkata").format("DD MMM YYYY, hh:mm A"),
+        };
       }
-    }
 
-    return res.render("DC/meterReading.ejs", {
-      user: req.worker,
-      activity,
-      remainingTime,
-      isMorning,
-    });
-  } catch (err) {
-    console.error("Error in /meterReading GET:", err);
-    return res.status(500).send("Server Error");
+      await activity.save();
+
+      return res.status(200).json({
+        message: `${
+          isMorning ? "सुबह" : "शाम"
+        } की मीटर रीडिंग सफलतापूर्वक सहेजी गई है।`,
+        activity,
+      });
+    } catch (error) {
+      console.error("Upload error:", error);
+      return res.status(500).json({
+        message: "सर्वर में आंतरिक त्रुटि हुई है। कृपया बाद में प्रयास करें।",
+      });
+    }
   }
-});
-
-router.post("/meterReading", upload.single("meterPhoto"), async (req, res) => {
-  try {
-    const file = req.file;
-    const { busId, odometer } = req.body;
-
-    if (!file || !busId || !odometer) {
-      return res
-        .status(400)
-        .json({ message: "कृपया सभी आवश्यक जानकारी भरें।" });
-    }
-
-    // Get start and end of the day in IST
-
-    const currentIST = moment().tz("Asia/Kolkata");
-    const todayStart = moment().tz("Asia/Kolkata").startOf("day").toDate();
-    const todayEnd = moment().tz("Asia/Kolkata").endOf("day").toDate();
-
-    const isMorning = currentIST.hour() < 14;
-    console.log("Current hour:", currentIST.hour());
-    console.log("isMorning:", isMorning);
-
-    // एक्टिविटी लॉग ढूँढो या नया बनाओ
-    let activity = await BusActivityLog.findOne({
-      bus: busId,
-      createdAt: { $gte: todayStart, $lte: todayEnd },
-    });
-
-    if (!activity) {
-      activity = new BusActivityLog({ bus: busId });
-    }
-
-    // इमेज का सिर्फ रिलेटिव पाथ स्टोर करो
-    const imagePath = file.path.split("public")[1];
-
-    if (isMorning) {
-      activity.morningSnap = {
-        image: imagePath,
-        reading: Number(odometer),
-        takenAt: moment().tz("Asia/Kolkata").format("DD MMM YYYY, hh:mm A")
-
-      };
-    } else {
-      activity.eveningSnap = {
-        image: imagePath,
-        reading: Number(odometer),
-        takenAt: currentIST.toDate(),
-      };
-    }
-
-    await activity.save();
-
-    return res.status(200).json({
-      message: `${
-        isMorning ? "सुबह" : "शाम"
-      } की मीटर रीडिंग सफलतापूर्वक सहेजी गई है।`,
-      activity,
-    });
-  } catch (error) {
-    console.error("Upload error:", error);
-    return res.status(500).json({
-      message: "सर्वर में आंतरिक त्रुटि हुई है। कृपया बाद में प्रयास करें।",
-    });
-  }
-});
-
-// Regardin complain
+);
 
 export { router as dcRouter };

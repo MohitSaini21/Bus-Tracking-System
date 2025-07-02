@@ -276,7 +276,15 @@ if(meterForm){
         
     }
 } catch (error) {
+
     document.getElementById("loader").style.display = "none";
+    if (
+                error.message.includes("Unexpected token '<'") ||
+                error.message.includes("position 0") // Firefox/Edge sometimes
+              ) {
+                window.location.href = "/DC";
+                return;
+              }
     console.error("Error:", error);
     alert("❌ नेटवर्क त्रुटि: कृपया विवरण के लिए कंसोल देखें।");
     safeSpeakHindi(`नेटवर्क त्रुटि: कृपया विवरण के लिए कंसोल देखें।`)

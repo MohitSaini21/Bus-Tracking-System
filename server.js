@@ -11,6 +11,7 @@ import { Worker } from "worker_threads";
 import os from "os";
 import { setAllRouteStops } from "./utils/busRouteStops.js";
 import { getBusCacheData } from "./utils/busRouteStops.js";
+import rfdc from "rfdc";
 import jwt from "jsonwebtoken";
 
 import { administratorRouter } from "./routes/administrator.js";
@@ -122,7 +123,7 @@ let administratorConnectionsBus = {};
 
 let lastLocation = new Map();
 
-let locationEvaluationCooldown = 5000; // ms (5 seconds)
+let locationEvaluationCooldown = 10000; // ms (5 seconds)
 let lastEvaluated = {}; // { [busId]: timestamp }
 
 // Cron Jobs
@@ -140,7 +141,7 @@ cron.schedule("0 0 * * *", () => {
 
 //  NewArch Based Code
 
-const MAX_WORKERS = os.cpus().length - 1; // 8 in your case
+const MAX_WORKERS = os.cpus().length - 2; // 8 in your case
 const waitingArea = new Set(); // 👈 No duplicates
 const workers = [];
 
@@ -174,8 +175,7 @@ function addTask(task) {
     processQueue(busId);
   }
 }
-
-const TASK_TIMEOUT = 2500; // 10 seconds max per task
+const TASK_TIMEOUT = 10000; // from 4000ms
 
 // Ineterval to Provess Watitign Area
 setInterval(() => {
@@ -224,7 +224,7 @@ function processQueue(busId) {
 
   const start = Date.now();
 
-  const busObject = lastEvaluated[busId];
+  let busObject = lastEvaluated[busId] ?? {};
 
   isProcessing.set(busId, true);
 
@@ -257,32 +257,36 @@ function processQueue(busId) {
       }
     }
   }, TASK_TIMEOUT);
+  timeout.unref();
 
-  // 🔄 Start task
-  worker.postMessage({ task, busObject });
+  const safeTaskData = JSON.parse(JSON.stringify({ task, busObject }));
+  worker.postMessage(safeTaskData);
 
   worker.once("message", (msg) => {
-    if (resolved) return;
+    process.nextTick(() => {
+      if (resolved) return;
 
-    if (msg?.updatedBusObject && msg?.busId) {
-      lastEvaluated[msg.busId] = msg.updatedBusObject;
+      if (msg?.updatedBusObject && msg?.busId) {
+        lastEvaluated[msg.busId] = msg.updatedBusObject;
 
-      if (adminConnectionsBus[msg.busId]) {
-        adminConnectionsBus[msg.busId].forEach((socketId) => {
-          io.to(socketId).emit("busUpdate", {
-            busObject: lastEvaluated[msg.busId],
+        if (adminConnectionsBus[msg.busId]) {
+          adminConnectionsBus[msg.busId].forEach((socketId) => {
+            io.to(socketId).emit("busUpdate", {
+              busObject: lastEvaluated[msg.busId],
+            });
           });
-        });
+        }
+
+        const timeTaken = Date.now() - start;
+        console.log(`✅ Worker completed in ${timeTaken}ms`);
+      } else {
+        console.warn("⚠️ Malformed worker message:", msg);
       }
 
-      const timeTaken = Date.now() - start;
-      console.log(`✅ Worker completed in ${timeTaken}ms`);
-    } else {
-      console.warn("⚠️ Malformed worker message:", msg);
-    }
-
-    clearEverything();
+      clearEverything();
+    });
   });
+
   if (!task._retries) task._retries = 0;
 
   worker.once("error", (err) => {
@@ -628,67 +632,89 @@ io.on("connection", (socket) => {
   });
 
   socket.on("busLocationUpdate", (data) => {
-    const clone = data;
-    const busId = data.bus?._id;
-    if (!busId) return;
+    try {
+      const busId = data.bus?._id;
+      if (!busId) return;
 
-    // 1. Broadcast to clients (exclude previousPoint)
-    const sockets = busConnections[busId];
-    if (sockets?.length) {
-      for (let i = 0; i < sockets.length; i++) {
-        io.to(sockets[i]).emit("receivelocation", clone);
-      }
-    }
-
-    // 2. Fetch cached data
-    const cacheData = getBusCacheData(busId);
-    clone.bus.iconPhoto = cacheData.iconPhoto;
-
-    // 3. Cache the last safe location (immutable for logs/admins)
-    lastLocation.set(busId, {
-      ...clone,
-      bus: { ...clone.bus },
-    });
-
-    // 4. Notify all admin and super admin sockets
-    const adminTargets = [...allAdmins, ...administratorIds];
-    if (adminTargets.length) {
-      for (let i = 0; i < adminTargets.length; i++) {
-        io.to(adminTargets[i]).emit("allBusLocations", clone);
-      }
-    }
-
-    // 5. Initialize cooldown data if not present
-    const now = Date.now();
-    let busEval = lastEvaluated[busId];
-    if (!busEval) {
-      busEval = lastEvaluated[busId] = {
-        busId,
-        reachedStops: {},
-        lastEvaluations: 0,
-        previousPoint: { latitude: data.latitude, longitude: data.longitude },
+      // 1. Clone only what's needed early
+      const clientBroadcastData = {
+        latitude: data.latitude,
+        longitude: data.longitude,
+        timestamp: data.timestamp,
+        accuracy: data.accuracy,
+        bus: {
+          _id: busId,
+        },
       };
-    }
 
-    // 6. Check if cooldown passed
-    const cooldownPassed =
-      now - busEval.lastEvaluations >= locationEvaluationCooldown;
+      // 2. Broadcast to bus-connected clients
+      const sockets = busConnections[busId];
+      if (sockets?.length) {
+        for (let i = 0; i < sockets.length; i++) {
+          io.to(sockets[i]).emit("receivelocation", clientBroadcastData);
+        }
+      }
 
-    if (cooldownPassed) {
-      // 7. Update last evaluation time FIRST (to avoid overlaps)
+      // 3. Use lightweight cache fetch
+      const cacheData = getBusCacheData(busId);
+      const adminPayload = {
+        ...clientBroadcastData,
+        bus: {
+          ...clientBroadcastData.bus,
+          iconPhoto: cacheData.iconPhoto,
+        },
+      };
+
+      // 4. Update lastLocation (used by admins)
+      lastLocation.set(busId, adminPayload);
+
+      // 5. Notify all admin and super admin sockets
+      const adminTargets = [...allAdmins, ...administratorIds];
+      for (let i = 0; i < adminTargets.length; i++) {
+        io.to(adminTargets[i]).emit("allBusLocations", adminPayload);
+      }
+
+      // 6. Initialize bus evaluation cache if not present
+      const now = Date.now();
+      let busEval = lastEvaluated[busId];
+      if (!busEval) {
+        busEval = lastEvaluated[busId] = {
+          busId,
+          reachedStops: {},
+          lastEvaluations: 0,
+          previousPoint: {
+            latitude: data.latitude,
+            longitude: data.longitude,
+          },
+        };
+      }
+
+      // 7. Cooldown check
+      const cooldownPassed = now - busEval.lastEvaluations >= 10000;
+      if (!cooldownPassed) {
+        console.log("skipping addTask");
+        return;
+      }
+
+      // 8. Set last evaluation time first (prevents overlaps)
       busEval.lastEvaluations = now;
 
-      // 8. Build clean task input (safe clone)
+      // 9. Prepare trimmed task for worker thread
       const taskInput = {
-        ...data,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        timestamp: data.timestamp,
+        accuracy: data.accuracy,
         bus: {
-          ...data.bus,
+          _id: busId,
           routeStops: cacheData.routeStops,
         },
       };
 
-      // pertanning to offload
-      // addTask(taskInput);
+      // 10. Offload to background worker
+      addTask(taskInput);
+    } catch (err) {
+      console.error("🚨 Error in busLocationUpdate handler:", err);
     }
   });
 
@@ -877,8 +903,6 @@ io.on("connection", (socket) => {
 
       if (lastEvaluated[busId]) {
         await saveLogs(lastEvaluated[busId]); // async-safe
-
-        console.log(`📝 Saved logs for ${busId}`);
       }
     }
   });

@@ -53,7 +53,7 @@ export default async function saveLogs(busObject) {
       // ➕ Update existing log
       for (const newStop of stopsData) {
         const existingStop = log.stops.find(
-          (s) => s.stop.toString() === newStop.stop
+          (s) => s.stop?.toString() === newStop.stop
         );
         if (existingStop) {
           if (newStop.morningTime && !existingStop.morningTime) {
@@ -88,6 +88,7 @@ export default async function saveLogs(busObject) {
 
       await log.save();
       console.log(`📝 Updated today's log for bus ${busObject.busId}`);
+      return;
     } else {
       // 🆕 New log
       const newLog = new BusActivityLog({
@@ -103,8 +104,10 @@ export default async function saveLogs(busObject) {
       // ✅ Clear after saving
       busObject.path = [];
       busObject.eventTimeline = [];
+      return;
     }
   } catch (err) {
     console.error("❌ Error saving bus logs:", err.message);
+    return;
   }
 }

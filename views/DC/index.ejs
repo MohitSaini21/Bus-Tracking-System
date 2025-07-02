@@ -26,6 +26,60 @@
     <link rel="stylesheet" href="/assets/css/style.css" />
     <!-- End layout styles -->
     <link rel="shortcut icon" href="/assets/images/favicon.png" />
+    <style>
+      .btn-group-vertical .btn {
+        transition: all 0.3s ease;
+        border-radius: 12px;
+      }
+    
+      .btn:hover {
+        transform: scale(1.02);
+      }
+
+      @media (max-width: 768px) {
+  .card-body {
+    padding: 1rem !important;
+  }
+
+  ul {
+    padding-left: 1.2rem;
+  }
+
+  ul li {
+    font-size: 15px;
+    line-height: 1.5;
+    margin-bottom: 8px;
+  }
+
+  .card-title {
+    font-size: 20px;
+  }
+
+  .card-description {
+    font-size: 14px;
+  }
+}
+.collapsible-header {
+    cursor: pointer;
+    font-weight: bold;
+    color: #dc3545; /* Bootstrap danger red */
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+  }
+
+  .collapsible-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease;
+  }
+
+  .collapsible-content.open {
+    max-height: 3000px; /* large enough for content */
+    transition: max-height 0.7s ease;
+  }
+    </style>
+    
      
 
 
@@ -46,95 +100,176 @@
         <div class="main-panel">
           <div class="content-wrapper">
             <div class="row">
-              <div class="col-12 grid-margin stretch-card">
-                <div class="card">
-                  <div class="card-body">
-                    <h4 class="card-title">
-                      <%= user.name %> (<%= user.role %>)
-                    </h4>
-                    <p class="card-description">
-                      अपनी बस की लाइव लोकेशन भेजने के लिए नीचे दिए गए <code>चेक इन</code> बटन पर क्लिक करें।
-                    </p>
-                    <div class="template-demo">
-                      <button type="button" class="btn btn-secondary btn-fw">
-                        <a href="/DC/goLive" style="text-decoration: none; color: black;">चेक इन</a>
-                      </button>
-                      <button type="button" class="btn btn-secondary btn-fw">
-                        <a href="/DC/profile" style="text-decoration: none; color: black;">               प्रोफ़ाइल देखें</a>
-         
-                      </button>
-                      <button type="button" class="btn btn-danger btn-fw" onclick="Redirect()">
-                        लॉगआउट
-                      </button>
-                                    
+           <!-- LEFT: Real-time Operations -->
+  <div class="col-md-6 grid-margin stretch-card">
+    <div class="card shadow">
+      <div class="card-body text-center">
+        <h4 class="card-title mb-3">🔧 त्वरित संचालन (Quick Actions)</h4>
 
- <!-- 🔴 Emergency Button in Hindi -->
-<button type="button" class="btn btn-danger btn-fw" onclick="handleEmergencyClick()">
-  आपातकालीन बटन
-</button>
+        <div class="btn-group-vertical w-100" role="group" style="gap: 12px; max-width: 300px; margin: auto;">
+          <a href="/DC/goLive" class="btn btn-outline-primary btn-lg fw-bold">🚍 चेक इन</a>
+          <a href="/DC/profile" class="btn btn-outline-success btn-lg fw-bold">👤 प्रोफ़ाइल देखें</a>
+          <button class="btn btn-outline-danger btn-lg fw-bold" onclick="handleEmergencyClick()">🚨 आपातकालीन बटन</button>
+          <button class="btn btn-danger btn-lg fw-bold" onclick="Redirect()">🔓 लॉगआउट</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
 
-              <div class="col-12 grid-margin stretch-card">
-                <div class="card">
-                  <div class="card-body text-center">
-                    <h4 class="card-title">🚌 ओडोमीटर अपडेट (Odometer Update)</h4>
-                    <p class="card-description">
-                      कृपया नीचे वर्तमान बस मीटर रीडिंग दर्ज करें <br>
-                      <span class="text-muted">(Please enter the current bus meter reading below)</span>
-                    </p>
+  <div class="col-md-6 grid-margin stretch-card">
+    <div class="card shadow-sm">
+      <div class="card-body text-center">
+        <h4 class="card-title mb-3">📈 ओडोमीटर अपडेट</h4>
+        <form id="odometerForm" class="d-flex justify-content-center flex-wrap gap-3" style="max-width: 400px; margin: auto;">
+          <input type="number" class="form-control form-control-lg" name="odometerReading" id="odometerReading" value="<%= user.assignedBus.distanceTravelled %>" placeholder="🔢 उदाहरण: 128560" required>
+          <br><br>
+          <br>
+          <button type="submit" class="btn btn-outline-success btn-lg fw-bold">🔄 अपडेट करें</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+            <!-- SECOND ROW: Notices -->
+<div class="row">
+  <div class="col-12 grid-margin stretch-card">
+    <div class="card">
+      <div class="card-body">
+        <h4 class="card-title text-center">📌 सूचना पट्ट (Notice Board)</h4>
+        <p class="card-description text-center">
+          ड्राइवर एवं परिचालकों के लिए अद्यतन दिशानिर्देश नीचे प्रस्तुत हैं।<br>
+          <span class="text-muted">(Updated operational instructions for Drivers and Conductors are listed below.)</span>
+        </p>
+  
+        <div>
+          <!-- PORTAL USAGE INSTRUCTIONS -->
+          <h5 class="collapsible-header">🔐 पोर्टल उपयोग संबंधी निर्देश:</h5>
+          <div class="collapsible-content">
+            <ul style="line-height: 1.8;">
+              <li>👥 प्रत्येक ड्राइवर एवं परिचालक को अपने-अपने पोर्टल खाते में लॉगिन करना आवश्यक है।<br>
+                  <span class="text-muted">(Each driver and conductor must log in to their respective portal account.)</span>
+              </li>
+              <li>🚌 एक बस से अधिकतम दो उपयोगकर्ता (ड्राइवर व परिचालक) जुड़े हो सकते हैं, परंतु किसी समय केवल <strong>एक</strong> उपयोगकर्ता <strong>लाइव</strong> रह सकता है।<br>
+                  <span class="text-muted">(A maximum of two users (driver and conductor) can be linked to one bus, but only one can be live at a time.)</span>
+              </li>
+              <li>🔄 यदि एक उपयोगकर्ता (जैसे ड्राइवर) पहले से लाइव है और दूसरा (परिचालक) “चेक-इन” करता है, तो पहले का कनेक्शन स्वतः समाप्त हो जाएगा।<br>
+                  <span class="text-muted">(If one user is already live and another checks in, the first user will be automatically disconnected.)</span>
+              </li>
+              <li>🤝 इसलिए “चेक-इन” से पूर्व आपसी संवाद अत्यंत आवश्यक है।<br>
+                  <span class="text-muted">(Hence, mutual communication is essential before checking in.)</span>
+              </li>
+              <li>📄 बार-बार पेज रिफ्रेश करने से सर्वर पर अनावश्यक लोड पड़ता है। कृपया इससे बचें।<br>
+                  <span class="text-muted">(Repeated page refreshes put unnecessary load on the server. Please avoid it.)</span>
+              </li>
+            </ul>
+          </div>
+  
+          <!-- CHECK-IN PROCESS -->
+          <h5 class="collapsible-header">📍 चेक-इन प्रक्रिया:</h5>
+          <div class="collapsible-content">
+            <ul style="line-height: 1.8;">
+              <li>📲 “चेक-इन” करते समय लोकेशन अनुमति देना अनिवार्य है। अनुमति न मिलने पर सर्वर से कनेक्शन स्थापित नहीं होगा।<br>
+                  <span class="text-muted">(Location permission is mandatory during check-in. Without it, server connection cannot be established.)</span>
+              </li>
+              <li>🎥 स्ट्रीमिंग शुरू करने पर कैमरा अनुमति देना आवश्यक है। कैमरा स्ट्रीमिंग के माध्यम से प्रशासन को लाइव जानकारी दी जाती है।<br>
+                  <span class="text-muted">(Camera permission is required when starting streaming. It allows the admin to monitor the live feed.)</span>
+              </li>
+              <li>🗺️ चेक-इन पेज पर आपकी लाइव लोकेशन, तय मार्ग (route), एवं रुकने के स्थान (stops) प्रदर्शित होते हैं।<br>
+                  <span class="text-muted">(The check-in page displays your live location, assigned route, and scheduled stops.)</span>
+              </li>
+              <li>🗣️ चालक "स्टॉप अपडेट" के लिए मैन्युअल रूप से निम्न नोटिफिकेशन भेज सकता है:<br>
+                  <span class="text-muted">(The driver can manually send the following stop notifications:)</span>
+                <ul>
+                  <li>🟡 आने वाले हैं (Arriving)</li>
+                  <li>🟢 आ गए हैं (Arrived)</li>
+                  <li>🔵 निकलने वाले हैं (Departing)</li>
+                  <li>⚪ निकल गए हैं (Departed)</li>
+                </ul>
+              </li>
+              <li>📵 ऐप को बैकग्राउंड में न रखें, अन्यथा लाइव कनेक्शन टूट सकता है।<br>
+                  <span class="text-muted">(Do not keep the app in the background; it may break the live connection.)</span>
+              </li>
+            </ul>
+          </div>
+  
+          <!-- DAILY ODOMETER -->
+          <h5 class="collapsible-header">📷 डेली ओडोमीटर रीडिंग व प्रमाण:</h5>
+          <div class="collapsible-content">
+            <ul style="line-height: 1.8;">
+              <li>📅 प्रत्येक दिन <strong>सुबह एवं शाम</strong> दो बार ओडोमीटर रीडिंग एवं उसकी स्पष्ट फोटो अपलोड करना अनिवार्य है।<br>
+                  <span class="text-muted">(It is mandatory to upload the odometer reading and a clear photo twice a day — morning and evening.)</span>
+              </li>
+              <li>📄 पोर्टल के <strong>मुख्य पेज पर उपलब्ध ओडोमीटर फॉर्म</strong> में रीडिंग भरें और वहीं से फोटो अपलोड करें।<br>
+                  <span class="text-muted">(Submit the reading and photo using the dedicated odometer form available on the portal's main page.)</span>
+              </li>
+              <li>📤 फोटो ड्राइवर या परिचालक – कोई भी अपलोड कर सकता है, लेकिन केवल निर्धारित फॉर्म के माध्यम से ही करें।<br>
+                  <span class="text-muted">(Either driver or conductor can upload the photo, but only through the official form.)</span>
+              </li>
+              <li>📸 ओडोमीटर की स्पष्ट फोटो आवश्यक है, जिससे वाहन की स्थिति का उचित रिकॉर्ड रखा जा सके।<br>
+                  <span class="text-muted">(A clear photo of the odometer is necessary to maintain accurate vehicle records.)</span>
+              </li>
+              <li>⚠️ यदि रीडिंग या फोटो अपलोड नहीं की जाती, तो प्रशासन को अलर्ट प्राप्त होता है और <strong>अनुशासनात्मक कार्रवाई</strong> की जा सकती है।<br>
+                  <span class="text-muted">(Failure to upload may alert the admin and lead to disciplinary action.)</span>
+              </li>
+            </ul>
+          </div>
+  
+          <!-- EMERGENCY FACILITIES -->
+          <h5 class="collapsible-header">🚨 आपातकालीन सुविधाएं:</h5>
+          <div class="collapsible-content">
+            <ul style="line-height: 1.8;">
+              <li>🔴 पोर्टल पर “इमरजेंसी बटन” उपलब्ध है जिसका प्रयोग संकट के समय तुरंत सूचना देने हेतु करें।<br>
+                  <span class="text-muted">(An emergency button is available on the portal for instant alert during crisis situations.)</span>
+              </li>
+              <li>📥 सूचना सीधे प्रशासन तक पहुंचाई जाती है और तत्काल सहायता के लिए टीम को सक्रिय किया जाता है।<br>
+                  <span class="text-muted">(The alert is sent directly to the administration, and support is immediately mobilized.)</span>
+              </li>
+            </ul>
+          </div>
+  
+          <!-- COMPLAINTS -->
+          <h5 class="collapsible-header">🧾 शिकायत पंजीकरण व रिकॉर्डिंग:</h5>
+          <div class="collapsible-content">
+            <ul style="line-height: 1.8;">
+              <li>📝 ड्राइवर/परिचालक किसी भी घटना, समस्या या बस संबंधित शिकायत को पोर्टल पर दर्ज कर सकते हैं।<br>
+                  <span class="text-muted">(Drivers/conductors may report any issue, incident, or complaint directly on the portal.)</span>
+              </li>
+              <li>📹 फोटो, वीडियो, दस्तावेज़ आदि के साथ पूरा विवरण अपलोड किया जा सकता है।<br>
+                  <span class="text-muted">(They can upload photos, videos, or documents as supporting evidence.)</span>
+              </li>
+            </ul>
+          </div>
+  
+          <!-- PROFILE & SECURITY -->
+          <h5 class="collapsible-header">👤 प्रोफाइल व सुरक्षा:</h5>
+          <div class="collapsible-content">
+            <ul style="line-height: 1.8;">
+              <li>🔐 उपयोगकर्ता अपना पासवर्ड कभी भी बदल सकते हैं। नियमित परिवर्तन सुरक्षा हेतु आवश्यक है।<br>
+                  <span class="text-muted">(Users may change their password anytime. Regular updates are recommended for security.)</span>
+              </li>
+              <li>🚌 उपयोगकर्ता अपनी प्रोफाइल में <strong>स्वयं की जानकारी, असाइन किए गए सहायक (Helper)</strong> तथा <strong>निर्धारित बस</strong> की जानकारी देख सकते हैं।<br>
+                  <span class="text-muted">(Users can view their own details, assigned helper, and designated bus in the profile.)</span>
+              </li>
+              <li>✏️ यह जानकारी केवल <strong>देखी जा सकती है</strong>, उपयोगकर्ता इसे <strong>संशोधित या अपडेट</strong> नहीं कर सकते।<br>
+                  <span class="text-muted">(This information is view-only; users cannot modify or update it.)</span>
+              </li>
+              <li>👁️ प्रशासनिक टीम आपकी गतिविधियों की निगरानी करती है, ताकि संचालन पारदर्शी एवं सुरक्षित बना रहे।<br>
+                  <span class="text-muted">(All actions are monitored by the admin team to maintain transparency and security.)</span>
+              </li>
+            </ul>
+          </div>
+  
+          <p class="mt-4 font-italic text-center text-warning">
+            ⚠️ सभी उपयोगकर्ताओं से अपेक्षा है कि वे उपरोक्त सभी नियमों का पालन करेंगे। यह प्रणाली आपकी सुरक्षा, जवाबदेही एवं पारदर्शिता के लिए विकसित की गई है।<br>
+            <span class="text-muted">(All users are expected to follow the above rules. This system is built for your safety, accountability, and transparency.)</span>
+          </p>
+        </div>
+      </div>
+  </div>
+</div>
               
-                    <form id="odometerForm" class="form-inline justify-content-center flex-wrap">
-                      <input
-                        type="number"
-                        class="form-control mb-2 mr-sm-2"
-                        id="odometerReading"
-                        value="<%= user.assignedBus.distanceTravelled %>"
-                        name="odometerReading"
-                        placeholder="🔢 रीडिंग दर्ज करें / Enter Reading"
-                        required
-                        style="color: white !important"
-                      />
               
-                      <button type="submit" class="btn btn-success mb-2">
-                        🔄 अपडेट करें (Update)
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              </div>
-              <div class="col-12 grid-margin stretch-card">
-                <div class="card">
-                  <div class="card-body">
-                    <h4 class="card-title text-center">📌 सूचना पट्ट (Notice Board)</h4>
-                    <p class="card-description text-center">
-                      विश्वविद्यालय द्वारा जारी सभी सूचनाएँ नीचे दी गई हैं।<br>
-                      <span class="text-muted">(All university-issued notices are listed below)</span>
-                    </p>
-              
-                    <!-- Notice List -->
-                    <div class="mt-4">
-                      <h5 class="text-danger font-weight-bold mb-3">📝 सभी ड्राइवर और परिचालकों के लिए आवश्यक निर्देश:</h5>
-                      <ul style="line-height: 1.8;">
-                        <li>🚍 यात्रा प्रारंभ करने से पहले <strong>“चेक इन”</strong> करके <strong>लाइव लोकेशन</strong> अवश्य शुरू करें।</li>
-                        <li>📱 ट्रैकिंग ऐप को हमेशा मोबाइल में <strong>चालू (Active)</strong> रखें।</li>
-                        <li>📅 प्रत्येक दिन की शुरुआत में <strong>ओडोमीटर रीडिंग</strong> अवश्य अपडेट करें।</li>
-                        <li>📝 यदि किसी भी प्रकार की समस्या या शिकायत हो, तो <strong>“शिकायत दर्ज करें”</strong> विकल्प का उपयोग करें।</li>
-                        <li>📞 तकनीकी समस्या या आपातकालीन स्थिति में <strong>तत्काल प्रशासन से संपर्क करें।</strong></li>
-                        <li>🪪 यात्रा पर जाने से पहले अपना <strong>ID कार्ड और यूनिफॉर्म</strong> अनिवार्य रूप से पहनें।</li>
-                        <li>🛑 निर्धारित <strong>स्पीड लिमिट (50 किमी/घंटा)</strong> का पालन करें, तेज गति से वाहन चलाना वर्जित है।</li>
-                        <li>🙏 यात्रियों से सद्भावपूर्ण व्यवहार करें और <strong>उनकी सुरक्षा</strong> को सर्वोच्च प्राथमिकता दें।</li>
-                      </ul>
-                    </div>
-                    
-                  </div>
-                </div>
-              </div>
-
 
 
                 
@@ -150,8 +285,9 @@
           <%- include('./partials/footer.ejs') %>
           
           <!-- partial -->
-        </div>
+           </div>
         <!-- main-panel ends -->
+      </div>
       </div>
       <!-- page-body-wrapper ends -->
     </div>
@@ -216,10 +352,10 @@
       
     </script>
 
-<script>
+  <script>
 
 const user = <%- JSON.stringify(user) %>;
-  document.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener("DOMContentLoaded", async () => {
     const form = document.getElementById("odometerForm");
     const input = document.getElementById("odometerReading");
 
@@ -228,9 +364,12 @@ const user = <%- JSON.stringify(user) %>;
 
       const reading = input.value;
 
+      document.getElementById("loader").style.display = "flex";
+
       try {
         const response = await fetch("/DC/odometer", {
           method: "POST",
+          credentials: "include", // 👈 Important to send cookies
           headers: {
             "Content-Type": "application/json",
           },
@@ -238,72 +377,127 @@ const user = <%- JSON.stringify(user) %>;
         });
 
         const result= await response.json()
+        document.getElementById("loader").style.display = "none";
+        document.getElementById("odoReading").innerText=`दूरी तय की गई : ${reading} कि.मी.`
         let  message = result.message.slice(2); // pehle ke 2 character (🔇) hata do
         safeSpeakHindi(message)
         alert(result.message)
      
       
-      } catch (err) {
-        console.error(err);
+      } catch (error) {
+        document.getElementById("loader").style.display = "none";
+        console.error(error);
+        if (
+  error.message.includes("Unexpected token '<'") ||
+  error.message.includes("position 0") // Firefox/Edge sometimes
+) {
+  window.location.href = "/driverConductorLogin";
+  return;
+}
+       
+        document.getElementById("loader").style.display = "none";
         alert("❌ Server or network error.");
         safeSpeakHindi("Server or network error.");
       }
     });
   });
-</script>
- 
-<script>
-    function handleEmergencyClick() {
 
-      safeSpeakHindi("क्या आप वाकई आपातकालीन सूचना भेजना चाहते हैं ");
-    const confirmEmergency = confirm("⚠️ क्या आप वाकई आपातकालीन सूचना भेजना चाहते हैं?");
-
-    if (!confirmEmergency) {
-      safeSpeakHindi("आपातकालीन कार्रवाई रद्द कर दी गई है।");
-      alert("❌ आपातकालीन कार्रवाई रद्द कर दी गई है।");
-      return;
-    }
-
-    // 📦 Optional: आप चाहें तो ड्राइवर/बस की जानकारी यहाँ जोड़ सकते हैं
-    const emergencyData = {
-      timestamp: new Date().toISOString(),
-
-      busId:user.assignedBus._id
-    };
-
-    // 🚀 Server को सूचना भेजना
-    fetch('/DC/emergencyAlert', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(emergencyData)
-    })
-    .then(response => {
-      if (response.ok) {
-        safeSpeakHindi("सूचना भेज दी गई है। प्रशासन जल्द ही संपर्क करेगा।");
-        alert("✅ सूचना भेज दी गई है। प्रशासन जल्द ही संपर्क करेगा।");
-     
-        
-      } else {
-
-        
-        throw new Error("सर्वर त्रुटि");
-      }
-    })
-    .catch(error => {
-      console.error("❌ नेटवर्क त्रुटि:", error);
-      safeSpeakHindi("सूचना भेजने में समस्या आई। कृपया पुनः प्रयास करें।")
-      alert("❌ सूचना भेजने में समस्या आई। कृपया पुनः प्रयास करें।");
-    });
-  }
-
+  // haldine emeregency
 
   
-        window.onload = function () {
-          document.getElementById("loader").style.display = "none";
-        };
-</script>
+  function handleEmergencyClick() {
+
+safeSpeakHindi("क्या आप वाकई आपातकालीन सूचना भेजना चाहते हैं ");
+const confirmEmergency = confirm("⚠️ क्या आप वाकई आपातकालीन सूचना भेजना चाहते हैं?");
+
+if (!confirmEmergency) {
+safeSpeakHindi("आपातकालीन कार्रवाई रद्द कर दी गई है।");
+alert("❌ आपातकालीन कार्रवाई रद्द कर दी गई है।");
+return;
+}
+
+// 📦 Optional: आप चाहें तो ड्राइवर/बस की जानकारी यहाँ जोड़ सकते हैं
+const emergencyData = {
+timestamp: new Date().toISOString(),
+
+busId:user.assignedBus._id
+};
+
+// 🚀 Server को सूचना भेजना
+document.getElementById("loader").style.display = "flex";
+
+
+
+fetch('/DC/emergencyAlert', {
+  method: 'POST',
+  credentials: "include", // 👈 Important to send cookies like auth token
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(emergencyData)
+})
+.then(async (response) => {
+  const text = await response.text(); // Read response as plain text
+
+  // 🔍 Detect if server redirected to login or sent HTML
+  if (text.includes("<!DOCTYPE html>") || text.includes("<html")) {
+    window.location.href = "/driverConductorLogin";
+    return;
+  }
+
+  // ✅ Try parsing JSON safely
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (err) {
+    console.error("❌ JSON parse error:", err);
+    alert("❌ Unexpected response from server.");
+    return;
+  }
+
+  // 🎯 Check response status
+  if (response.ok) {
+    document.getElementById("loader").style.display = "none";
+    safeSpeakHindi("सूचना भेज दी गई है। प्रशासन जल्द ही संपर्क करेगा।");
+    alert("✅ सूचना भेज दी गई है। प्रशासन जल्द ही संपर्क करेगा।");
+  } else {
+    console.error("❌ Server responded with an error:", data);
+    alert("❌ कुछ गलत हुआ। कृपया पुनः प्रयास करें।");
+  }
+})
+.catch((error) => {
+  document.getElementById("loader").style.display = "none";
+
+  if (
+    error.message.includes("Unexpected token '<'") ||
+    error.message.includes("position 0")
+  ) {
+    window.location.href = "/driverConductorLogin";
+    return;
+  }
+
+  console.error("❌ नेटवर्क त्रुटि:", error);
+  safeSpeakHindi("सूचना भेजने में समस्या आई। कृपया पुनः प्रयास करें।");
+  alert("❌ सूचना भेजने में समस्या आई। कृपया पुनः प्रयास करें।");
+});
+
+  }
+
+  window.onload = function () {
+    document.getElementById("loader").style.display = "none";
+  };
+
+
+  document.querySelectorAll('.collapsible-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const content = header.nextElementSibling;
+      content.classList.toggle('open');
+    });
+  });
+  </script>
+ 
+
+
 
   </body>
 </html>

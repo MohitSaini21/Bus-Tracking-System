@@ -78,16 +78,7 @@
                           }) %>
                         </p>
           
-                        <p class="mb-2">
-                          🔖 <strong>स्थिति:</strong>
-                          <% if (complaint.status === "pending") { %>
-                            <span class="badge badge-warning">पेंडिंग</span>
-                          <% } else if (complaint.status === "reviewed") { %>
-                            <span class="badge badge-success">समीक्षित</span>
-                          <% } else if (complaint.status === "rejected") { %>
-                            <span class="badge badge-danger">अस्वीकृत</span>
-                          <% } %>
-                        </p>
+                        
           
                         <button onclick="deleteComplaint('<%= complaint._id %>')" class="btn btn-sm btn-danger mt-3">
                           🗑️ शिकायत हटाएं
@@ -129,6 +120,7 @@
           if (!confirm("क्या आप वाकई इस शिकायत को हटाना चाहते हैं?")) return;
       
           try {
+            document.getElementById("loader").style.display = "flex";
             const res = await fetch(`/DC/deleteComplaint/${id}`, {
         method: "DELETE",
       });
@@ -137,9 +129,13 @@
       
                 
             const result= await response.json()
+            document.getElementById("loader").style.display = "none";
         let  message = result.message.slice(2); // pehle ke 2 character (🔇) hata do
             safeSpeakHindi(message)
-            document.getElementById(id).remove()
+            if(result.done){
+
+              document.getElementById(id).remove()
+            }
       
             alert(result.message);
             

@@ -17,10 +17,13 @@ export const checkAuth = (req, res, next) => {
       }
     }
 
-    // No token or invalid token
-    return res.status(204).end(); // silent drop (no message)
+    return res
+      .status(401)
+      .send("🚫 कृपया पहले लॉगिन करें।\n🔒 Please log in first to continue.");
   } catch (error) {
     console.error("Authentication error:", error);
-    return res.status(204).end(); // silent drop
+    return res
+      .status(401)
+      .send("🚫 कृपया पहले लॉगिन करें।\n🔒 Please log in first to continue.");
   }
 };

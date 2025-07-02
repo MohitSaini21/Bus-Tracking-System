@@ -101,8 +101,6 @@
                 </h3>
                 <form id="loginForm" novalidate>
                   <div class="form-group mb-3">
-                 
-                    
                     <input
                       type="text"
                       class="form-control p_input"
@@ -112,8 +110,6 @@
                     />
                   </div>
                   <div class="form-group mb-4">
-               
-                    
                     <input
                       type="password"
                       class="form-control p_input"
@@ -145,6 +141,7 @@
                     >
                   </p>
                 </form>
+                <button id="refreshBtn">Refresh</button>
               </div>
             </div>
           </div>
@@ -169,6 +166,9 @@
     <script src="../../assets/js/todolist.js"></script>
     <!-- endinject -->
     <script>
+      document.getElementById("refreshBtn").onclick = function () {
+        window.location.href = "/admin"; // Replace this
+      };
       document
         .getElementById("loginForm")
         .addEventListener("submit", function (event) {
@@ -197,6 +197,7 @@
           // Make the POST request
           fetch("/adminLogin", {
             method: "POST",
+            credentials: "include", // 👈 Important to send cookies
             headers: {
               "Content-Type": "application/json",
             },
@@ -245,6 +246,13 @@
               }, 2000);
             })
             .catch((error) => {
+              if (
+                error.message.includes("Unexpected token '<'") ||
+                error.message.includes("position 0") // Firefox/Edge sometimes
+              ) {
+                window.location.href = "/admin";
+                return;
+              }
               msgElem.style.color = "red";
               msgElem.innerText =
                 error.message || "An unexpected error occurred.";

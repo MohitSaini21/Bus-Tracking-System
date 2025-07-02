@@ -12,7 +12,7 @@ parentPort.on("message", ({ task, busObject }) => {
     const timestamp = task.timestamp;
 
     const RADIUS_METERS = 1000;
-    const MIN_TIME_DIFF = 10 * 60 * 1000;
+    const MIN_TIME_DIFF = 1000;
 
     // 1. Check entry/exit polygon if previous point is provided
     if (task.previousPoint) {
@@ -21,6 +21,18 @@ parentPort.on("message", ({ task, busObject }) => {
           previousPoint: busObject.previousPoint,
           currentPoint: { longitude: busLng, latitude: busLat },
         });
+
+        if (eventType && campus) {
+          if (!Array.isArray(busObject.eventTimeline)) {
+            busObject.eventTimeline = [];
+          }
+
+          busObject.eventTimeline.push({
+            campus,
+            eventType,
+            time: currentTime.toISOString(),
+          });
+        }
       } catch (err) {
         console.error("checkEntryExit failed:", err);
       }
@@ -105,23 +117,13 @@ parentPort.on("message", ({ task, busObject }) => {
       }
     }
 
-    if (eventType && campus) {
-      if (!Array.isArray(busObject.eventTimeline)) {
-        busObject.eventTimeline = [];
-      }
-
-      busObject.eventTimeline.push({
-        campus,
-        eventType,
-        time: currentTime.toISOString(),
-      });
-    }
     console.log(`✅ Worker completed and response sent for bus ${bus._id}`);
     (busObject.previousPoint = { longitude: busLng, latitude: busLat }),
       parentPort.postMessage({
         updatedBusObject: busObject,
         busId: bus._id,
       });
+    console.log("📤 postMessage sent successfully to parent");
   } catch (err) {
     console.error("🚨 Worker thread failed:", err);
     parentPort.postMessage({ error: err.message });

@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-export const generateTokenAndSetCookie = (res, id, role) => {
+export const generateTokenAndSetCookie = async (res, id, role) => {
   // Step 1: Create the JWT token
   // The payload is the user ID, which will be embedded inside the token.
   // The "Secret String" is the secret key used to sign the token, which ensures its integrity.

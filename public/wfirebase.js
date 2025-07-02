@@ -88,6 +88,7 @@ export async function sendTokenToServer(token, expiryDate) {
     // Send the token to the backend
     const response = await fetch("/DC/api/save-fcm-token", {
       method: "POST",
+
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token: token }),
     });

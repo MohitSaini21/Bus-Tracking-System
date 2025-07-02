@@ -14,8 +14,8 @@ import { generateTokenAndSetCookie } from "../utils/createJwtTokenSetCookie.js";
 let router = express.Router();
 
 const limiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 5, // max 5 requests per window
+  windowMs: 2 * 60 * 1000, // 1 minute
+  max: 6, // max 5 requests per window
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable `X-RateLimit-*` headers (optional)
 
@@ -287,7 +287,7 @@ router.post(
       const trimmedPassword = password.trim();
 
       let driver = await Driver.findOne({ driverId: trimmedUserId });
-      
+
       if (driver?.isLogged) {
         return res.status(400).json({
           message:
@@ -297,7 +297,7 @@ router.post(
 
       if (driver) {
         if (trimmedPassword === driver.password) {
-          const token = generateTokenAndSetCookie(
+          const token = await generateTokenAndSetCookie(
             res,
             driver.driverId,
             driver.role
@@ -314,8 +314,7 @@ router.post(
         }
       } else {
         let conductor = await Conductor.findOne({ conductorId: trimmedUserId });
- 
-        
+
         if (conductor?.isLogged) {
           return res.status(400).json({
             message:
@@ -325,7 +324,7 @@ router.post(
 
         if (conductor) {
           if (trimmedPassword === conductor.password) {
-            const token = generateTokenAndSetCookie(
+            const token = await generateTokenAndSetCookie(
               res,
               conductor.conductorId,
               conductor.role
@@ -464,9 +463,6 @@ router.post("/complaints", async (req, res) => {
 
 router.get("/routingMachine", async (req, res) => {
   try {
-
-    
-
     const { logId, busId } = req.query;
 
     if (logId) {

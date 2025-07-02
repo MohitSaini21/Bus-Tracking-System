@@ -147,6 +147,7 @@
                     >
                   </p>
                 </form>
+                <button id="refreshBtn">Refresh</button>
               </div>
             </div>
           </div>
@@ -163,6 +164,9 @@
     <script src="/custom/speak.js"></script>
 
     <script>
+      document.getElementById("refreshBtn").onclick = function () {
+        window.location.href = "/driverConductorLogin"; // Replace this
+      };
       document
         .getElementById("loginForm")
         .addEventListener("submit", function (event) {
@@ -189,6 +193,7 @@
 
           fetch("/driverConductorLogin", {
             method: "POST",
+            credentials: "include", // 👈 Important to send cookies
             headers: {
               "Content-Type": "application/json",
             },
@@ -243,8 +248,14 @@
               }, 2000);
             })
             .catch((error) => {
-              const errText =
-                "सर्वर से कनेक्ट नहीं हो सका। कृपया बाद में पुनः प्रयास करें।";
+              if (
+                error.message.includes("Unexpected token '<'") ||
+                error.message.includes("position 0") // Firefox/Edge sometimes
+              ) {
+                window.location.href = "/DC";
+                return;
+              }
+              const errText = `सर्वर से कनेक्ट नहीं हो सका। कृपया बाद में पुनः प्रयास करें। ${error.message}`;
               msgElem.style.color = "red";
               msgElem.innerText = errText;
               safeSpeakHindi(errText);

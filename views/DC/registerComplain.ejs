@@ -209,6 +209,7 @@ const user = <%- JSON.stringify(user) %>;
           try {
             const response = await fetch("/DC/registerComplain", {
               method: "POST",
+              credentials:true,
               body: formData,
             });
     
@@ -223,7 +224,16 @@ document.getElementById("loader").style.display = "none";
   
             
           } catch (error) {
+
+
             document.getElementById("loader").style.display = "none";
+            if (
+                error.message.includes("Unexpected token '<'") ||
+                error.message.includes("position 0") // Firefox/Edge sometimes
+              ) {
+                window.location.href = "/DC";
+                return;
+              }
             console.error("❌ नेटवर्क त्रुटि:", error);
             alert("❌ नेटवर्क त्रुटि: सर्वर से संपर्क नहीं हो सका");
             safeSpeakHindi("नेटवर्क त्रुटि: सर्वर से संपर्क नहीं हो सका")

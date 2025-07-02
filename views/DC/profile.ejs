@@ -277,54 +277,8 @@
  
  
     <script>
-        const worker = <%- JSON.stringify(worker) %>;
-        if(worker.driverId){
-        
-          append(worker.driverDocuments)
-          
-        }else{
-          append(worker.conductorDocuments)
-       
-          
-      
-          
-        }
-
-        function append(workerDocuments){
- workerDocuments.forEach((doc, index) => {
-  console.log(doc.name)
-
-           const mainRow = document.querySelector(".row");
-           console.log(mainRow)
-   const col = `
-    <div class="col-md-4 grid-margin stretch-card">
-                <div class="card "  style="padding: 0;">
-                  <div class="card-body"  style="padding: 0.8rem;">
-                  
-                    
-                    <div class="media" >
-                           <div class="media-body">
-                        <p class="card-text">${doc.name}</p>
-                      </div>
-<a href="${doc.url}" title="View">
-  <i class="mdi mdi-eye icon-sm" style="margin-right: 8px;"></i>
-</a>
-
-
-                 
-                    </div>
-                  </div>
-                </div>
-              </div>
-    `;
-    const tempDiv = document.createElement('div');
-     tempDiv.innerHTML = col.trim();
-       const newCol = tempDiv.firstChild;
-
-    mainRow.insertBefore(newCol, mainRow.children[2]);
-  });
-        }
-
+    
+    
         window.onload = function () {
           document.getElementById("loader").style.display = "none";
         };

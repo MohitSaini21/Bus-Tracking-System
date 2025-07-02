@@ -8,6 +8,7 @@ let recorder = null;
 let chunks = [];
 let isSharing = false;
 let mediaStream = null;
+let isShowingRoute = false; // Track current state
 
 const iceConfig = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
@@ -76,7 +77,7 @@ function saveLocation(position) {
   );
 
   if (isSame) {
-    return null; // Too close — skip saving
+    return baseData;
   }
 
   // ✅ Update previous point and return new data
@@ -146,7 +147,12 @@ function buildConnection() {
   socket.on("disconnectReason", (msg) => {
     if (msg === "duplicate_connection") window._wasManuallyRejected = true;
   });
+  socket.on("connect_timeout", () => {
+    console.warn("⏰ Connection timed out after 20s");
 
+    msg = "कनेक्शन समय समाप्त हो गया। कृपया फिर से प्रयास करें।";
+    connectionDenied(msg);
+  });
   socket.on("disconnect", (reason) => {
     console.log("Disconnect reason:", reason);
     cleanupConnection();
@@ -341,21 +347,23 @@ function flyToBusLocation() {
     .setAttribute("src", `/locationBus/${bus._id}`);
 }
 
-let isShowingRoute = false; // Track current state
-
 function toggleRouteVisibility() {
-  const iframe = document.getElementById("videoIframe");
-  const busId = bus._id;
+  try {
+    const iframe = document.getElementById("videoIframe");
+    const busId = bus._id;
 
-  if (isShowingRoute) {
-    // Show current location
-    iframe.setAttribute("src", `/locationBus/${busId}`);
-  } else {
-    // Show full route
-    iframe.setAttribute("src", `/routingMachine?busId=${busId}`);
+    if (isShowingRoute) {
+      // Show current location
+      iframe.setAttribute("src", `/locationBus/${busId}`);
+    } else {
+      // Show full route
+      iframe.setAttribute("src", `/routingMachine?busId=${busId}`);
+    }
+
+    isShowingRoute = !isShowingRoute; // Toggle state
+  } catch (error) {
+    console.log(error.message);
   }
-
-  isShowingRoute = !isShowingRoute; // Toggle state
 }
 
 function toggleStopsVisibility() {
@@ -416,7 +424,7 @@ async function startStreaming(button) {
   id="zoomControls"
   style="
     position: absolute;
-    bottom: 60px;
+    bottom: 60px;   
     right: 12px;
     z-index: 999;
     display: flex;
