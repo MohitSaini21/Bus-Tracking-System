@@ -582,30 +582,123 @@ async function collectionIceCandidateInfo() {
   socket.emit("driver-offer", { bus, offer });
 }
 
-function notifyStatus(stopId, status) {
-  console.log("emitting event ");
-  const btn = document.getElementById(`dropdownMenu-${stopId}`);
-  console.log(btn);
+function updateButtonStatus(btn, type, text) {
+  const iconMap = {
+    sending: "mdi-bell-ring-outline text-warning",
+    success: "mdi-check-circle text-success",
+    error: "mdi-close-circle text-danger",
+    idle: "mdi-bell",
+  };
 
+  btn.innerHTML = `<i class="mdi ${iconMap[type]} mr-2"></i> ${text}`;
+
+  if (type === "success" || type === "error") {
+    setTimeout(() => {
+      btn.innerHTML = `<i class="mdi ${
+        iconMap.idle
+      } mr-2"></i> ${btn.getAttribute("data-stop-name")}`;
+    }, 4000);
+  }
+}
+
+function emitNotification(stopId, status, distance, btn) {
+  const payload = { stopId, status };
+  if (typeof distance !== "undefined") {
+    payload.distance = distance;
+  }
+
+  socket.emit("sendNotificiation", payload, (isConfirm) => {
+    updateButtonStatus(
+      btn,
+      isConfirm ? "success" : "error",
+      isConfirm ? "नोटिफिकेशन भेज दी गई" : "नोटिफिकेशन नहीं भेजी जा सकी"
+    );
+  });
+}
+
+function notifyStatus(stopId, status, lat, lon) {
+  const btn = document.getElementById(`dropdownMenu-${stopId}`);
   if (!btn) return;
 
-  // Show sending status
-  btn.innerHTML = `<i class="mdi mdi-bell-ring-outline text-warning mr-2"></i> नोटिफिकेशन भेजी जा रही है...`;
+  updateButtonStatus(btn, "sending", "नोटिफिकेशन भेजी जा रही है...");
 
-  socket.emit("sendNotificiation", { stopId, status }, (isConfirm) => {
-    if (isConfirm) {
-      // Success message
-      btn.innerHTML = `<i class="mdi mdi-check-circle text-success mr-2"></i> नोटिफिकेशन भेज दी गई`;
-    } else {
-      // Error message
-      btn.innerHTML = `<i class="mdi mdi-close-circle text-danger mr-2"></i> नोटिफिकेशन नहीं भेजी जा सकी`;
+  // Directly emit for "arrived"/"departed" without location check
+  if (status === "arrived" || status === "departed" || status === "departing") {
+    emitNotification(stopId, status, undefined, btn);
+    return;
+  }
+
+  // For "arriving"/"departing", get location and compute distance
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const { latitude, longitude } = pos.coords;
+      const distance = getDistance(
+        Number(lat),
+        Number(lon),
+        latitude,
+        longitude
+      );
+      console.log(`📏 Distance from stop: ${distance} meters`);
+      emitNotification(stopId, status, distance, btn);
+    },
+    (err) => {
+      console.warn(
+        "⚠️ Location error, proceeding without distance:",
+        err.message
+      );
+      emitNotification(stopId, status, undefined, btn);
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0,
     }
+  );
+}
 
-    // Optional: revert to original after few seconds
-    setTimeout(() => {
-      btn.innerHTML = `<i class="mdi mdi-bell mr-2"></i> ${btn.getAttribute(
-        "data-stop-name"
-      )}`;
-    }, 4000);
-  });
+  function notifyCampus(campus, event) {
+    if (campus && event) {
+      console.log("📡 Emitting campus event:", campus, event);
+
+      const btn = document.getElementById(`dropdownMenu-${campus}`);
+      if (!btn) return;
+
+      // Show loading state
+      btn.innerHTML = `<i class="mdi mdi-bell-ring-outline text-warning mr-2"></i> नोटिफिकेशन भेजी जा रही है...`;
+
+      // Send socket event with callback as 3rd parameter
+      socket.emit(
+        "campusEvent",
+        { campus, event, busId: bus._id },
+        (isConfirm) => {
+          if (isConfirm) {
+            btn.innerHTML = `<i class="mdi mdi-check-circle text-success mr-2"></i> नोटिफिकेशन भेज दी गई`;
+          } else {
+            btn.innerHTML = `<i class="mdi mdi-close-circle text-danger mr-2"></i> नोटिफिकेशन नहीं भेजी जा सकी`;
+          }
+
+          // Restore original label after 4 seconds
+          setTimeout(() => {
+            btn.innerHTML = `<i class="mdi mdi-bell mr-2"></i> ${btn.getAttribute(
+              "data-campus-name"
+            )}`;
+          }, 4000);
+        }
+      );
+    }
+  }
+
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371000; // Earth radius in meters
+  const toRad = (deg) => (deg * Math.PI) / 180;
+
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
 }

@@ -1,5 +1,6 @@
 // Importing Required Modules
-import express from "express"; // Core framework for building the server
+import express from "express";
+
 import { config } from "dotenv"; // For environment variable management
 
 import FCM from "./model/FCM.js";
@@ -774,43 +775,107 @@ io.on("connection", (socket) => {
     console.log(`📡 stopStreaming received for bus: ${busId}`);
   });
   // notificton event
-  socket.on("sendNotificiation", async ({ stopId, status }, callback) => {
-    console.log("we have recieved an event got it ");
-    try {
-      const activeTokens = await FCM.find({
-        stopId,
-        isActive: true,
-      }).select("fcmToken stop stopId");
+  socket.on(
+    "sendNotificiation",
+    async ({ stopId, status, distance }, callback) => {
+      console.log("here isthe distance lerad it it is highlighte below");
+      console.log(distance);
+      try {
+        const activeTokens = await FCM.find({
+          stopId,
+          isActive: true,
+        })
+          .select("fcmToken stop stopId busId")
+          .populate("busId", "busNumber route");
 
-      if (!activeTokens.length) {
-        return callback(true); // No one to notify
+        if (!activeTokens.length) {
+          return callback(true); // ✅ No users to notify, but not an error
+        }
+
+        const title = "Bus Stop Update";
+
+        // 🚦 Status to formal message map
+        const statusMessages = {
+          arriving: "The bus is arriving shortly at your stop.",
+          arrived: "The bus has just arrived at your stop.",
+          departing: "The bus will be departing from your stop soon.",
+          departed: "The bus has departed from your stop.",
+        };
+
+        const formalMessage =
+          statusMessages[status] || `New status at your stop: ${status}`;
+
+        // 🔁 Notify all tokens
+        for (const entry of activeTokens) {
+          const stopName = entry.stop?.stopName || "your stop";
+          const busNumber = entry.busId?.busNumber || "Unknown Bus";
+
+          let message = `🚌 Bus ${busNumber} update at "${stopName}": ${formalMessage}`;
+
+          // 📏 If distance is provided, append
+          if (typeof distance !== "undefined") {
+            const meters = Math.round(distance);
+            message += ` (Distance: ~${meters} meters)`;
+          }
+
+          // 🚏 Optional: Add route info
+          // const route = entry.busId?.route || "";
+          // message += route ? `\nRoute: ${route}` : "";
+
+          await sendNotificationToClient(entry.fcmToken, title, message);
+        }
+
+        callback(true);
+      } catch (err) {
+        console.error("🚨 Error while sending notification:", err);
+        callback(false);
+      }
+    }
+  );
+
+  // notifcation aout campus event got t
+  socket.on("campusEvent", async ({ campus, event, busId }, callback) => {
+    try {
+      if (!campus || !event || !busId) {
+        return callback(false); // 🔴 Invalid request
       }
 
-      const title = "Bus Stop Update";
+      // 1. Fetch active tokens for this busId
+      const activeTokens = await FCM.find({
+        busId,
+        isActive: true,
+      })
+        .select("fcmToken stop stopName busId")
+        .populate("busId", "busNumber");
 
-      // Status to formal English message mapping
+      if (!activeTokens.length) {
+        return callback(true); // ✅ No tokens to notify, but it's not an error
+      }
+
+      // 2. Build messages
+      const title = "Campus Update";
+      const busNumber = activeTokens[0]?.busId?.busNumber || "Bus";
+
       const statusMessages = {
-        arriving: "The bus is arriving shortly at your stop.",
-        arrived: "The bus has just arrived at your stop.",
-        departing: "The bus will be departing from your stop soon.",
-        departed: "The bus has departed from your stop.",
+        Entered: `🚌 ${busNumber} has entered ${campus}`,
+        Exited: `🚌 ${busNumber} has exited ${campus}`,
       };
 
-      const formalMessage =
-        statusMessages[status] || `New status at your stop: ${status}`;
+      const message =
+        statusMessages[event] || `Bus status update for ${campus}`;
 
+      // 3. Send push to each token
       for (const entry of activeTokens) {
-        const stopName = entry.stop?.stopName || "your stop";
-        const message = `Update for "${stopName}": ${formalMessage}`;
         await sendNotificationToClient(entry.fcmToken, title, message);
       }
 
-      callback(true);
+      callback(true); // ✅ Sent successfully
     } catch (err) {
-      console.error("Error while sending notification:", err);
+      console.error("🚨 Error in campusEvent handler:", err);
       callback(false);
     }
   });
+
   socket.on("streamNotification", async ({ busId, about }) => {
     try {
       const bus = await Bus.findById(busId)

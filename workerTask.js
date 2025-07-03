@@ -95,7 +95,8 @@ parentPort.on("message", ({ task, busObject }) => {
         busObject.reachedStops[stopId].stopName = stop.stopName;
 
         if (isMorning) {
-          busObject.reachedStops[stopId].eMorningTime = stop.morningTime;
+          busObject.reachedStops[stopId].eMorningTime =
+            stop.morningTime + " am";
           busObject.reachedStops[stopId].eveningTime = date.toLocaleString(
             "en-IN",
             {
@@ -106,7 +107,8 @@ parentPort.on("message", ({ task, busObject }) => {
             }
           );
         } else {
-          busObject.reachedStops[stopId].eEveningTime = stop.eveningTime;
+          busObject.reachedStops[stopId].eEveningTime =
+            stop.eveningTime + " pm";
           busObject.reachedStops[stopId].eveningTime = date.toLocaleString(
             "en-IN",
             {

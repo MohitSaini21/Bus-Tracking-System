@@ -185,27 +185,69 @@
           </div>
     
           <div class="modal-body py-3">
+
+            <!-- 🚌 Stops Section -->
+            <h5 class="mb-3 text-primary font-weight-bold">🚌 स्टॉप नोटिफिकेशन</h5>
             <% bus.routeStops.forEach(function(stop) { %>
               <div class="dropdown mb-3">
-  <button type="button" class="btn btn-outline-primary dropdown-toggle w-100 text-left" id="dropdownMenu-<%=stop._id  %>" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" data-stop-name="<%=stop.stopName  %>">
+                <button type="button" class="btn btn-outline-primary dropdown-toggle w-100 text-left"
+                  id="dropdownMenu-<%= stop._id %>"
+                  data-toggle="dropdown"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                  data-stop-name="<%= stop.stopName %>">
                   <i class="mdi mdi-bell mr-2"></i> <%= stop.stopName %>
                 </button>
-    
+          
                 <div class="dropdown-menu w-100" aria-labelledby="dropdownMenu-<%= stop._id %>">
                   <h6 class="dropdown-header text-muted">नोटिफिकेशन भेजें</h6>
-                  <a class="dropdown-item" href="#" onclick="notifyStatus('<%= stop._id %>', 'arriving')">आने वाले हैं</a>
-                  <a class="dropdown-item" href="#" onclick="notifyStatus('<%= stop._id %>', 'arrived')">आ गए हैं</a>
-                  <a class="dropdown-item" href="#" onclick="notifyStatus('<%= stop._id %>', 'departing')">निकलने वाले हैं</a>
-                  <a class="dropdown-item" href="#" onclick="notifyStatus('<%= stop._id %>', 'departed')">निकल गए हैं</a>
+                  <a class="dropdown-item" href="#"
+                  onclick="notifyStatus('<%= stop._id %>', 'arriving', '<%= stop.latitude %>', '<%= stop.longitude %>')">
+                  आने वाले हैं
+                </a>
+                
+                <a class="dropdown-item" href="#"
+                  onclick="notifyStatus('<%= stop._id %>', 'arrived', '<%= stop.latitude %>', '<%= stop.longitude %>')">
+                  आ गए हैं
+                </a>
+                
+                <a class="dropdown-item" href="#"
+                  onclick="notifyStatus('<%= stop._id %>', 'departing', '<%= stop.latitude %>', '<%= stop.longitude %>')">
+                  निकलने वाले हैं
+                </a>
+                
+                <a class="dropdown-item" href="#"
+                  onclick="notifyStatus('<%= stop._id %>', 'departed', '<%= stop.latitude %>', '<%= stop.longitude %>')">
+                  निकल गए हैं
+                </a>
+                
                 </div>
               </div>
             <% }) %>
-          </div>
-    
-   
           
-    
-        </div>
+            <!-- 🏫 Campuses Section -->
+            <h5 class="mt-4 mb-3 text-success font-weight-bold">🏫 कैम्पस नोटिफिकेशन</h5>
+            <% campuses.forEach(function(campus) { %>
+              <div class="dropdown mb-3">
+                <button type="button" class="btn btn-outline-success dropdown-toggle w-100 text-left"
+                  id="dropdownMenu-<%= campus %>"
+                  data-toggle="dropdown"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                  data-campus-name="<%= campus %>">
+                  <i class="mdi mdi-bell mr-2"></i> <%= campus %>
+                </button>
+          
+                <div class="dropdown-menu w-100" aria-labelledby="dropdownMenu-<%= campus %>">
+                  <h6 class="dropdown-header text-muted">नोटिफिकेशन भेजें</h6>
+                  <a class="dropdown-item" href="#" onclick="notifyCampus('<%= campus %>', 'Entered')">प्रवेश किया</a>
+                  <a class="dropdown-item" href="#" onclick="notifyCampus('<%= campus %>', 'Exited')">निकास किया</a>
+                </div>
+              </div>
+            <% }) %>
+          
+          </div>
+          
       </div>
     </div>
     <!-- Modal -->

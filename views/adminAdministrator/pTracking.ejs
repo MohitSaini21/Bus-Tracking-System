@@ -160,6 +160,7 @@
                           </tr>
                         </thead>
                         <tbody>
+                          
                           <% if (busLog && busLog.stops && busLog.stops.length > 0) { %>
                             <% busLog.stops.forEach((stopLog, index) => { %>
                               <tr id="<%= stopLog.stop._id %>">
@@ -169,7 +170,13 @@
                                 <!-- Morning Times -->
                                 <td>
                                   <div><strong>Expected:</strong> <%= stopLog.eMorningTime ? stopLog.eMorningTime + " am" : "__" %></div>
-                                  <div><strong>Actual:</strong> <%= stopLog.morningTime || '__' %></div>
+
+                                  <div>
+                                    <div>
+
+                                 
+                                      
+                                    <strong>Actual:</strong> <%= stopLog.morningTime || '__' %></div>
                                 </td>
                       
                                 <!-- Evening Times -->
