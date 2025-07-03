@@ -150,14 +150,10 @@
                     <h4 class="card-title">Stops Covered</h4>
 
                     <div class="table-responsive">
-                      <table
-                        class="table table-bordered text-center"
-                        id="stops-covered"
-                      >
+                      <table class="table table-bordered text-center" id="stops-covered">
                         <thead class="thead-dark">
                           <tr>
                             <th>#</th>
-
                             <th>Stop Name</th>
                             <th>Morning</th>
                             <th>Evening</th>
@@ -169,44 +165,24 @@
                               <tr id="<%= stopLog.stop._id %>">
                                 <td><%= index + 1 %></td>
                                 <td><%= stopLog.stopName || '__' %></td>
-                        
+                      
                                 <!-- Morning Times -->
                                 <td>
-                                  <div>
-                                    <div>
-                                      <strong>Expected:</strong> <%= stopLog.eMorningTime || '__' %>
-                                    </div>
-                                    <div>
-                                      <strong>Actual:</strong> <%= stopLog.morningTime || '__' %>
-                                    </div>
-                                  </div>
+                                  <div><strong>Expected:</strong> <%= stopLog.eMorningTime ? stopLog.eMorningTime + " am" : "__" %></div>
+                                  <div><strong>Actual:</strong> <%= stopLog.morningTime || '__' %></div>
                                 </td>
-                                
-                                </td>
-                        
+                      
                                 <!-- Evening Times -->
                                 <td>
-                                  <td>
-                                    <div>
-                                      <div>
-                                        <strong>Expected:</strong> <%= stopLog.eEveningTime || '__' %>
-                                      </div>
-                                      <div>
-                                        <strong>Actual:</strong> <%= stopLog.eveningTime || '__' %>
-                                      </div>
-                                    </div>
-                                  </td>
-                                  
-                                  </td>
+                                  <div><strong>Expected:</strong> <%= stopLog.eEveningTime ? stopLog.eEveningTime + " pm" : "__" %></div>
+                                  <div><strong>Actual:</strong> <%= stopLog.eveningTime || '__' %></div>
                                 </td>
-                                
-                                
                               </tr>
                             <% }) %>
                           <% } %>
                         </tbody>
-                        
                       </table>
+                      
                     </div>
                   </div>
                 </div>
@@ -307,64 +283,63 @@
 
       // fucntiom to update the row
 
-  function updateStopsCoveredTable(reachedStops) {
+  ffunction updateStopsCoveredTable(reachedStops) {
   const tbody = document.querySelector("#stops-covered tbody");
   if (!tbody) {
     console.error("❌ tbody not found inside #stops-covered");
     return;
   }
 
-  console.log("✅ Received reachedStops:", reachedStops); // Debug
+  console.log("✅ Received reachedStops:", reachedStops);
 
   Object.entries(reachedStops).forEach(([stopId, info], index) => {
     const rowId = String(stopId);
     const existingRow = document.getElementById(rowId);
 
     const stopName = info.stopName || "Unknown";
+    const eMorningTime = info.eMorningTime || "__";
+    const morningTime = info.morningTime || "__";
+    const eEveningTime = info.eEveningTime || "__";
+    const eveningTime = info.eveningTime || "__";
 
-
-    
-    // 🧪 Logging
-    console.log(`📄 Rendering row for stop: ${stopName}`, {
-      eMorningTime, morningTime, eEveningTime, eveningTime
-    });
-
-    // Build the row
+    // Create new row element
     const newRow = document.createElement("tr");
     newRow.id = rowId;
+
+    // Set row HTML
     newRow.innerHTML = `
       <td></td>
       <td>${stopName}</td>
       <td>
-        <div><strong>Expected:</strong> ${info.eMorningTime}</div>
-        <div><strong>Actual:</strong> ${info.morningTime}</div>
+        <div><strong>Expected:</strong> ${eMorningTime}</div>
+        <div><strong>Actual:</strong> ${morningTime}</div>
       </td>
       <td>
-        <div><strong>Expected:</strong> ${info.eEveningTime}</div>
-        <div><strong>Actual:</strong> ${info.eveningTime}</div>
+        <div><strong>Expected:</strong> ${eEveningTime}</div>
+        <div><strong>Actual:</strong> ${eveningTime}</div>
       </td>
     `;
 
-    // Replace or insert
+    // Replace if exists, or append new
     if (existingRow) {
       tbody.replaceChild(newRow, existingRow);
     } else {
       tbody.appendChild(newRow);
     }
 
-    // ✨ Blinking effect
+    // Blink effect on update
     newRow.classList.add("row-updated");
-    setTimeout(() => newRow.classList.remove("row-updated"), 3000);
+    setTimeout(() => {
+      newRow.classList.remove("row-updated");
+    }, 3000);
   });
 
-  // 🔢 Renumber all rows
+  // Renumber rows
   Array.from(tbody.querySelectorAll("tr")).forEach((row, i) => {
     const indexCell = row.querySelector("td:first-child");
     if (indexCell) indexCell.textContent = i + 1;
   });
 }
-
-
 
       socket.emit("getObject", { busId: bus._id }, function (response) {
         if (response.data) {
