@@ -5,10 +5,10 @@ const { Schema, model } = mongoose;
 const stopLogSchema = new Schema({
   stop: { type: Schema.Types.ObjectId, ref: "Stop", required: true },
   stopName: String,
-  morningTime: Date,
-  eMorningTime: Date,
-  eveningTime: Date,
-  eEveningTime: Date,
+  morningTime: String,
+  eMorningTime: String,
+  eveningTime: String,
+  eEveningTime: String,
 });
 
 const busActivityLogSchema = new Schema(
@@ -30,7 +30,7 @@ const busActivityLogSchema = new Schema(
         },
         event: { type: String, enum: ["Entered", "Exited"], required: true },
 
-        timestamp: { type: Date, required: true },
+        timestamp: { type: String, required: true },
       },
     ],
     morningSnap: {
@@ -42,7 +42,7 @@ const busActivityLogSchema = new Schema(
         required: false,
       },
       takenAt: {
-        type: Date,
+        type: String,
       },
     },
     eveningSnap: {
@@ -54,7 +54,7 @@ const busActivityLogSchema = new Schema(
         required: false,
       },
       takenAt: {
-        type: Date,
+        type: String,
       },
     },
   },

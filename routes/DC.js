@@ -81,8 +81,6 @@ function checkUserExistenceAndRedirect(excludeFields = []) {
   };
 }
 
-
-
 async function getBusDetailsByRole(role, userId) {
   try {
     let busQuery = {};
@@ -125,8 +123,6 @@ router.get(
     return res.render("DC/index.ejs", { user: req.worker }); // Passing user as req.worker
   }
 );
-
-
 
 router.post("/api/save-fcm-token", async (req, res) => {
   try {
@@ -273,7 +269,6 @@ router.get(
     }
   }
 );
-
 
 router.get(
   "/yourComplaints",
@@ -874,13 +869,13 @@ router.post(
         activity.morningSnap = {
           image: imagePath,
           reading: Number(odometer),
-          takenAt: moment().tz("Asia/Kolkata").format("DD MMM YYYY, hh:mm A"),
+          takenAt: moment().tz("Asia/Kolkata").format("hh:mm A"),
         };
       } else {
         activity.eveningSnap = {
           image: imagePath,
           reading: Number(odometer),
-          takenAt: moment().tz("Asia/Kolkata").format("DD MMM YYYY, hh:mm A"),
+          takenAt: moment().tz("Asia/Kolkata").format("hh:mm A"),
         };
       }
 

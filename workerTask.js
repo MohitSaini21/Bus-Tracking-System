@@ -10,6 +10,7 @@ parentPort.on("message", ({ task, busObject }) => {
     const busLat = parseFloat(task.latitude);
     const busLng = parseFloat(task.longitude);
     const timestamp = task.timestamp;
+    const date = new Date(timestamp);
 
     const RADIUS_METERS = 1000;
     const MIN_TIME_DIFF = 1000;
@@ -30,7 +31,12 @@ parentPort.on("message", ({ task, busObject }) => {
           busObject.eventTimeline.push({
             campus,
             eventType,
-            time: currentTime.toISOString(),
+            time: date.toLocaleString("en-IN", {
+              timeZone: "Asia/Kolkata",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            }),
           });
         }
       } catch (err) {
@@ -89,25 +95,27 @@ parentPort.on("message", ({ task, busObject }) => {
         busObject.reachedStops[stopId].stopName = stop.stopName;
 
         if (isMorning) {
-          const expectedTime = moment.tz(
-            `1970-01-01T${stop.morningTime}`,
-            "Asia/Kolkata"
+          busObject.reachedStops[stopId].eMorningTime = stop.morningTime;
+          busObject.reachedStops[stopId].eveningTime = date.toLocaleString(
+            "en-IN",
+            {
+              timeZone: "Asia/Kolkata",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            }
           );
-          busObject.reachedStops[stopId].eMorningTime = expectedTime.toDate();
-          busObject.reachedStops[stopId].eveningTime = moment()
-            .tz("Asia/Kolkata")
-            .toDate();
-
         } else {
-          const expectedTime = moment.tz(
-            `1970-01-01T${stop.eveningTime}`,
-            "Asia/Kolkata"
+          busObject.reachedStops[stopId].eEveningTime = stop.eveningTime;
+          busObject.reachedStops[stopId].eveningTime = date.toLocaleString(
+            "en-IN",
+            {
+              timeZone: "Asia/Kolkata",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            }
           );
-          busObject.reachedStops[stopId].eEveningTime = expectedTime.toDate();
-          busObject.reachedStops[stopId].eveningTime = moment()
-            .tz("Asia/Kolkata")
-            .toDate();
-
         }
 
         console.log(

@@ -174,35 +174,30 @@
                                 <td>
                                   <div>
                                     <div>
-                                      <strong>Expected:</strong>
-                                      <%= stopLog.eMorningTime
-                                        ? moment(new Date(stopLog.eMorningTime)).tz('Asia/Kolkata').format('hh:mm A')
-                                        : '__' %>
+                                      <strong>Expected:</strong> <%= stopLog.eMorningTime || '__' %>
                                     </div>
                                     <div>
-                                      <strong>Actual:</strong>
-                                      <%= stopLog.morningTime
-                                        ? moment(new Date(stopLog.morning)).tz('Asia/Kolkata').format('hh:mm A')
-                                        : '__' %>
+                                      <strong>Actual:</strong> <%= stopLog.morningTime || '__' %>
                                     </div>
-                                  </td>
-                                  
+                                  </div>
+                                </td>
+                                
                                 </td>
                         
                                 <!-- Evening Times -->
                                 <td>
-                                  <div>
-                                    <strong>Expected:</strong>
-                                    <%= stopLog.eEveningTime
-                                      ? moment(new Date(stopLog.eEveningTime)).tz('Asia/Kolkata').format('hh:mm A')
-                                      : '__' %>
-                                  </div>
-                                  <div>
-                                    <strong>Actual:</strong>
-                                    <%= stopLog.eveningTime
-                                      ? moment(new Date(stopLog.eveningTime)).tz('Asia/Kolkata').format('hh:mm A')
-                                      : '__' %>
-                                  </div>
+                                  <td>
+                                    <div>
+                                      <div>
+                                        <strong>Expected:</strong> <%= stopLog.eEveningTime || '__' %>
+                                      </div>
+                                      <div>
+                                        <strong>Actual:</strong> <%= stopLog.eveningTime || '__' %>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  
+                                  </td>
                                 </td>
                                 
                                 
@@ -246,7 +241,7 @@
                               </span>
                             </td>
                             <td>
-                              <%= new Date(ev.timestamp).toLocaleString() %>
+                              <%=ev.timestamp%>
                             </td>
                        
                           </tr>
@@ -327,18 +322,8 @@
 
     const stopName = info.stopName || "Unknown";
 
-    // Safely parse time fields
-    const eMorningTime = info.eMorningTime ? new Date(info.eMorningTime) : null;
-    const morningTime = info.morningTime ? new Date(info.morningTime) : null;
 
-    const eEveningTime = info.eEveningTime ? new Date(info.eEveningTime) : null;
-    const eveningTime = info.eveningTime ? new Date(info.eveningTime) : null;
-
-    const formatTime = (d) =>
-      d instanceof Date && !isNaN(d)
-        ? d.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })
-        : "__";
-
+    
     // 🧪 Logging
     console.log(`📄 Rendering row for stop: ${stopName}`, {
       eMorningTime, morningTime, eEveningTime, eveningTime
@@ -351,12 +336,12 @@
       <td></td>
       <td>${stopName}</td>
       <td>
-        <div><strong>Expected:</strong> ${formatTime(eMorningTime)}</div>
-        <div><strong>Actual:</strong> ${formatTime(morningTime)}</div>
+        <div><strong>Expected:</strong> ${info.eMorningTime}</div>
+        <div><strong>Actual:</strong> ${info.morningTime}</div>
       </td>
       <td>
-        <div><strong>Expected:</strong> ${formatTime(eEveningTime)}</div>
-        <div><strong>Actual:</strong> ${formatTime(eveningTime)}</div>
+        <div><strong>Expected:</strong> ${info.eEveningTime}</div>
+        <div><strong>Actual:</strong> ${info.eveningTime}</div>
       </td>
     `;
 

@@ -263,15 +263,11 @@
                                     <td>
                                       <div>
                                         <strong>Expected:</strong> <%=
-                                        stopLog.eMorningTime ? new
-                                        Date(stopLog.eMorningTime).toLocaleTimeString()
-                                        : '__' %>
+                                        stop.eMorningTime || '__' %>
                                       </div>
                                       <div>
                                         <strong>Actual:</strong> <%=
-                                        stopLog.morningTime ? new
-                                        Date(stopLog.morningTime).toLocaleTimeString()
-                                        : '__' %>
+                                        stop.morningTime || '__' %>
                                       </div>
                                     </td>
 
@@ -279,15 +275,11 @@
                                     <td>
                                       <div>
                                         <strong>Expected:</strong> <%=
-                                        stopLog.eEveningTime ? new
-                                        Date(stopLog.eEveningTime).toLocaleTimeString()
-                                        : '__' %>
+                                        stop.eEveningTime || '__' %>
                                       </div>
                                       <div>
                                         <strong>Actual:</strong> <%=
-                                        stopLog.eveningTime ? new
-                                        Date(stopLog.eveningTime).toLocaleTimeString()
-                                        : '__' %>
+                                        stop.eveningTime || '__' %>
                                       </div>
                                     </td>
                                   </tr>
@@ -332,10 +324,7 @@
                                         <%= ev.event %>
                                       </span>
                                     </td>
-                                    <td>
-                                      <%= new
-                                      Date(ev.timestamp).toLocaleString() %>
-                                    </td>
+                                    <td><%= ev.timestamp%></td>
                                   </tr>
                                   <% }) %> <% } else { %>
                                   <tr>
@@ -391,11 +380,7 @@
                                     </p>
                                     <p>
                                       <strong>Captured At:</strong>
-                                      <%= new
-                                      Date(busLog.morningSnap.takenAt).toLocaleString("en-IN",
-                                      { day: "2-digit", month: "short", year:
-                                      "numeric", hour: "2-digit", minute:
-                                      "2-digit" }) %>
+                                      <%= busLog.morningSnap.takenAt %>
                                     </p>
                                     <% if (busLog.morningSnap.image) { %>
                                     <button
@@ -432,7 +417,7 @@
                                     </p>
                                     <p>
                                       <strong>Captured At:</strong>
-                                      <%= busLog.eveningSnap.formattedTakenAt %>
+                                      <%= busLog.eveningSnap.takenAt %>
                                     </p>
                                     <% if (busLog.eveningSnap.image) { %>
                                     <button
