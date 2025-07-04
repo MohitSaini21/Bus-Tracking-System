@@ -602,7 +602,7 @@ function updateButtonStatus(btn, type, text) {
 }
 
 function emitNotification(stopId, status, distance, btn) {
-  const payload = { stopId, status };
+  const payload = { stopId, status, busId: bus._id };
   if (typeof distance !== "undefined") {
     payload.distance = distance;
   }
@@ -656,37 +656,37 @@ function notifyStatus(stopId, status, lat, lon) {
   );
 }
 
-  function notifyCampus(campus, event) {
-    if (campus && event) {
-      console.log("📡 Emitting campus event:", campus, event);
+function notifyCampus(campus, event) {
+  if (campus && event) {
+    console.log("📡 Emitting campus event:", campus, event);
 
-      const btn = document.getElementById(`dropdownMenu-${campus}`);
-      if (!btn) return;
+    const btn = document.getElementById(`dropdownMenu-${campus}`);
+    if (!btn) return;
 
-      // Show loading state
-      btn.innerHTML = `<i class="mdi mdi-bell-ring-outline text-warning mr-2"></i> नोटिफिकेशन भेजी जा रही है...`;
+    // Show loading state
+    btn.innerHTML = `<i class="mdi mdi-bell-ring-outline text-warning mr-2"></i> नोटिफिकेशन भेजी जा रही है...`;
 
-      // Send socket event with callback as 3rd parameter
-      socket.emit(
-        "campusEvent",
-        { campus, event, busId: bus._id },
-        (isConfirm) => {
-          if (isConfirm) {
-            btn.innerHTML = `<i class="mdi mdi-check-circle text-success mr-2"></i> नोटिफिकेशन भेज दी गई`;
-          } else {
-            btn.innerHTML = `<i class="mdi mdi-close-circle text-danger mr-2"></i> नोटिफिकेशन नहीं भेजी जा सकी`;
-          }
-
-          // Restore original label after 4 seconds
-          setTimeout(() => {
-            btn.innerHTML = `<i class="mdi mdi-bell mr-2"></i> ${btn.getAttribute(
-              "data-campus-name"
-            )}`;
-          }, 4000);
+    // Send socket event with callback as 3rd parameter
+    socket.emit(
+      "campusEvent",
+      { campus, event, busId: bus._id },
+      (isConfirm) => {
+        if (isConfirm) {
+          btn.innerHTML = `<i class="mdi mdi-check-circle text-success mr-2"></i> नोटिफिकेशन भेज दी गई`;
+        } else {
+          btn.innerHTML = `<i class="mdi mdi-close-circle text-danger mr-2"></i> नोटिफिकेशन नहीं भेजी जा सकी`;
         }
-      );
-    }
+
+        // Restore original label after 4 seconds
+        setTimeout(() => {
+          btn.innerHTML = `<i class="mdi mdi-bell mr-2"></i> ${btn.getAttribute(
+            "data-campus-name"
+          )}`;
+        }, 4000);
+      }
+    );
   }
+}
 
 function getDistance(lat1, lon1, lat2, lon2) {
   const R = 6371000; // Earth radius in meters

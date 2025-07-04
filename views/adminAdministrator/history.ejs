@@ -261,7 +261,11 @@
 
                                     <!-- Morning Times -->
                                     <td>
-                                      <div><strong>Expected:</strong> <%= stopLog.eMorningTime ? stopLog.eMorningTime + " am" : "__" %></div>
+                                      <div>
+                                        <strong>Expected:</strong> <%=
+                                        stopLog.eMorningTime ?
+                                        stopLog.eMorningTime : "__" %>
+                                      </div>
                                       <div>
                                         <strong>Actual:</strong> <%=
                                         stopLog.morningTime || '__' %>
@@ -270,7 +274,11 @@
 
                                     <!-- Evening Times -->
                                     <td>
-                                      <div><strong>Expected:</strong> <%= stopLog.eEveningTime ? stopLog.eEveningTime + " pm" : "__" %></div>
+                                      <div>
+                                        <strong>Expected:</strong> <%=
+                                        stopLog.eEveningTime ?
+                                        stopLog.eEveningTime : "__" %>
+                                      </div>
                                       <div>
                                         <strong>Actual:</strong> <%=
                                         stopLog.eveningTime || '__' %>

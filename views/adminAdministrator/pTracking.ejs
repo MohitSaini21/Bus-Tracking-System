@@ -169,7 +169,7 @@
                       
                                 <!-- Morning Times -->
                                 <td>
-                                  <div><strong>Expected:</strong> <%= stopLog.eMorningTime ? stopLog.eMorningTime + " am" : "__" %></div>
+                                  <div><strong>Expected:</strong> <%= stopLog.eMorningTime ? stopLog.eMorningTime : "__" %></div>
 
                                   <div>
                                     <div>
@@ -181,12 +181,16 @@
                       
                                 <!-- Evening Times -->
                                 <td>
-                                  <div><strong>Expected:</strong> <%= stopLog.eEveningTime ? stopLog.eEveningTime + " pm" : "__" %></div>
+                                  <div><strong>Expected:</strong> <%= stopLog.eEveningTime ? stopLog.eEveningTime: "__" %></div>
                                   <div><strong>Actual:</strong> <%= stopLog.eveningTime || '__' %></div>
                                 </td>
                               </tr>
                             <% }) %>
-                          <% } %>
+                            <% } else { %>
+                              <tr>
+                                <td colspan="4">No events recorded</td>
+                              </tr>
+                              <% } %>
                         </tbody>
                       </table>
                       
@@ -349,15 +353,30 @@
 }
 
       socket.emit("getObject", { busId: bus._id }, function (response) {
-        if (response.data) {
-          updateStopsCoveredTable(response.data.reachedStops);
-        }
+        console.log(response)
+        if (response.data && Object.keys(response.data.reachedStops || {}).length > 0) {
+  updateStopsCoveredTable(response.data.reachedStops);
+}
+
       });
+
+      let isFirst=true
 
       socket.on("busUpdate", function (data) {
         console.log(data);
+        if(isFirst){
+          const tbody = document.querySelector("#stops-covered tbody");
+          tbody.innerHTML=""
+          isFirst=false
+        }
         if (data && data.busObject) {
-          updateStopsCoveredTable(data.busObject.reachedStops);
+          if (Object.keys(data.busObject.reachedStops || {}).length > 0) {
+  updateStopsCoveredTable(data.busObject.reachedStops);
+}
+
+
+
+
         }
       });
 

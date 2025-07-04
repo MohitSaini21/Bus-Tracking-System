@@ -245,7 +245,7 @@ router.get(
         busQuery.conductor = userId;
       }
 
-      const bus = await Bus.findOne(busQuery).select("_id routeStops").lean();
+      let bus = await Bus.findOne(busQuery).select("_id routeStops").lean();
 
       if (!bus) {
         return res.status(404).json({ message: "बस की जानकारी नहीं मिली।" });
@@ -257,6 +257,9 @@ router.get(
           status: "out_of_service",
         });
       }
+      bus.routeStops = bus.routeStops.sort(
+        (a, b) => parseInt(a.stopOrder) - parseInt(b.stopOrder)
+      );
 
       // If bus is operational, return normal data
       res.set("Cache-Control", "no-store");
