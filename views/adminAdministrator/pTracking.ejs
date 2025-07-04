@@ -352,37 +352,37 @@
   });
 }
 
-      socket.emit("getObject", { busId: bus._id }, function (response) {
-        console.log(response)
-        if (response.data && Object.keys(response.data.reachedStops || {}).length > 0) {
-  updateStopsCoveredTable(response.data.reachedStops);
-}
-if(response.data.eventTimeline.length>0)[
-  updateEventTimelineTable(response.data.eventTimeline)
-]
+//       socket.emit("getObject", { busId: bus._id }, function (response) {
+//         console.log(response)
+//         if (response.data && Object.keys(response.data.reachedStops || {}).length > 0) {
+//   updateStopsCoveredTable(response.data.reachedStops);
+// }
+// if(response.data.eventTimeline.length>0)[
+//   updateEventTimelineTable(response.data.eventTimeline)
+// ]
 
-      });
+//       });
 
       let isFirst=true
 
-      socket.on("busUpdate", function (data) {
-        console.log(data);
-        if(isFirst){
-          const tbody = document.querySelector("#stops-covered tbody");
-          document.getElementById("event-timeline-body").innerHTML=""
-          tbody.innerHTML=""
-          isFirst=false
-        }
-        if (data && data.busObject) {
-          if (Object.keys(data.busObject.reachedStops || {}).length > 0) {
-  updateStopsCoveredTable(data.busObject.reachedStops);
-}
-if(data.busObject.eventTimeline.length>0){
-  updateEventTimelineTable(data.busObject.eventTimeline)
+//       socket.on("busUpdate", function (data) {
+//         console.log(data);
+//         if(isFirst){
+//           const tbody = document.querySelector("#stops-covered tbody");
+//           document.getElementById("event-timeline-body").innerHTML=""
+//           tbody.innerHTML=""
+//           isFirst=false
+//         }
+//         if (data && data.busObject) {
+//           if (Object.keys(data.busObject.reachedStops || {}).length > 0) {
+//   updateStopsCoveredTable(data.busObject.reachedStops);
+// }
+// if(data.busObject.eventTimeline.length>0){
+//   updateEventTimelineTable(data.busObject.eventTimeline)
 
   
 
-}
+// }
 
 
 
@@ -390,8 +390,8 @@ if(data.busObject.eventTimeline.length>0){
 
 
 
-        }
-      });
+//         }
+//       });
 
       
 
