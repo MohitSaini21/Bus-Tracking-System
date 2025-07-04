@@ -846,6 +846,7 @@ io.on("connection", (socket) => {
     console.log(`📡 stopStreaming received for bus: ${busId}`);
   });
 
+  // Send Notifcation 
   socket.on(
     "sendNotificiation",
     async ({ stopId, status, busId, distance }, callback) => {
@@ -919,6 +920,8 @@ io.on("connection", (socket) => {
     }
   );
 
+
+  // Campus Notification 
   socket.on("campusEvent", async ({ campus, event, busId }, callback) => {
     try {
       if (!campus || !event || !busId) {

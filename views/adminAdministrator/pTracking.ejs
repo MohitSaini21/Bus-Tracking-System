@@ -214,7 +214,7 @@
                             <th>Timestamp</th>
                           </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="event-timeline-body">
                           <% if (busLog && busLog.events && busLog.events.length
                           > 0) { %> <% busLog.events.forEach((ev, index) => { %>
                           <tr>
@@ -357,6 +357,9 @@
         if (response.data && Object.keys(response.data.reachedStops || {}).length > 0) {
   updateStopsCoveredTable(response.data.reachedStops);
 }
+if(response.data.eventTimeline.length>0)[
+  updateEventTimelineTable(response.data.eventTimeline)
+]
 
       });
 
@@ -366,6 +369,7 @@
         console.log(data);
         if(isFirst){
           const tbody = document.querySelector("#stops-covered tbody");
+          document.getElementById("event-timeline-body").innerHTML=""
           tbody.innerHTML=""
           isFirst=false
         }
@@ -373,12 +377,59 @@
           if (Object.keys(data.busObject.reachedStops || {}).length > 0) {
   updateStopsCoveredTable(data.busObject.reachedStops);
 }
+if(data.busObject.eventTimeline.length>0){
+  updateEventTimelineTable(data.busObject.eventTimeline)
+
+  
+
+}
+
+
+
 
 
 
 
         }
       });
+
+      
+
+
+      function updateEventTimelineTable(events) {
+    const tbody = document.getElementById("event-timeline-body");
+    if (!tbody) {
+      console.error("❌ Cannot find tbody with ID 'event-timeline-body'");
+      return;
+    }
+
+    // Clear old rows
+    tbody.innerHTML = "";
+
+    if (!Array.isArray(events) || events.length === 0) {
+      const emptyRow = document.createElement("tr");
+      emptyRow.innerHTML = `<td colspan="4">No events recorded</td>`;
+      tbody.appendChild(emptyRow);
+      return;
+    }
+
+    // Append new rows
+    events.forEach((ev, index) => {
+      const row = document.createElement("tr");
+
+      // Set status color
+      const badgeClass =
+        ev.eventTypet === "Entered" ? "bg-success" : ev.eventType === "Exited" ? "bg-danger" : "bg-secondary";
+
+      row.innerHTML = `
+        <td>${index + 1}</td>
+        <td>${ev.campus || "Unknown"}</td>
+        <td><span class="badge ${badgeClass}">${ev.eventType}</span></td>
+        <td>${ev.time || "--"}</td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
 
       window.onload = function () {
         document.getElementById("loader").style.display = "none";
