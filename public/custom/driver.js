@@ -77,7 +77,7 @@ function saveLocation(position) {
   );
 
   if (isSame) {
-    return baseData;
+    return null;
   }
 
   // ✅ Update previous point and return new data
@@ -602,7 +602,7 @@ function updateButtonStatus(btn, type, text) {
 }
 
 function emitNotification(stopId, status, distance, btn) {
-  const payload = { stopId, status, busId: bus._id };
+  const payload = { stopId, status };
   if (typeof distance !== "undefined") {
     payload.distance = distance;
   }

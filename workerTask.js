@@ -19,12 +19,13 @@ parentPort.on("message", ({ task }) => {
     // 1. Check entry/exit polygon if previous point is provided
     if (task.previousPoint) {
       try {
-        let { campus, event } = checkEntryExit({
+        const entryResult = checkEntryExit({
           previousPoint: task.previousPoint,
           currentPoint: { longitude: busLng, latitude: busLat },
         });
-        if (event && campus) {
-          timeLine = { campus, event, timestamp: readableTime };
+        if (entryResult) {
+          const { campus, eventType } = entryResult;
+          timeLine = { campus, event: eventType, timestamp: readableTime };
         }
       } catch (err) {
         console.error("checkEntryExit failed:", err);
