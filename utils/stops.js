@@ -22,6 +22,7 @@ const connectToDatabase = async () => {
     console.error("❌ MongoDB connection error", err);
   }
 };
+
 export const sendNotification = async (
   stopId,
   stopName,
@@ -32,7 +33,7 @@ export const sendNotification = async (
   readableTime,
   timeLine
 ) => {
-  if (!stopId) return;
+  if (!stopId) return console.warn("⛔ No stopId provided, skipping.");
 
   await connectToDatabase();
 
@@ -49,6 +50,8 @@ export const sendNotification = async (
       ],
     });
 
+    console.log(`🔎 Found ${fcmUsers.length} FCM users for stop ${stopName}`);
+
     if (fcmUsers.length > 0) {
       for (const fcm of fcmUsers) {
         const message = isMorning
@@ -56,15 +59,18 @@ export const sendNotification = async (
           : `Bus (${busNumber}) might reach anytime at ${stopName}. Please be ready to board or exit.`;
 
         await sendNotificationToClient(fcm.fcmToken, "Bus Location", message);
+        console.log(`📲 Notification sent to token ${fcm.fcmToken}`);
       }
 
-      // Update their lastConsidered timestamp after sending
       await FCM.updateMany(
         { _id: { $in: fcmUsers.map((u) => u._id) } },
         { $set: { lastConsidered: new Date() } }
       );
+
+      console.log(`✅ Updated lastConsidered for notified users`);
     }
 
+    // ------------------ LOG ACTIVITY SECTION --------------------
     const todayStart = moment().tz("Asia/Kolkata").startOf("day").toDate();
     const todayEnd = moment().tz("Asia/Kolkata").endOf("day").toDate();
 
@@ -74,6 +80,7 @@ export const sendNotification = async (
     });
 
     const nowTime = moment().tz("Asia/Kolkata").format("hh:mm A");
+    console.log(`🕐 Logging activity at ${nowTime} for bus ${busNumber}`);
 
     if (log) {
       let stopLog = log.stops.find(
@@ -81,76 +88,77 @@ export const sendNotification = async (
       );
 
       if (stopLog) {
-        // ✅ STOP exists
+        console.log("📌 Stop already exists in log");
+
         if (isMorning) {
-          if (stopLog.morningTime || stopLog.eMorningTime) return;
+          if (stopLog.morningTime || stopLog.eMorningTime)
+            return console.log("🔁 Morning time already logged, skipping.");
 
           stopLog.stopName = stopName;
           stopLog.eMorningTime = expectedTime + " AM";
           stopLog.morningTime = readableTime;
         } else {
-          if (stopLog.eveningTime || stopLog.eEveningTime) return;
+          if (stopLog.eveningTime || stopLog.eEveningTime)
+            return console.log("🔁 Evening time already logged, skipping.");
 
           stopLog.stopName = stopName;
           stopLog.eEveningTime = expectedTime + " PM";
           stopLog.eveningTime = readableTime;
         }
       } else {
-        // ➕ Create new stop log entry
+        console.log("➕ Adding new stop entry");
+
         const newStop = {
           stop: stopId,
           stopName,
+          ...(isMorning
+            ? {
+                eMorningTime: expectedTime + " AM",
+                morningTime: readableTime,
+              }
+            : {
+                eEveningTime: expectedTime + " PM",
+                eveningTime: readableTime,
+              }),
         };
-
-        if (isMorning) {
-          newStop.eMorningTime = expectedTime + " AM";
-          newStop.morningTime = readableTime;
-        } else {
-          newStop.eEveningTime = expectedTime + " PM";
-          newStop.eveningTime = readableTime;
-        }
 
         log.stops.push(newStop);
       }
+
       if (timeLine) {
-        {
-          log.events.push(timeLine);
-        }
+        log.events.push(timeLine);
+        console.log("🧾 Added timeline event");
       }
 
-      await log.save(); // ✅ Always save if anything is modified
+      await log.save();
+      console.log("📦 Log saved successfully");
     } else {
-      if (isMorning) {
-        const newLog = new BusActivityLog({
-          bus: busId,
+      console.log("🆕 Creating new activity log");
 
-          stops: [
-            {
-              stop: stopId,
-              stopName: stopName,
-              eMorningTime: expectedTime,
-              morningTime: readableTime,
-            },
-          ],
-        });
-      } else {
-        const newLog = new BusActivityLog({
-          bus: busId,
+      const newLog = new BusActivityLog({
+        bus: busId,
+        stops: [
+          {
+            stop: stopId,
+            stopName,
+            ...(isMorning
+              ? {
+                  eMorningTime: expectedTime + " AM",
+                  morningTime: readableTime,
+                }
+              : {
+                  eEveningTime: expectedTime + " PM",
+                  eveningTime: readableTime,
+                }),
+          },
+        ],
+        events: timeLine ? [timeLine] : [],
+      });
 
-          stops: [
-            {
-              stop: stopId,
-              stopName: stopName,
-              eEveningTime: expectedTime,
-              eveningTime: readableTime,
-            },
-          ],
-        });
-
-        await newLog.save();
-      }
+      await newLog.save();
+      console.log("📘 New log created and saved");
     }
   } catch (error) {
-    console.error("Error sending notifications:", error);
+    console.error("❌ Error in sendNotification:", error);
   }
 };
