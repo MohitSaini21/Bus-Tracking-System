@@ -37,14 +37,32 @@ export const sendNotification = async (
   await connectToDatabase();
 
   try {
-    const fcms = await FCM.find({ stopId, isActive: true });
+    const twentyMinutesAgo = new Date(Date.now() - 20 * 60 * 1000);
 
-    for (const fcm of fcms) {
-      const message = isMorning
-        ? `Good morning! Bus (${busNumber}) might reach anytime at ${stopName}. Please be ready to board or exit.`
-        : `Bus (${busNumber}) might reach anytime at ${stopName}. Please be ready to board or exit.`;
+    const fcmUsers = await FCM.find({
+      stopId,
+      isActive: true,
+      $or: [
+        { lastConsidered: { $lt: twentyMinutesAgo } },
+        { lastConsidered: { $exists: false } },
+        { lastConsidered: null },
+      ],
+    });
 
-      await sendNotificationToClient(fcm.fcmToken, "Bus Location", message);
+    if (fcmUsers.length > 0) {
+      for (const fcm of fcmUsers) {
+        const message = isMorning
+          ? `Good morning! Bus (${busNumber}) might reach anytime at ${stopName}. Please be ready to board or exit.`
+          : `Bus (${busNumber}) might reach anytime at ${stopName}. Please be ready to board or exit.`;
+
+        await sendNotificationToClient(fcm.fcmToken, "Bus Location", message);
+      }
+
+      // Update their lastConsidered timestamp after sending
+      await FCM.updateMany(
+        { _id: { $in: fcmUsers.map((u) => u._id) } },
+        { $set: { lastConsidered: new Date() } }
+      );
     }
 
     const todayStart = moment().tz("Asia/Kolkata").startOf("day").toDate();
@@ -101,6 +119,36 @@ export const sendNotification = async (
       }
 
       await log.save(); // ✅ Always save if anything is modified
+    } else {
+      if (isMorning) {
+        const newLog = new BusActivityLog({
+          bus: busId,
+
+          stops: [
+            {
+              stop: stopId,
+              stopName: stopName,
+              eMorningTime: expectedTime,
+              morningTime: readableTime,
+            },
+          ],
+        });
+      } else {
+        const newLog = new BusActivityLog({
+          bus: busId,
+
+          stops: [
+            {
+              stop: stopId,
+              stopName: stopName,
+              eEveningTime: expectedTime,
+              eveningTime: readableTime,
+            },
+          ],
+        });
+
+        await newLog.save();
+      }
     }
   } catch (error) {
     console.error("Error sending notifications:", error);

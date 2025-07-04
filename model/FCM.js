@@ -37,6 +37,9 @@ const fcmSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  lastConsidered: {
+    type: Date,
+  },
 
   isActive: {
     type: Boolean,
