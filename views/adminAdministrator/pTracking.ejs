@@ -353,6 +353,10 @@
 }
 
       socket.emit("getObject", { busId: bus._id }, function (response) {
+
+        const tbody = document.querySelector("#stops-covered tbody");
+          document.getElementById("event-timeline-body").innerHTML=""
+          tbody.innerHTML=""
         console.log(response)
         if (response.data && Object.keys(response.data.reachedStops || {}).length > 0) {
   updateStopsCoveredTable(response.data.reachedStops);
