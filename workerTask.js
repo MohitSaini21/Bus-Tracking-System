@@ -4,80 +4,35 @@ import moment from "moment-timezone";
 import { checkEntryExit } from "./utils/polygon.js";
 import { sendNotification } from "./utils/stops.js";
 
-parentPort.on("message", ({ task, busObject }) => {
+parentPort.on("message", ({ task }) => {
   try {
     const bus = task.bus;
+    const busId = bus._id;
     const busLat = parseFloat(task.latitude);
     const busLng = parseFloat(task.longitude);
     const timestamp = task.timestamp;
-    const date = new Date(timestamp);
-
+    const readableTime = moment(timestamp).tz("Asia/Kolkata").format("hh:mm A");
+    const isMorning = moment(timestamp).tz("Asia/Kolkata").hour() < 12;
     const RADIUS_METERS = 1000;
-    const MIN_TIME_DIFF = 1000;
+    let timeLine;
 
     // 1. Check entry/exit polygon if previous point is provided
     if (task.previousPoint) {
       try {
-        let { campus, eventType } = checkEntryExit({
-          previousPoint: busObject.previousPoint,
+        let { campus, event } = checkEntryExit({
+          previousPoint: task.previousPoint,
           currentPoint: { longitude: busLng, latitude: busLat },
         });
-
-        if (eventType && campus) {
-          if (!Array.isArray(busObject.eventTimeline)) {
-            busObject.eventTimeline = [];
-          }
-
-          busObject.eventTimeline.push({
-            campus,
-            eventType,
-            time: date.toLocaleString("en-IN", {
-              timeZone: "Asia/Kolkata",
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: true,
-            }),
-          });
+        if (event && campus) {
+          timeLine = { campus, event, timestamp: readableTime };
         }
       } catch (err) {
         console.error("checkEntryExit failed:", err);
       }
     }
 
-    // 2. Path Tracking
-    if (!busObject.lastPathTimestamp) {
-      busObject.lastPathTimestamp = timestamp;
-      if (!Array.isArray(busObject.path)) {
-        busObject.path = [];
-      }
-      busObject.path.push({ lat: busLat, lon: busLng });
-      console.log("✅ Path initialized and updated");
-    } else {
-      const timeDiff = timestamp - busObject.lastPathTimestamp;
-      if (timeDiff >= MIN_TIME_DIFF) {
-        busObject.path.push({ lat: busLat, lon: busLng });
-        busObject.lastPathTimestamp = timestamp;
-        console.log("✅ Path updated with new point");
-      } else {
-        console.log("⏩ Skipping path update — interval too short");
-      }
-    }
-
-    // 3. Handle stop proximity
-    const currentTime = moment().tz("Asia/Kolkata");
-    const isMorning = currentTime.hour() < 12;
-
-    if (!busObject.reachedStops) busObject.reachedStops = {};
-
     for (const stop of task.bus.routeStops || []) {
       if (!stop || !stop._id || !stop.latitude || !stop.longitude) continue;
-
-      const stopId = stop._id.toString();
-      const alreadyLogged = isMorning
-        ? busObject.reachedStops[stopId]?.morningTime
-        : busObject.reachedStops[stopId]?.eveningTime;
-
-      if (alreadyLogged) continue;
 
       const stopLat = parseFloat(stop.latitude);
       const stopLng = parseFloat(stop.longitude);
@@ -87,44 +42,31 @@ parentPort.on("message", ({ task, busObject }) => {
       );
 
       if (distance <= RADIUS_METERS) {
-        sendNotification(stopId, stop.stopName, bus.busNumber, isMorning);
-        if (!busObject.reachedStops[stopId]) {
-          busObject.reachedStops[stopId] = {};
-        }
-
-        busObject.reachedStops[stopId].stopName = stop.stopName;
-
         if (isMorning) {
-          busObject.reachedStops[stopId].eMorningTime =
-            stop.morningTime + " am";
-          busObject.reachedStops[stopId].eveningTime = date.toLocaleString(
-            "en-IN",
-            {
-              timeZone: "Asia/Kolkata",
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: true,
-            }
+          sendNotification(
+            stop._id,
+            stop.stopName,
+            bus.busNumber,
+            isMorning,
+            busId,
+            stop.morningTime,
+            readableTime,
+            timeLine
           );
         } else {
-          busObject.reachedStops[stopId].eEveningTime =
-            stop.eveningTime + " pm";
-          busObject.reachedStops[stopId].eveningTime = date.toLocaleString(
-            "en-IN",
-            {
-              timeZone: "Asia/Kolkata",
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: true,
-            }
+          sendNotification(
+            stop._id,
+            stop.stopName,
+            bus.busNumber,
+            isMorning,
+            busId,
+            stop.eveningTime,
+            readableTime,
+            timeLine
           );
         }
 
-        console.log(
-          `📍 Bus ${bus._id} reached "${
-            stop.stopName
-          }" at ${currentTime.format()}`
-        );
+        console.log(`📍 Bus ${bus._id} reached "${stop.stopName}"`);
         break; // Only log one stop per location update
       } else {
         console.log(
@@ -133,15 +75,12 @@ parentPort.on("message", ({ task, busObject }) => {
       }
     }
 
-    console.log(`✅ Worker completed and response sent for bus ${bus._id}`);
-    (busObject.previousPoint = { longitude: busLng, latitude: busLat }),
-      parentPort.postMessage({
-        updatedBusObject: busObject,
-        busId: bus._id,
-      });
+    parentPort.postMessage({
+      done: false,
+    });
     console.log("📤 postMessage sent successfully to parent");
   } catch (err) {
     console.error("🚨 Worker thread failed:", err);
-    parentPort.postMessage({ error: err.message });
+    parentPort.postMessage({ done: false });
   }
 });

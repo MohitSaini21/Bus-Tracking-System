@@ -259,8 +259,6 @@ function processQueue(busId) {
 
   const start = Date.now();
 
-  let busObject = lastEvaluated[busId] ?? {};
-
   isProcessing.set(busId, true);
 
   let resolved = false;
@@ -294,28 +292,18 @@ function processQueue(busId) {
   }, TASK_TIMEOUT);
   timeout.unref();
 
-  const safeTaskData = JSON.parse(JSON.stringify({ task, busObject }));
+  const safeTaskData = JSON.parse(JSON.stringify({ task }));
   worker.postMessage(safeTaskData);
 
-  worker.once("message", (msg) => {
+  worker.once("message", (done) => {
     process.nextTick(() => {
       if (resolved) return;
 
-      if (msg?.updatedBusObject && msg?.busId) {
-        lastEvaluated[msg.busId] = msg.updatedBusObject;
-
-        if (adminConnectionsBus[msg.busId]) {
-          adminConnectionsBus[msg.busId].forEach((socketId) => {
-            io.to(socketId).emit("busUpdate", {
-              busObject: lastEvaluated[msg.busId],
-            });
-          });
-        }
-
+      if (done) {
         const timeTaken = Date.now() - start;
         console.log(`✅ Worker completed in ${timeTaken}ms`);
       } else {
-        console.warn("⚠️ Malformed worker message:", msg);
+        console.warn("⚠️ Malformed worker message:");
       }
 
       clearEverything();
@@ -802,26 +790,66 @@ io.on("connection", (socket) => {
       if (!busEval) {
         busEval = lastEvaluated[busId] = {
           busId,
-          reachedStops: {},
+
           lastEvaluations: 0,
-          eventTimeline: [],
-          path: [],
+          previousPoint: {
+            latitude: data.latitude,
+            longitude: data.longitude,
+          },
         };
       }
 
-      // 7. Cooldown check — only update every 10s
-      const cooldownPassed = now - busEval.lastEvaluations >= 10000;
-      if (cooldownPassed) {
-        // Push path update
-        busEval.path.push({
-          lat: data.latitude,
-          lon: data.longitude,
-        });
+      if (!busEval.lastPathTimestamp) {
+        busEval.lastPathTimestamp = data.timestamp;
 
-        busEval.lastEvaluations = now;
+        if (!Array.isArray(busEval.path)) {
+          busEval.path = [];
+        }
+        busEval.path.push({ lat: data.latitude, lon: data.longitude });
+        console.log("✅ Path initialized and updated");
+      } else {
+        const timeDiff = data.timestamp - busEval.lastPathTimestamp;
+        if (timeDiff >= 10000) {
+          busEval.path.push({ lat: data.latitude, lon: data.longitude });
 
-        console.log("✅ Path updated after cooldown");
+          busEval.lastPathTimestamp = data.timestamp;
+          console.log("✅ Path updated with new point");
+        } else {
+          console.log("⏩ Skipping path update — interval too short");
+        }
       }
+
+      // 7. Cooldown check
+      const cooldownPassed =
+        now - busEval.lastEvaluations >= locationEvaluationCooldown;
+      if (!cooldownPassed) {
+        console.log("skipping addTask");
+        return;
+      }
+
+      // 8. Set last evaluation time first (prevents overlaps)
+      busEval.lastEvaluations = now;
+
+      // 9. Prepare trimmed task for worker thread
+      const taskInput = {
+        latitude: data.latitude,
+        longitude: data.longitude,
+        timestamp: data.timestamp,
+        accuracy: data.accuracy,
+        previousPoint: busEval.previousPoint,
+
+        bus: {
+          _id: busId,
+          routeStops: cacheData.routeStops,
+          busNumber: cacheData.busNumber,
+        },
+      };
+      busEval.previousPoint = {
+        latitude: data.latitude,
+        longitude: data.longitude,
+      };
+      // 10. Offload to background worker
+      addTask(taskInput);
     } catch (err) {
       console.error("🚨 Error in busLocationUpdate handler:", err);
     }
@@ -846,7 +874,7 @@ io.on("connection", (socket) => {
     console.log(`📡 stopStreaming received for bus: ${busId}`);
   });
 
-  // Send Notifcation 
+  // Send Notifcation
   socket.on(
     "sendNotificiation",
     async ({ stopId, status, busId, distance }, callback) => {
@@ -866,16 +894,6 @@ io.on("connection", (socket) => {
           .populate("busId", "busNumber route");
 
         console.log("📡 Fetched activeTokens:", activeTokens.length);
-
-        // ✅ Special logic only for 'arrived'
-        if (status === "arrived") {
-          console.log(
-            "🟢 Status is 'arrived' — calling logStopArrivalToMemory"
-          );
-          logStopArrivalToMemory({ busId, stopId });
-        } else {
-          console.log("ℹ️ Not an 'arrived' status — skipping memory log");
-        }
 
         if (!activeTokens.length) {
           console.log("🟡 No active tokens found for stopId:", stopId);
@@ -920,8 +938,7 @@ io.on("connection", (socket) => {
     }
   );
 
-
-  // Campus Notification 
+  // Campus Notification
   socket.on("campusEvent", async ({ campus, event, busId }, callback) => {
     try {
       if (!campus || !event || !busId) {
@@ -956,27 +973,6 @@ io.on("connection", (socket) => {
       for (const entry of activeTokens) {
         await sendNotificationToClient(entry.fcmToken, title, message);
       }
-
-      // ✅ 4. Update in-memory eventTimeline
-      const timeString = moment().tz("Asia/Kolkata").format("hh:mm A");
-
-      lastEvaluated[busId]?.eventTimeline?.push({
-        campus,
-        eventType: event,
-        time: timeString,
-      });
-
-      if (adminConnectionsBus[busId]) {
-        adminConnectionsBus[busId].forEach((socketId) => {
-          io.to(socketId).emit("busUpdate", {
-            busObject: lastEvaluated[busId],
-          });
-        });
-      }
-
-      console.log(
-        `📌 Event logged: ${event} ${campus} @ ${timeString} for bus ${busId}`
-      );
 
       callback(true); // ✅ Completed successfully
     } catch (err) {

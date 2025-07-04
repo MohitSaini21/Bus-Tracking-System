@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import FCM from "../model/FCM.js";
+import moment from "moment-timezone";
+import BusActivityLog from "../model/busTrack.js";
 import { sendNotificationToClient } from "./notify.js";
 
 let isConnected = false; // Track whether we're connected
@@ -20,31 +22,86 @@ const connectToDatabase = async () => {
     console.error("❌ MongoDB connection error", err);
   }
 };
-
 export const sendNotification = async (
   stopId,
   stopName,
   busNumber,
-  isMorning
+  isMorning,
+  busId,
+  expectedTime,
+  readableTime,
+  timeLine
 ) => {
   if (!stopId) return;
 
-  await connectToDatabase(); // 👈 Ensure this runs before calling FCM.find()
+  await connectToDatabase();
 
   try {
-    const fcms = await FCM.find({ stopId: stopId, isActive: true });
+    const fcms = await FCM.find({ stopId, isActive: true });
 
-    fcms.forEach((fcm) => {
-      const fcmToken = fcm.fcmToken; // Properly reference the token
-
-      // Determine the message based on `isMorning`
+    for (const fcm of fcms) {
       const message = isMorning
         ? `Good morning! Bus (${busNumber}) might reach anytime at ${stopName}. Please be ready to board or exit.`
         : `Bus (${busNumber}) might reach anytime at ${stopName}. Please be ready to board or exit.`;
 
-      // Send notification to client
-      sendNotificationToClient(fcmToken, "Bus Location", message);
+      await sendNotificationToClient(fcm.fcmToken, "Bus Location", message);
+    }
+
+    const todayStart = moment().tz("Asia/Kolkata").startOf("day").toDate();
+    const todayEnd = moment().tz("Asia/Kolkata").endOf("day").toDate();
+
+    const log = await BusActivityLog.findOne({
+      bus: busId,
+      createdAt: { $gte: todayStart, $lte: todayEnd },
     });
+
+    const nowTime = moment().tz("Asia/Kolkata").format("hh:mm A");
+
+    if (log) {
+      let stopLog = log.stops.find(
+        (s) => s.stop?.toString() === stopId.toString()
+      );
+
+      if (stopLog) {
+        // ✅ STOP exists
+        if (isMorning) {
+          if (stopLog.morningTime || stopLog.eMorningTime) return;
+
+          stopLog.stopName = stopName;
+          stopLog.eMorningTime = expectedTime + " AM";
+          stopLog.morningTime = readableTime;
+        } else {
+          if (stopLog.eveningTime || stopLog.eEveningTime) return;
+
+          stopLog.stopName = stopName;
+          stopLog.eEveningTime = expectedTime + " PM";
+          stopLog.eveningTime = readableTime;
+        }
+      } else {
+        // ➕ Create new stop log entry
+        const newStop = {
+          stop: stopId,
+          stopName,
+        };
+
+        if (isMorning) {
+          newStop.eMorningTime = expectedTime + " AM";
+          newStop.morningTime = readableTime;
+        } else {
+          newStop.eEveningTime = expectedTime + " PM";
+          newStop.eveningTime = readableTime;
+        }
+
+        log.stops.push(newStop);
+      }
+      if (timeLine) {
+        {
+          log.events.push(timeLine);
+        }
+      }
+
+      await log.save(); // ✅ Always save if anything is modified
+    }
   } catch (error) {
     console.error("Error sending notifications:", error);
   }
